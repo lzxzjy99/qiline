@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="__CSP__">
+<title>弈合 · P5.4 浏览器验收</title>
+<style>
+body{font:16px/1.7 system-ui,sans-serif;background:#f6f3eb;color:#213c35;max-width:880px;margin:40px auto;padding:24px}
+h1{font-size:26px}button{font:inherit;background:#213c35;color:white;border:0;border-radius:8px;padding:12px 24px;cursor:pointer}
+pre{white-space:pre-wrap;background:white;border:1px solid #ccc;padding:20px;border-radius:12px}
+</style>
+<h1>弈合 · P5.4 浏览器验收</h1>
+<p>使用实际模块 Worker 与桌面同等的内容安全策略。此页面仅用于开发验收。</p>
+<button id="run">运行浏览器验收</button>
+<p id="state">尚未运行</p>
+<p id="pulse">主线程心跳：0</p>
+<pre id="results" role="status" aria-live="polite">等待开始。</pre>
+<script type="module" src="worker-qa.mjs"></script>
+</html>

@@ -5,3 +5,4 @@ export { listAIActions, analyzeTactics } from "./tactics.js";
 export { pickBasicAction, recommendBasicAction } from "./basic.js";
 export { SEARCH_POLICIES, runSearch } from "./search.js";
 export { evaluatePosition, WIN_VALUE } from "./evaluation.js";
+export { AIWorkerController, createAIWorkerController, DEFAULT_WORKER_LIMITS } from "./worker-controller.js";

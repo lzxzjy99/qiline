@@ -3,7 +3,7 @@
     "packages/ai/src/basic.ts": "0ec07b50e915ffd9e148aad2b4c9d1b97940500a43535e91612c978f003b42b1",
     "packages/ai/src/evaluation.ts": "e04c5ede170562bdf8278446cb0943b18984f10aa8b9b92287e00ecd7f153771",
     "packages/ai/src/features.ts": "645675d1a87450cb5049f53c9d9e924a1b83dee098af5b836a6e8710e2695770",
-    "packages/ai/src/index.ts": "d71a1f5cbc83a9c710c5f18453dad7523f09a1acb9fd55eb7cf00617c95bf86f",
+    "packages/ai/src/index.ts": "38707827b23964c013ac11637b883a10f226ce306b2375eaffe6d6fb8b01090e",
     "packages/ai/src/ordering.ts": "8c1d77138781f538a6a28608df5f6119a9e104604979de7d7fee77089c5b55ed",
     "packages/ai/src/protocol.ts": "2b84bc37bcf031fc21a8d5f71c4038c7994757d2fb228bdc5d7dc6feec93c49b",
     "packages/ai/src/save.ts": "b0da6ba20565ef694898d348c6e38b87cade692c7bf943bdb0b6ca5776debdc6",
@@ -12,6 +12,8 @@
     "packages/ai/src/tree.ts": "f6a79de3191a25b071dd357c20c79d943bb616078d41e23971ba0f3f9d9b3538",
     "packages/ai/src/turn.ts": "e10438b1ae3cda8eff42be3907cf38aaa01682c00dcbffec555817f1a43d3204",
     "packages/ai/src/types.ts": "a781372ca104c43359d56ffd01854c41125eba8a700ffc40019f30b4eaba8771",
+    "packages/ai/src/worker-controller.ts": "10d7a4c62ce2cba0f481b9471742a1e7a8730be92af20604d0be4b0c7000aba0",
+    "packages/ai/src/worker-entry.ts": "b3973b790903df4255e27c1ab182d8cba8d54ba32cad40d5cc322531f6ec84ef",
     "tsconfig.json": "f822dd201ea0420bf9a1753c73dad0d2085de53081e7be4faa5d9c530cdf46ca",
     "tsconfig.ai.json": "26fd5f76d17258cb14ddca19ca3042994afd8e029aca1e4be6217dc49045e518",
     "tools/ai/package.json": "3aa24081f1a8710a3f84db11b19ac5b8c796983243a89b2efaba5d040e435fb2",
@@ -24,8 +26,8 @@
     "compiled/ai/src/evaluation.js": "b117d5a84aea1589f9f2fca1279539c3397b1cd9a01d1166eec5f8d3831e7466",
     "compiled/ai/src/features.d.ts": "4e4c684dbae4bed12326453d288f1f4459cacf295dd427fbdf2517539b97ca1b",
     "compiled/ai/src/features.js": "9a25bf751d0a847aedec4ac802a6d496dd0168ab66c39891f906c4186e161a60",
-    "compiled/ai/src/index.d.ts": "d71a1f5cbc83a9c710c5f18453dad7523f09a1acb9fd55eb7cf00617c95bf86f",
-    "compiled/ai/src/index.js": "f4501a7ab4347df73f5815aa11252f0ce209d072ac2f2f79aa9b31530cd4a82a",
+    "compiled/ai/src/index.d.ts": "38707827b23964c013ac11637b883a10f226ce306b2375eaffe6d6fb8b01090e",
+    "compiled/ai/src/index.js": "2fe71a1d5953739a5b9fb4fcc7f0f1eafb0a765ad1eb3418baa16bc1db010456",
     "compiled/ai/src/ordering.d.ts": "ba5f76b8b0a1002c425982d3f441129d2eabaa3b90cf6c89065431ec723c13dd",
     "compiled/ai/src/ordering.js": "cfecd14795cbe6b734aae559cd6ec3fe0dabefaddc4b972f33d7b2ef98e4ada8",
     "compiled/ai/src/protocol.d.ts": "89b20e186ca4a8335a41ce7530401fc5f4f79c734573270b29a7d28b50159509",
@@ -41,6 +43,10 @@
     "compiled/ai/src/turn.d.ts": "fe54c942eb404076ff8b7325823ce6e0e0570f05dfc8f9b5049cabfa9425d227",
     "compiled/ai/src/turn.js": "7c758e97a9a27fe80c4b8aba1f38dd833f9b88565b25f2c68bd5f91cba034ebc",
     "compiled/ai/src/types.d.ts": "032b8006fcd87b106f359b9d1cdfdbe1a66886c016c0d1f5665057c360cdf137",
-    "compiled/ai/src/types.js": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+    "compiled/ai/src/types.js": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+    "compiled/ai/src/worker-controller.d.ts": "388f730e6af4249f37b6329e6b5eb5af7c75bdb9151edd65dbe02d46e41b7a4e",
+    "compiled/ai/src/worker-controller.js": "8218f705374beede3643278e97bdd1416fe163b8c64b6ac7561256d3039e3982",
+    "compiled/ai/src/worker-entry.d.ts": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+    "compiled/ai/src/worker-entry.js": "3d7fb09a0959e1313b11856686b48893593085e8039237d6e6842209ea9ec07f"
   }
 }

@@ -1,0 +1,80 @@
+{
+  "stage":"P5.4",
+  "verifiedOn":"2026-10-20",
+  "rulesVersion":"2.1.0-r3",
+  "baselineCommit":"29ca819bc588682d5ff7bc31f833312fbb0b65a5",
+  "implementation":{
+    "moduleWorkerPerExplicitCommand":true,
+    "strictReadyHandshake":true,
+    "actualWorkerTermination":true,
+    "startupAndComputeWatchdogs":true,
+    "monotonicReplyDeadlineCheck":true,
+    "explicitRetry":true,
+    "undoToAIWaitsForContinue":true,
+    "staleTaskLifecycleGuard":true,
+    "sharedBrowserElectronHost":true,
+    "humanVsAIProductInterface":false,
+    "newWindowsPackage":false
+  },
+  "limits":{"startupMs":3000,"graceMs":250,"directSessionMutationMonitorMs":50,"easySearchMs":300,"standardSearchMs":1200},
+  "validation":{
+    "typescriptVersion":"7.0.2",
+    "strictTypecheck":"passed",
+    "javascriptModulesParsed":27,
+    "localImports":"passed",
+    "p2CoreSessionSourceAndCompiledHashes":"unchanged",
+    "aiSourceCompiledDistHashes":"matched reports/ai-contract-sha256.json",
+    "workerLifecycleMatrix":{"rules":448,"aiRoles":2,"levels":2,"tests":1792,"passed":1792,"method":"fake Worker ports, deterministic timers, supplied legal fixture actions"},
+    "workerControllerUnits":{"tests":29,"passed":29},
+    "actualThreadTests":{"tests":3,"passed":3,"method":"Node worker_threads bridge to the actual compiled module entry; awaited native terminate promises and verified exit"},
+    "regression":{"tests":1915,"passed":1915,"desktopTestsIncluded":13},
+    "totalNodeTests":3739,
+    "passed":3739,
+    "failed":0,
+    "skipped":0,
+    "browser":{
+      "environment":"cloud Chromium, HTTP static preview, actual module Workers, desktop-equivalent CSP",
+      "tests":4,
+      "passed":4,
+      "checks":["full replay, E5 defense and single commit","pause during startup-to-search transition, stale task invalidation and resume","undo to AI waits for explicit continue","uncooperative CPU loop hard termination, main-thread response and explicit retry"],
+      "heartbeatsDuringInfiniteLoop":28,
+      "heartbeatPeriodMs":20,
+      "hardTimeoutAndRetryWorkersCreated":2,
+      "terminateCallsPerWorker":1,
+      "remainingSchedulerTimers":0,
+      "applicationConsoleErrors":0,
+      "unrelatedExtensionMetadataErrors":3,
+      "screenshot":"reports/ai-p5-4-browser.jpg"
+    },
+    "commands":[
+      "npm run build:ai",
+      "npm run build",
+      "npm run check",
+      "node --test tests/ai-worker.test.mjs tests/ai-worker-native.test.mjs",
+      "node --test --test-reporter=spec tests/ai-worker-matrix.test.mjs",
+      "node --test --test-reporter=spec tests/ai.test.mjs tests/ai-matrix.test.mjs tests/ai-tactics.test.mjs tests/ai-tree.test.mjs tests/ai-search.test.mjs tests/session.test.mjs tests/restore-session.test.mjs tests/web.test.mjs tests/desktop.test.mjs",
+      "node scripts/build-worker-qa.mjs",
+      "git diff --check"
+    ]
+  },
+  "coveredBoundaries":[
+    "separate macrotasks for consecutive A opening commands and B choosing white followed by B placing",
+    "duplicate start, sync, ready, reply and old captured callbacks",
+    "pause, undo, new game, load, direct cancelTask, resignation, terminal commit and close",
+    "failed undo and invalid load preserve the current task",
+    "late messages rejected even if watchdog callbacks are delayed",
+    "constructor, postMessage, message decoding, malformed and illegal action failures",
+    "observer exceptions, observer-triggered cancellation and factory reentrancy",
+    "terminate failure prevents accumulating replacement workers",
+    "real startup and compute infinite loops terminate physically while the main loop runs"
+  ],
+  "limitsAndPending":[
+    "Browser timers can be delayed by background throttling, suspension or a busy main thread; deadline checks still reject late replies.",
+    "Main-thread request export, structured clone and final rule validation remain synchronous; arbitrarily long records are not a zero-stall guarantee.",
+    "UI mutations must use change(); direct active-task mutations are monitored, and idle external mutations require sync().",
+    "The 1792 lifecycle cases use supplied actions, not 1792 live searches or complete matches.",
+    "The earlier full tactical and bounded-search matrices were not rerun; their reports remain historical evidence.",
+    "Actual qiline-scheme Electron Worker launch on Windows, mobile and Safari remain unverified.",
+    "Current deployed product remains PvP; human-vs-AI UI and a new Windows package belong to later stages."
+  ]
+}

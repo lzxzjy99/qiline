@@ -34,9 +34,19 @@ test('offline protocol serves actual UTF-8 assets and MIME without external requ
   const handle=createAssetHandler(root);
   const h=await handle({method:'GET',url:'qiline://game/'});assert.equal(h.status,200);assert.equal(await h.text(),'<h1>弈合</h1>');
   assert.match(h.headers.get('Content-Security-Policy'),/connect-src 'none'/);
+  assert.match(h.headers.get('Content-Security-Policy'),/worker-src 'self'/);
   const js=await handle({method:'GET',url:'qiline://game/app.mjs'});assert.match(js.headers.get('Content-Type'),/javascript/);assert.equal(js.headers.get('X-Content-Type-Options'),'nosniff');
   const head=await handle({method:'HEAD',url:HOME});assert.equal(head.status,200);assert.equal(await head.text(),'');
  } finally{await rm(root,{recursive:true,force:true});}
+});
+test('offline protocol serves the real module Worker, scheduler and browser adapter as local JavaScript',async()=>{
+ const handle=createAssetHandler(path.resolve('dist'));
+ for(const file of ['ai/src/worker-entry.js','ai/src/worker-controller.js','ui/ai-host.mjs']){
+  const response=await handle({method:'GET',url:`qiline://game/${file}`});
+  assert.equal(response.status,200);assert.match(response.headers.get('Content-Type'),/javascript/);
+  assert.match(response.headers.get('Content-Security-Policy'),/worker-src 'self'/);
+  assert.match(await response.text(),/runSearch|createAIWorkerController|class AIWorkerController/);
+ }
 });
 test('missing, malformed, unsupported and failed reads do not expose arbitrary files',async()=>{
  const handle=createAssetHandler('/bundle',async()=>{throw Error('denied');});

@@ -20,7 +20,8 @@ node --test tests/web.test.mjs
 
 - `packages/core`：不可变棋局、提子、五连、PSK 和完整重放。
 - `packages/session`：真实玩家身份、共同同意和过期任务保护。
-- `packages/ai`：AI 协议、完整棋谱重建、任务提交边界、存档适配、基础战术，以及 P5.3 迭代加深 Alpha-Beta 和预算控制；尚无后台 Worker。
+- `packages/ai`：AI 协议、完整棋谱重建、基础战术、迭代加深 Alpha-Beta、预算，以及 P5.4 独立 Worker 调度、实际终止和重试。
+- `packages/ui/ai-host.mjs`：网页与 Electron 共用的模块 Worker 宿主；产品入口按 P5.5 接入。
 - `packages/ui/model.mjs`：中文展示、存档外壳、存储冲突保护。
 - `apps/web`：响应式棋盘、浏览器入口、文件导入导出和内置手册。
 - `scripts/build-web.mjs`：复制已验证的核心和网页资产，生成静态目录。
@@ -41,4 +42,4 @@ P3：12 个 JavaScript 模块语法/本地依赖检查通过；10 个网页模�
 
 P4 已加入离线桌面壳、原生存档保存对话框、退出保护和 Windows 构建／校验脚本；可生成包含“弈合.exe”的完整运行目录。构建步骤与本轮修复见 `docs/desktop-build.md`，真实 Windows 运行、离线、缩放和中文路径仍按 `docs/Windows真机验收清单.md` 待测。
 
-P5.1 接口与 P5.2 基础选点已完成；P5.3 加入迭代加深、真实玩家 Alpha-Beta、节点／深度硬限制和在检查点停止的时间预算，详见 [AI 接口与实施框架](docs/AI接口与实施框架.md)、[基础战术](docs/AI基础战术P5.2.md) 和 [搜索与预算](docs/AI搜索与预算P5.3.md)。`npm run test:ai` 保留前两阶段测试，`npm run test:search` 运行搜索矩阵与专项；`npm run build:ai` 重新编译 AI。Worker 和人机界面待后续阶段接入，当前可玩版本继续为本地双人。未完成分配置的胜率公平性研究；不能把规则对称或随机对局看作公平证明。
+P5.1–P5.3 的接口、战术与预算搜索已完成；P5.4 已加入独立模块 Worker、实际终止、超时守护、暂停／重试及悔棋后的等待。详见 [AI 实施框架](docs/AI接口与实施框架.md)、[基础战术](docs/AI基础战术P5.2.md)、[搜索与预算](docs/AI搜索与预算P5.3.md) 和 [后台任务](docs/AI后台任务P5.4.md)。`npm run test:ai`、`test:search`、`test:worker` 分别运行对应检查；`npm run build:ai` 重新编译 AI。人机界面待 P5.5 接入，当前可玩版本继续为本地双人。未完成分配置的胜率公平性研究；不能把规则对称或随机对局看作公平证明。

@@ -9,3 +9,5 @@ export { pickBasicAction, recommendBasicAction } from "./basic.js";
 export type { SearchHost, SearchOutcome, SearchStop } from "./search.js";
 export { SEARCH_POLICIES, runSearch } from "./search.js";
 export { evaluatePosition, WIN_VALUE } from "./evaluation.js";
+export type { WorkerPort, TimerId, WorkerHost, WorkerLimits, WorkerState } from "./worker-controller.js";
+export { AIWorkerController, createAIWorkerController, DEFAULT_WORKER_LIMITS } from "./worker-controller.js";

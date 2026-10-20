@@ -1,0 +1,250 @@
+TAP version 13
+# Subtest: product settings react to radio changes and practice assigns the selected identity/difficulty
+ok 1 - product settings react to radio changes and practice assigns the selected identity/difficulty
+  ---
+  duration_ms: 7.1175
+  type: 'test'
+  ...
+# Subtest: AI A places three opening stones with fresh workers, saves each once and cannot be impersonated
+ok 2 - AI A places three opening stones with fresh workers, saves each once and cannot be impersonated
+  ---
+  duration_ms: 9.5455
+  type: 'test'
+  ...
+# Subtest: AI B choosing white continues with B on a fresh worker and undo waits for explicit continue
+ok 3 - AI B choosing white continues with B on a fresh worker and undo waits for explicit continue
+  ---
+  duration_ms: 8.1139
+  type: 'test'
+  ...
+# Subtest: pause and worker failure leave the game intact and expose continue or explicit retry
+ok 4 - pause and worker failure leave the game intact and expose continue or explicit retry
+  ---
+  duration_ms: 5.671
+  type: 'test'
+  ...
+# Subtest: startup AI restore waits for continue for either real-player identity
+ok 5 - startup AI restore waits for continue for either real-player identity
+  ---
+  duration_ms: 7.0771
+  type: 'test'
+  ...
+# Subtest: new game replacement closes old work and ignores old results; live PvP remains protected
+ok 6 - new game replacement closes old work and ignores old results; live PvP remains protected
+  ---
+  duration_ms: 3.7475
+  type: 'test'
+  ...
+# Subtest: import replacement terminates old work and restored AI waits before creating a fresh task
+ok 7 - import replacement terminates old work and restored AI waits before creating a fresh task
+  ---
+  duration_ms: 4.9401
+  type: 'test'
+  ...
+# Subtest: storage events stop current AI work, preserve newer bytes and leave export available
+ok 8 - storage events stop current AI work, preserve newer bytes and leave export available
+  ---
+  duration_ms: 6.6433
+  type: 'test'
+  ...
+# Subtest: a missed storage event is detected at readiness and stops work before sending a request
+ok 9 - a missed storage event is detected at readiness and stops work before sending a request
+  ---
+  duration_ms: 3.2014
+  type: 'test'
+  ...
+# Subtest: invalid imports preserve active work and paused opening cancellation never briefly resumes AI
+ok 10 - invalid imports preserve active work and paused opening cancellation never briefly resumes AI
+  ---
+  duration_ms: 4.7022
+  type: 'test'
+  ...
+# Subtest: practice resignation on an AI turn closes work using the human identity
+ok 11 - practice resignation on an AI turn closes work using the human identity
+  ---
+  duration_ms: 3.7643
+  type: 'test'
+  ...
+# Subtest: local two-player undo retains the original consent workflow and never creates AI work
+ok 12 - local two-player undo retains the original consent workflow and never creates AI work
+  ---
+  duration_ms: 3.3541
+  type: 'test'
+  ...
+# Subtest: pagehide closes active work and a cached pageshow requests a fresh document
+ok 13 - pagehide closes active work and a cached pageshow requests a fresh document
+  ---
+  duration_ms: 3.0688
+  type: 'test'
+  ...
+# Subtest: practice A/easy/swap3=false keeps identity through play and wrapped restore
+ok 14 - practice A/easy/swap3=false keeps identity through play and wrapped restore
+  ---
+  duration_ms: 3.1214
+  type: 'test'
+  ...
+# Subtest: practice A/easy/swap3=true keeps identity through play and wrapped restore
+ok 15 - practice A/easy/swap3=true keeps identity through play and wrapped restore
+  ---
+  duration_ms: 1.4554
+  type: 'test'
+  ...
+# Subtest: practice A/standard/swap3=false keeps identity through play and wrapped restore
+ok 16 - practice A/standard/swap3=false keeps identity through play and wrapped restore
+  ---
+  duration_ms: 0.5078
+  type: 'test'
+  ...
+# Subtest: practice A/standard/swap3=true keeps identity through play and wrapped restore
+ok 17 - practice A/standard/swap3=true keeps identity through play and wrapped restore
+  ---
+  duration_ms: 0.6056
+  type: 'test'
+  ...
+# Subtest: practice B/easy/swap3=false keeps identity through play and wrapped restore
+ok 18 - practice B/easy/swap3=false keeps identity through play and wrapped restore
+  ---
+  duration_ms: 0.6278
+  type: 'test'
+  ...
+# Subtest: practice B/easy/swap3=true keeps identity through play and wrapped restore
+ok 19 - practice B/easy/swap3=true keeps identity through play and wrapped restore
+  ---
+  duration_ms: 0.5315
+  type: 'test'
+  ...
+# Subtest: practice B/standard/swap3=false keeps identity through play and wrapped restore
+ok 20 - practice B/standard/swap3=false keeps identity through play and wrapped restore
+  ---
+  duration_ms: 0.2966
+  type: 'test'
+  ...
+# Subtest: practice B/standard/swap3=true keeps identity through play and wrapped restore
+ok 21 - practice B/standard/swap3=true keeps identity through play and wrapped restore
+  ---
+  duration_ms: 0.4169
+  type: 'test'
+  ...
+# Subtest: new-game adapter keeps dual-human and competitive dual-human games available
+ok 22 - new-game adapter keeps dual-human and competitive dual-human games available
+  ---
+  duration_ms: 0.2646
+  type: 'test'
+  ...
+# Subtest: bare practice SessionSave has names mapped to human identity rather than color
+ok 23 - bare practice SessionSave has names mapped to human identity rather than color
+  ---
+  duration_ms: 0.2148
+  type: 'test'
+  ...
+# Subtest: raw MatchRecord discards AI settings and restores as two humans
+ok 24 - raw MatchRecord discards AI settings and restores as two humans
+  ---
+  duration_ms: 0.2469
+  type: 'test'
+  ...
+# Subtest: restoring during AI calculation removes runtime authority and paused status
+ok 25 - restoring during AI calculation removes runtime authority and paused status
+  ---
+  duration_ms: 0.2715
+  type: 'test'
+  ...
+# Subtest: legacy web wrapper keeps human names and A/B mapping while accepting valid AI save
+ok 26 - legacy web wrapper keeps human names and A/B mapping while accepting valid AI save
+  ---
+  duration_ms: 0.1102
+  type: 'test'
+  ...
+# Subtest: competitive AI and double-AI saves are rejected in bare and wrapped formats
+ok 27 - competitive AI and double-AI saves are rejected in bare and wrapped formats
+  ---
+  duration_ms: 0.5088
+  type: 'test'
+  ...
+# Subtest: practice options and damaged controllers are validated before creating a playable game
+ok 28 - practice options and damaged controllers are validated before creating a playable game
+  ---
+  duration_ms: 0.2676
+  type: 'test'
+  ...
+# Subtest: practice errors describe paused or unsupported state with a recovery action
+ok 29 - practice errors describe paused or unsupported state with a recovery action
+  ---
+  duration_ms: 0.1825
+  type: 'test'
+  ...
+# Subtest: direct session API still rejects non-human submission in practice mode
+ok 30 - direct session API still rejects non-human submission in practice mode
+  ---
+  duration_ms: 0.1137
+  type: 'test'
+  ...
+# Subtest: web save restores real player mapping, configuration, actions and candidates
+ok 31 - web save restores real player mapping, configuration, actions and candidates
+  ---
+  duration_ms: 3.7917
+  type: 'test'
+  ...
+# Subtest: session and core record imports work without a web wrapper
+ok 32 - session and core record imports work without a web wrapper
+  ---
+  duration_ms: 0.5512
+  type: 'test'
+  ...
+# Subtest: malformed, unknown and tampered imports are rejected; practice saves restore
+ok 33 - malformed, unknown and tampered imports are rejected; practice saves restore
+  ---
+  duration_ms: 0.379
+  type: 'test'
+  ...
+# Subtest: live human games cannot be replaced through session newGame or loadSave
+ok 34 - live human games cannot be replaced through session newGame or loadSave
+  ---
+  duration_ms: 0.2941
+  type: 'test'
+  ...
+# Subtest: pending consent and permissions never resume from a saved snapshot
+ok 35 - pending consent and permissions never resume from a saved snapshot
+  ---
+  duration_ms: 0.2789
+  type: 'test'
+  ...
+# Subtest: safe storage preserves previous save before accepting the next
+ok 36 - safe storage preserves previous save before accepting the next
+  ---
+  duration_ms: 0.1215
+  type: 'test'
+  ...
+# Subtest: two tabs reject stale writes and preserve both snapshots
+ok 37 - two tabs reject stale writes and preserve both snapshots
+  ---
+  duration_ms: 0.0569
+  type: 'test'
+  ...
+# Subtest: quota and denied access do not replace the current save
+ok 38 - quota and denied access do not replace the current save
+  ---
+  duration_ms: 0.1013
+  type: 'test'
+  ...
+# Subtest: backup failure leaves current data untouched; failed current write retains old bytes
+ok 39 - backup failure leaves current data untouched; failed current write retains old bytes
+  ---
+  duration_ms: 0.1087
+  type: 'test'
+  ...
+# Subtest: each color and every fixed-five candidate remains in the presentation
+ok 40 - each color and every fixed-five candidate remains in the presentation
+  ---
+  duration_ms: 0.6767
+  type: 'test'
+  ...
+1..40
+# tests 40
+# suites 0
+# pass 40
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 173.0372

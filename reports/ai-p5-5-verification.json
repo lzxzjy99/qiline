@@ -1,0 +1,79 @@
+{
+  "stage": "P5.5",
+  "verifiedOn": "2026-10-21",
+  "timezone": "Asia/Shanghai",
+  "rulesVersion": "2.1.0-r3",
+  "baselineCommit": "5c4104a6f5b8813707354c1cdb810328a0ca5df0",
+  "siteProjectId": "appgprj_6ad6f590bd4881919921299fa305f236",
+  "implementation": {
+    "existingSitePreserved": true,
+    "localPvPAndPractice": true,
+    "levels": ["easy", "standard"],
+    "openingHumanRoles": ["A", "B", "random"],
+    "controllersStayBoundToRealPlayers": true,
+    "backgroundAIStateAndPauseResumeRetry": true,
+    "undoToAIWaitsForContinue": true,
+    "restoredPracticeWaitsForContinue": true,
+    "sameWebAndElectronRenderer": true,
+    "saveSchemasUnchanged": true,
+    "newWindowsPackage": false
+  },
+  "environment": {
+    "platform": "Windows",
+    "node": "24.21.0",
+    "git": "2.53.0.windows.3",
+    "filesystemReadWrite": "passed",
+    "sourceFetch": "passed after network permission and process-scoped safe.directory for the selected checkout",
+    "checkoutLineEndings": "normalized to original repository LF bytes before integrity verification",
+    "python": "not on PATH; not required for this stage",
+    "staticPackaging": "native Windows tar fallback reuses Sites prepare-site-build.cjs validation because Bash is unavailable"
+  },
+  "validation": {
+    "build": "passed",
+    "javascriptModulesParsed": 27,
+    "localImports": "passed",
+    "p2CoreSessionSourceAndCompiledHashes": "unchanged",
+    "aiSourceCompiledDistHashes": "matched reports/ai-contract-sha256.json",
+    "nodeTests": {"total": 7811, "passed": 7811, "failed": 0, "skipped": 0, "cancelled": 0},
+    "productEntryIntegrationTests": {
+      "tests": 13,
+      "passed": 13,
+      "method": "actual dist/app.mjs, model and scheduler; fake DOM, Worker ports and clock",
+      "includedInNodeTotal": true
+    },
+    "browser": {
+      "environment": "Codex in-app browser, local HTTP preview, actual module Workers",
+      "checks": [
+        "mode radio reveals practice settings and disables competitive",
+        "human A places three opening stones; AI B chooses white and immediately places white",
+        "AI A completes three consecutive opening commands with standard difficulty",
+        "human B chooses black; AI A remains the same player while playing white",
+        "undo returns to AI turn, holds without automatic replay, and exposes continue",
+        "refresh restores the full board and waits for explicit continue",
+        "pause and resume controls operate in the product page",
+        "live-practice restart requires concrete local replacement confirmation",
+        "JSON download contains wrapper v1, complete commands, fixed player mapping, standard AI level and seed",
+        "file chooser imports exported practice with confirmation and explicit continue",
+        "second-tab save produces conflict warning and stops the first tab AI",
+        "PvP retains two-player undo request and consent; accepted undo restores zero moves"
+      ],
+      "applicationConsoleErrors": 0,
+      "screenshot": "reports/ai-p5-5-browser.png"
+    },
+    "commands": [
+      "npm run build",
+      "npm run check",
+      "node --test --test-reporter=tap tests/*.test.mjs",
+      "git diff --check"
+    ],
+    "tapReport": "reports/p5-5-tests.tap",
+    "finalUILabelRegression": {"tests": 40, "passed": 40, "failed": 0, "report": "reports/p5-5-ui-final.tap"}
+  },
+  "limitsAndPending": [
+    "No new Windows package generated. Actual Electron custom-protocol Worker startup and offline behavior remain P5.6 platform acceptance.",
+    "Physical mobile devices, narrow-screen browser resizing and Safari were not exercised in this stage.",
+    "The automated configuration matrices are rule/strategy/lifecycle tests, not thousands of complete matches or a proof of AI strength or fairness.",
+    "AI failure/retry and late callbacks were verified in product-entry integration tests; actual browser fault injection was not repeated.",
+    "Main-thread export, structured clone and final rules validation remain synchronous, as documented in P5.4."
+  ]
+}

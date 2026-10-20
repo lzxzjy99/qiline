@@ -1,11 +1,12 @@
 import {DEFAULT_RULES, activePlayer, formatPoint, inspectGroup} from './core/src/index.js';
-import {createSession} from './session/src/index.js';
-import {SAVE_KEY, SafeStorage, makeWebSave, parseWebSave, phaseView, rulesView, claimsView, playerName, colorName, other, errorText} from './ui/model.mjs';
+import {createBrowserAI} from './ui/ai-host.mjs';
+import {SAVE_KEY, SafeStorage, createGameSession, practiceView, makeWebSave, parseWebSave, phaseView, rulesView, claimsView, playerName, colorName, other, errorText} from './ui/model.mjs';
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>typeof crypto.randomUUID==='function'?crypto.randomUUID():Array.from(crypto.getRandomValues(new Uint32Array(4)),n=>n.toString(16).padStart(8,'0')).join('-');
 let session=null, meta={names:['玩家一','玩家二'],aIndex:0,round:1};
+let ai=null, aiState=null, restoreHold=false, observedMatch=null, replaceAction=null;
 let inspect=false, labels=false, selected=null, focusPoint=40, flash=[], noticeTimer;
 let storageObject;
 try {storageObject=window.localStorage;} catch {storageObject={getItem(){throw Error('storage unavailable');},setItem(){throw Error('storage unavailable');}};}
@@ -14,7 +15,7 @@ const startupRaw=storage.read();
 let badStartup=null, startupNote='';
 if (startupRaw) {
   const restored=parseWebSave(startupRaw,uid());
-  if (restored.ok) {session=restored.value.session;meta=restored.value.players;startupNote='已恢复上次对局；未完成的同意请求需重新发起。';}
+  if (restored.ok) {session=restored.value.session;meta=restored.value.players;startupNote=practiceView(session)?'已恢复人机对局。确认棋盘后点击“继续对局”。':'已恢复上次对局；未完成的同意请求需重新发起。';restoreHold=!!practiceView(session);}
   else {badStartup=startupRaw;storage.warning=errorText(restored.error)+' 可导出原文件留存。';}
 }
 
@@ -24,23 +25,57 @@ function notice(message,error=false) {
 }
 const live=()=>session && !session.state.match.state.outcome;
 const match=()=>session?.state.match;
+const practice=()=>session?practiceView(session):null;
+const humanTurn=()=>!!match()&&session.state.controllers[activePlayer(match())]?.kind==='human';
+const replaceable=()=>!live()||!!practice();
+function attachAI(restored=false) {
+  aiState=null;observedMatch=match();restoreHold=restored&&!!practice()&&!!live();
+  if(!practice())return;
+  const owned=session;
+  const result=createBrowserAI(owned,state=>{
+    if(session!==owned||state.status==='closed')return;
+    aiState=state;
+    if(!storage.check()&&!owned.state.paused){ai?.pause();render();return;}
+    const current=match();
+    if(current!==observedMatch){
+      flash=current.state.placements>observedMatch.state.placements?[...current.state.lastCaptured]:[];
+      observedMatch=current;selected=null;save();
+      if(flash.length)setTimeout(()=>{flash=[];renderBoard();},750);
+    }
+    render();
+  });
+  if(!result.ok){session.setPaused(true);aiState={status:'failed',error:result.error};return;}
+  ai=result.value;
+  if(restoreHold||storage.conflict)ai.pause();else ai.start();
+  aiState=ai.state;
+}
+function releaseSession(){const oldAI=ai;ai=null;aiState=null;if(oldAI)oldAI.close();else session?.close();}
+function installSession(next,players,restored=false){
+  releaseSession();session=next;meta=players;inspect=false;selected=null;flash=[];
+  focusPoint=Math.floor(match().rules.boardSize**2/2);attachAI(restored);save();render();
+}
+function confirmReplacement(action,label){
+  if(!live()||!practice()){action();return;}
+  replaceAction=action;$('replace-title').textContent=label;
+  $('replace-dialog').showModal();
+}
 function save() {
   if (!session) return;
   storage.write(JSON.stringify(makeWebSave(session,meta,uid())));
 }
 function mayChange() {
   if (storage.check()) return true;
-  notice(errorText({code:'STORAGE_CONFLICT'}),true);render();return false;
+  ai?.pause();notice(errorText({code:'STORAGE_CONFLICT'}),true);render();return false;
 }
 function operate(fn,success) {
   if (!session || !mayChange()) return;
   const before=session.state.match;
-  const result=fn();
+  const result=ai?ai.change(fn):fn();
   if (!result.ok) {notice(errorText(result.error),true);return;}
   const after=session.state.match;
   selected=null;
   flash=after.state.placements>before.state.placements?[...after.state.lastCaptured]:[];
-  save();render();
+  if(observedMatch!==after){observedMatch=after;save();}render();
   if (success) notice(success);
   const delta=after.state.ply-before.state.ply;
   const last=after.accepted.at(-1);
@@ -74,7 +109,7 @@ function renderBoard() {
   let group=null;
   if (s && selected!==null) {const r=inspectGroup(m,selected);if(r.ok)group=r.value;}
   const stones=new Set(group?.stones??[]),libs=new Set(group?.liberties??[]);
-  const canPlay=!!m && !s.outcome && !session.state.paused && ['opening','playing'].includes(s.phase.kind) && !storage.conflict;
+  const canPlay=!!m && !s.outcome && !session.state.paused && humanTurn() && ['opening','playing'].includes(s.phase.kind) && !storage.conflict;
   focusPoint=Math.min(focusPoint,n*n-1);
   // Rows are displayed from highest coordinate to 1; points retain core row-major indexing.
   let html=svg;
@@ -96,30 +131,36 @@ function renderBoard() {
   $('inspect-info').textContent=group?`${colorName(group.color)}棋块：${group.stones.length} 子，${group.liberties.length} 口气。绿圈为空气点。`:'查气模式：点任一棋子查看整块与气；再次点击“查气”返回落子。';
 }
 function render() {
-  const m=match(),s=m?.state,v=phaseView(m,meta),active=v.actor;
+  const m=match(),s=m?.state,v=phaseView(m,meta),active=v.actor,p=practice();
   renderRules();renderBoard();
   $('board-caption').textContent=!m?'准备开局':s.outcome?'终局棋盘':inspect?'查气 · 不会落子':v.title;
   $('move-count').textContent=`第 ${meta.round} 局${m?` · ${s.ply} 手 / ${s.placements} 子`:''}`;
   $('phase-label').textContent=!m?'一起开局':s.outcome?'本局结束':session.state.consent?'等待对方同意':s.phase.kind==='opening'?'01 / 三手换色':s.phase.kind==='choose'?'02 / 选择执色':'对局进行中';
   $('turn-title').textContent=v.title;$('turn-detail').textContent=v.detail;
   $('first-start').hidden=!!m&&!s.outcome;$('first-start').textContent=m?'再下一局 →':'开始对局 →';
-  $('choice-actions').hidden=s?.phase.kind!=='choose';
-  for(const id of ['choose-black','choose-white'])$(id).disabled=!!session?.state.paused||storage.conflict;
+  $('choice-actions').hidden=s?.phase.kind!=='choose'||!humanTurn();
+  for(const id of ['choose-black','choose-white'])$(id).disabled=!!session?.state.paused||!humanTurn()||storage.conflict;
+  $('mode-label').textContent=p?`人机练习 · ${p.level==='easy'?'简单':'标准'}`:'本地双人';
+  $('play-context').textContent=p?`本地人机 · 你是 ${p.humanActor} · ${m.rules.swap3?(p.humanActor==='A'?'摆局方':'选色方'):(p.humanActor==='A'?'执黑先行':'执白')}`:'同一设备，双方轮流操作';
+  renderAI();
   $('players').innerHTML=['A','B'].map(p=>{
     const color=s?.owners?(s.owners.black===p?'black':'white'):null;
-    return `<div class="player-row ${active===p?'active':''}">${color?`<i class="stone-dot ${color}"></i>`:`<span class="role-dot">${p}</span>`}<div class="player-text"><b>${esc(playerName(meta,p))}</b><small>${p}${m?.rules.swap3!==false?` · ${p==='A'?'摆局方':'选色方'}`:''}${color?` · ${colorName(color)}`:''}</small></div><span class="player-captures">提子<strong>${color?s.captures[color]:'—'}</strong></span></div>`;
+    const controller=session?.state.controllers[p];
+    return `<div class="player-row ${active===p?'active':''}">${color?`<i class="stone-dot ${color}"></i>`:`<span class="role-dot">${p}</span>`}<div class="player-text"><b>${esc(playerName(meta,p))}${controller?.kind==='ai'?'<span class="ai-badge">AI</span>':''}</b><small>${p}${m?.rules.swap3!==false?` · ${p==='A'?'摆局方':'选色方'}`:''}${color?` · ${colorName(color)}`:''}</small></div><span class="player-captures">提子<strong>${color?s.captures[color]:'—'}</strong></span></div>`;
   }).join('');
   const ended=!m||!!s.outcome,paused=!!session?.state.paused;
-  $('pass-btn').disabled=ended||paused||s?.phase.kind!=='playing'||storage.conflict;
+  $('pass-btn').disabled=ended||paused||!humanTurn()||s?.phase.kind!=='playing'||storage.conflict;
   $('undo-btn').disabled=ended||paused||!!session?.state.competitive||!m?.accepted.length||storage.conflict;
+  $('undo-btn').textContent=p?'悔棋一步':'申请悔棋';
   $('end-btn').disabled=ended||storage.conflict;
   $('end-btn').textContent=s?.phase.kind==='opening'||s?.phase.kind==='choose'?'双方取消开局':'认输';
-  $('export-btn').disabled=!m;$('import-btn').disabled=!!live()||storage.conflict;
+  $('end-btn').textContent=p&&['opening','choose'].includes(s?.phase.kind)?'取消开局':$('end-btn').textContent;
+  $('export-btn').disabled=!m;$('import-btn').disabled=!replaceable()||storage.conflict;
   $('save-status').textContent=storage.conflict?'存在冲突':storage.warning?'请手动导出':m?'已自动保存':'尚未开局';
   const cs=m?claimsView(m):[];
   $('mobile-status').hidden=ended;
   const nearest=['black','white'].flatMap(color=>{const group=cs.filter(c=>c.color===color);return group.length?[`${colorName(color)} ${group.length}组 · 最近 ${Math.min(...group.map(c=>c.remaining))} 手`]:[];});
-  $('mobile-status').textContent=`${paused?'等待对方同意':inspect?'查气模式 · '+v.title:v.title}${nearest.length?' ｜ '+nearest.join(' / '):''}`;
+  $('mobile-status').textContent=`${paused?(p?'人机对局已暂停':'等待对方同意'):p&&!humanTurn()?'AI 正在思考 · '+v.title:inspect?'查气模式 · '+v.title:v.title}${nearest.length?' ｜ '+nearest.join(' / '):''}`;
   $('claim-count').textContent=cs.length?`${cs.length} 组候选`:'暂无候选';
   $('claims').innerHTML=cs.length?cs.map(c=>`<details class="claim-item"><summary><i class="stone-dot ${c.color}"></i><span>${colorName(c.color)}${m.rules.claimMode==='fixed-five'?'五子组':'持续成五'}</span><strong>${c.remaining} <small>手</small></strong></summary><p>${esc(c.coordinates||'只要同色五连持续存在，允许换线接替。')}<br>形成于第 ${c.formedAt} 手 · 确认点 ${c.dueAt} 手</p></details>`).join(''):`<p class="empty-claims">${s?.outcome?'本局已结束，可查看棋盘或开始新局。':`成五只是开始。<br>${m?.rules.confirmationDelay===0?'本局成五即胜。':`保持连线满 ${m?.rules.confirmationDelay??4} 手，才确认胜利。`}`}</p>`;
   const c=session?.state.consent;
@@ -129,6 +170,16 @@ function render() {
     $('consent-panel').innerHTML=`<h3>请${esc(playerName(meta,responder))}回应</h3><p>${esc(playerName(meta,c.requester))}申请${text}。请将设备交给对方。</p><div class="consent-buttons"><button data-consent="no">不同意</button><button data-consent="yes">同意${c.kind==='undo'?'悔棋':'取消'}</button></div>`;
   }
   renderRecords();renderWarning();
+}
+function renderAI(){
+  const p=practice(),ended=!live();$('ai-panel').hidden=!p||ended;
+  if(!p||ended)return;
+  const status=aiState?.status??'failed',paused=!!session.state.paused,failed=status==='failed';
+  $('ai-indicator').classList.toggle('thinking',['starting','thinking'].includes(status));
+  $('ai-status').textContent=storage.conflict?'存档冲突，AI 已停止':restoreHold?'存档已恢复，等待继续':failed?'AI 暂未完成本手':aiState?.hold==='undo'?'已悔棋，等待继续 AI 回合':paused?'对局已暂停':status==='starting'?'AI 准备中':status==='thinking'?'AI 正在思考':humanTurn()?'轮到你了':'AI 即将行动';
+  $('ai-detail').textContent=failed?errorText(aiState?.error??{code:'AI_WORKER_FAILED'}):restoreHold?'已恢复角色、难度和完整棋谱；继续后再开始新的思考。':aiState?.hold==='undo'?'撤回最后一条操作，AI 不会立即重下。':paused?'棋盘已锁定，查气和导出仍可使用。':'AI 在本机运行。思考时可查气、暂停或结束对局。';
+  $('ai-pause').hidden=paused||failed;$('ai-resume').hidden=!paused||failed;$('ai-retry').hidden=!failed;
+  for(const id of ['ai-pause','ai-resume','ai-retry'])$(id).disabled=storage.conflict||!ai;
 }
 function renderRecords() {
   const m=match();let label=0;
@@ -147,7 +198,8 @@ function onPoint(p) {
   focusPoint=p;
   if(inspect) {selected=p;renderBoard();return;}
   const m=match();if(!m) {openSettings();return;}
-  if(session.state.paused) {notice('请先由对方回应同意请求。');return;}
+  if(session.state.paused) {notice(practice()?'请先点击“继续对局”。':'请先由对方回应同意请求。');return;}
+  if(!humanTurn()){notice('现在由 AI 操作，请等它完成这一手。');return;}
   const actor=activePlayer(m);if(!actor)return;
   operate(()=>session.submit(actor,{kind:'place',actor,point:p}));
 }
@@ -172,6 +224,22 @@ $('consent-panel').addEventListener('click',e=>{
 function actorDialog(kind) {
   const m=match();if(!m||m.state.outcome)return;
   const opening=['opening','choose'].includes(m.state.phase.kind),request=kind==='undo'?'申请悔棋':opening?'申请取消开局':'认输';
+  const p=practice();
+  if(p){
+    if(kind==='undo'){operate(()=>session.requestUndo(p.humanActor),'已撤回最后一条操作及其自动动作。');return;}
+    $('action-title').textContent=opening?'确认取消开局？':'确认认输？';
+    $('action-body').innerHTML=`<p class="dialog-note">${opening?'取消本次人机开局，不记胜负。':'确认后 AI 获胜，本局结束。'}</p><div class="confirm-resign"><button id="practice-back">继续查看</button><button id="practice-end" class="danger">${opening?'取消开局':'确认认输'}</button></div>`;
+    $('practice-back').onclick=()=>$('action-dialog').close();
+    $('practice-end').onclick=()=>{
+      $('action-dialog').close();
+      operate(()=>{
+        // Cancellation is a single synchronous command; never resume the scheduler between steps.
+        if(opening&&session.state.paused)session.setPaused(false);
+        return opening?session.requestCancelOpening(p.humanActor):session.submit(p.humanActor,{kind:'resign',actor:p.humanActor});
+      });
+    };
+    $('action-dialog').showModal();return;
+  }
   $('action-title').textContent=`谁要${request}？`;
   $('action-body').innerHTML=`<p class="dialog-note">${kind==='undo'?'每次撤回最后一条玩家命令，须另一位玩家同意。':opening?'双方同意后取消，不记胜负。':'任一方都可随时认输，确认后本局结束。'}</p><div class="actor-options">${['A','B'].map(p=>`<button data-actor="${p}">${esc(playerName(meta,p))}（${p}）${request}</button>`).join('')}</div>`;
   $('action-body').onclick=e=>{
@@ -194,14 +262,25 @@ function populateSettings(defaults=false) {
   f.elements.confirmationDelay.value=r.confirmationDelay;f.elements.directions.value=r.directions;
   f.elements.swap3.checked=r.swap3;f.elements.superko.checked=r.superko==='positional';f.elements.pressure.checked=r.claimMode==='color-pressure';
   f.elements.competitive.checked=defaults?false:session?.state.competitive??false;
-  f.elements.player1.value=meta.names[0];f.elements.player2.value=meta.names[1];explainDelay();
+  const p=practice();f.elements.mode.value=defaults?'pvp':p?'practice':'pvp';
+  f.elements.level.value=defaults?'standard':p?.level??'standard';
+  f.elements.humanActor.value=defaults?'A':p?.humanActor??'A';
+  f.elements.player1.value=p?playerName(meta,p.humanActor):meta.names[0];f.elements.player2.value=p?'玩家二':meta.names[1];explainDelay();explainMode();
 }
 function openSettings() {
-  populateSettings();const locked=!!live()||storage.conflict;
+  populateSettings();const locked=!replaceable()||storage.conflict;
   $('settings-lock').hidden=!locked;$('settings-lock').textContent=storage.conflict?errorText({code:'STORAGE_CONFLICT'}):'当前局仍在进行。此处可查看选项；请先正常结束，或双方同意取消开局，再确认新局。';
   $('start-game').disabled=locked;
-  $('role-explain').textContent=session?`续局将轮换 A / B 角色；${meta.names[1-meta.aIndex]}担任 A。A 摆局，B 选色；关闭换色时 A 执黑先行。`:'首局随机分配 A / B。A 摆局，B 选色；关闭换色时 A 执黑先行。';
   $('settings-dialog').showModal();
+}
+function explainMode(){
+  const f=$('settings-form'),isPractice=f.elements.mode.value==='practice';
+  $('practice-settings').hidden=!isPractice;$('player2-label').hidden=isPractice;
+  f.elements.player2.required=!isPractice;f.elements.competitive.disabled=isPractice;
+  if(isPractice)f.elements.competitive.checked=false;
+  $('player1-label-text').textContent=isPractice?'你的名字':'玩家一';
+  const role=f.elements.humanActor.value;
+  $('role-explain').textContent=isPractice?`${role==='A'?'你担任 A，AI 担任 B。':role==='B'?'AI 担任 A，你担任 B。':'开局时随机分配你与 AI 的 A / B。'}${f.elements.swap3.checked?'A 连摆黑白黑三子，B 选色；选色后身份不变。':'不换色：A 执黑先行，B 执白。'} 人机练习不启用竞技模式。`:session?`双人续局轮换 A / B；${[f.elements.player1.value,f.elements.player2.value][1-meta.aIndex]}担任 A。A 摆局，B 选色；关闭换色时 A 执黑先行。`:'双人首局随机分配 A / B。A 摆局，B 选色；关闭换色时 A 执黑先行。';
 }
 function explainDelay() {
   const delay=Number($('settings-form').elements.confirmationDelay.value);
@@ -209,16 +288,18 @@ function explainDelay() {
 }
 $('settings-open').onclick=openSettings;$('first-start').onclick=openSettings;
 $('reset-settings').onclick=()=>populateSettings(true);$('settings-form').elements.confirmationDelay.onchange=explainDelay;
+$('settings-form').addEventListener('change',e=>{if(['mode','humanActor','swap3'].includes(e.target.name))explainMode();});
 $('settings-form').onsubmit=e=>{
-  e.preventDefault();if(live()||!mayChange())return;
+  e.preventDefault();if(!replaceable()||!mayChange())return;
   const f=e.currentTarget,rules={...DEFAULT_RULES,boardSize:Number(f.elements.boardSize.value),confirmationDelay:Number(f.elements.confirmationDelay.value),directions:f.elements.directions.value,swap3:f.elements.swap3.checked,superko:f.elements.superko.checked?'positional':'off',claimMode:f.elements.pressure.checked?'color-pressure':'fixed-five'};
-  const names=[f.elements.player1.value.trim(),f.elements.player2.value.trim()];if(names.some(n=>!n)){notice('请填写双方的名字。',true);return;}
-  const result=createSession({matchId:uid(),rules,competitive:f.elements.competitive.checked});
+  const mode=f.elements.mode.value,isPractice=mode==='practice';
+  const names=[f.elements.player1.value.trim(),isPractice?'弈合 AI':f.elements.player2.value.trim()];if(names.some(n=>!n)){notice('请填写双方的名字。',true);return;}
+  const humanActor=f.elements.humanActor.value==='random'?(crypto.getRandomValues(new Uint8Array(1))[0]%2?'A':'B'):f.elements.humanActor.value;
+  const result=createGameSession({matchId:uid(),rules,mode,level:f.elements.level.value,humanActor,seed:crypto.getRandomValues(new Uint32Array(1))[0],competitive:isPractice?false:f.elements.competitive.checked});
   if(!result.ok){notice(errorText(result.error),true);return;}
-  const previous=!!session;session?.close();session=result.value;
-  meta={names,aIndex:previous?1-meta.aIndex:crypto.getRandomValues(new Uint8Array(1))[0]%2,round:previous?meta.round+1:1};
-  inspect=false;selected=null;focusPoint=Math.floor(rules.boardSize*rules.boardSize/2);flash=[];
-  save();$('settings-dialog').close();render();notice(`本局 A：${playerName(meta,'A')}；B：${playerName(meta,'B')}。`);
+  const players={names,aIndex:isPractice?(humanActor==='A'?0:1):session?1-meta.aIndex:crypto.getRandomValues(new Uint8Array(1))[0]%2,round:session?meta.round+1:1};
+  $('settings-dialog').close();
+  confirmReplacement(()=>{installSession(result.value,players);notice(`本局 A：${playerName(meta,'A')}；B：${playerName(meta,'B')}。`);},'重新开始人机练习？');
 };
 for(const b of document.querySelectorAll('[data-close]'))b.onclick=()=>$(b.dataset.close).close();
 for(const id of ['manual-open','rules-details'])$(id).onclick=()=>$('manual-dialog').showModal();
@@ -234,10 +315,16 @@ $('import-file').onchange=async e=>{
   let raw;try{raw=await file.text();}catch{notice('无法读取此文件，当前局已保留。',true);return;}
   const result=parseWebSave(raw,uid());
   if(!result.ok){notice(errorText(result.error),true);return;}
-  if(live()){notice(errorText({code:'WRONG_PHASE'}),true);return;}
+  if(!replaceable()){result.value.session.close();notice(errorText({code:'WRONG_PHASE'}),true);return;}
   if(!mayChange())return;
-  session?.close();session=result.value.session;meta=result.value.players;inspect=false;selected=null;flash=[];
-  save();render();notice('存档已完整校验并恢复。');
+  confirmReplacement(()=>{installSession(result.value.session,result.value.players,true);notice(practice()?'人机存档已恢复，点击“继续对局”开始。':'存档已完整校验并恢复。');},'载入另一份存档？');
 };
-window.addEventListener('storage',e=>{if(e.key===SAVE_KEY && e.newValue!==storage.raw){storage.conflict=true;storage.warning=errorText({code:'STORAGE_CONFLICT'});render();}});
-render();if(startupNote)notice(startupNote);
+for(const [id,method] of [['ai-pause','pause'],['ai-resume','resume'],['ai-retry','retry']])$(id).onclick=()=>{
+  if(!ai||!mayChange())return;restoreHold=false;const result=ai[method]();if(!result.ok)notice(errorText(result.error),true);aiState=ai.state;render();
+};
+$('replace-confirm').onclick=()=>{const action=replaceAction;replaceAction=null;$('replace-dialog').close();if(mayChange()&&replaceable())action?.();};
+$('replace-dialog').addEventListener('close',()=>{replaceAction=null;});
+window.addEventListener('storage',e=>{if((e.key===SAVE_KEY||e.key===null)&&e.newValue!==storage.raw){storage.conflict=true;storage.warning=errorText({code:'STORAGE_CONFLICT'});ai?.pause();render();}});
+window.addEventListener('pagehide',()=>releaseSession());
+window.addEventListener('pageshow',e=>{if(e.persisted)window.location.reload();});
+attachAI(restoreHold);render();if(startupNote)notice(startupNote);

@@ -272,7 +272,7 @@ test('legacy PvP/session/raw record saves and AI role/level/seed settings restor
  }
 });
 
-test('unsupported modes, extra controller settings, runtime fields and corrupt saves are rejected; PvP web gate stays intact',()=>{
+test('unsupported modes, extra controller settings, runtime fields and corrupt saves are rejected; practice web restoration is enabled',()=>{
  const good=practice().exportSave();
  for(const mutate of [r=>r.controllers.B={kind:'ai',level:'easy',seed:1},r=>r.competitive=true,
   r=>r.controllers.A.engine='v1',r=>r.controllers.A.seed=-1,r=>r.task={taskId:'forged'},
@@ -280,7 +280,7 @@ test('unsupported modes, extra controller settings, runtime fields and corrupt s
   const bad=clone(good);mutate(bad);assert.equal(restorePlayableSession('fresh',bad).ok,false);
  }
  for(const raw of ['{',null,{},[]])assert.equal(restorePlayableSession('fresh',raw).ok,false);
- error(parseWebSave(good,'web'),'AI_UNAVAILABLE');
+ assert.equal(value(parseWebSave(good,'web')).mode,'practice');
  const pvp=value(createSession({matchId:'pvp'})),before=pvp.state;
  error(beginAITurn(pvp),'AI_MODE_UNSUPPORTED');assert.equal(pvp.state,before);
  const humanTurn=practice('B');error(beginAITurn(humanTurn),'WRONG_ACTOR');

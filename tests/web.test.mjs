@@ -22,12 +22,12 @@ test('session and core record imports work without a web wrapper',()=>{
  assert.equal(value(parseWebSave(s.exportSave(),'s')).session.state.match.state.placements,1);
  assert.equal(value(parseWebSave(exportRecord(s.state.match),'r')).session.state.match.state.placements,1);
 });
-test('malformed, unknown, tampered and wrong-controller imports are rejected',()=>{
+test('malformed, unknown and tampered imports are rejected; practice saves restore',()=>{
  const s=make();const good=makeWebSave(s,meta,'s');
  const cases=['{',null,{}, {...good,webSchemaVersion:2},{...good,players:{...meta,aIndex:5}}, {...good,extra:1}, {...good,session:{...s.exportSave(),record:{...s.exportSave().record,rulesVersion:'2.0.0'}}}];
  for(const bad of cases)assert.equal(parseWebSave(bad,'x').ok,false);
  const ai={...s.exportSave(),controllers:{A:{kind:'ai',level:'easy',seed:1},B:{kind:'human'}}};
- assert.equal(parseWebSave(ai,'x').error.code,'AI_UNAVAILABLE');
+ assert.equal(value(parseWebSave(ai,'x')).mode,'practice');
  const before=JSON.stringify(s.exportSave());assert.equal(parseWebSave({...good,session:{...s.exportSave(),record:{...s.exportSave().record,actions:[{kind:'place',actor:'B',point:0}]}}},'z').ok,false);
  assert.equal(JSON.stringify(s.exportSave()),before);
 });

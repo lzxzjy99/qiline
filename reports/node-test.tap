@@ -1,0 +1,2842 @@
+TAP version 13
+# Subtest: all 448 configurations are complete, unique and immutable
+ok 1 - all 448 configurations are complete, unique and immutable
+  ---
+  duration_ms: 7.696535
+  type: 'test'
+  ...
+# Subtest: corner capture, suicide escape and deduplication use P1 geometry fixtures
+ok 2 - corner capture, suicide escape and deduplication use P1 geometry fixtures
+  ---
+  duration_ms: 11.186524
+  type: 'test'
+  ...
+# Subtest: exhaustive 3x3 legal local boards agree with independent full-board capture oracle
+ok 3 - exhaustive 3x3 legal local boards agree with independent full-board capture oracle
+  ---
+  duration_ms: 626.687657
+  type: 'test'
+  ...
+# Subtest: swap ownership, opening pass/capture refusal, inspection and exact transaction events
+ok 4 - swap ownership, opening pass/capture refusal, inspection and exact transaction events
+  ---
+  duration_ms: 5.106508
+  type: 'test'
+  ...
+# Subtest: public state, commands, events and exported records resist external mutation; fake matches fail
+ok 5 - public state, commands, events and exported records resist external mutation; fake matches fail
+  ---
+  duration_ms: 1.262287
+  type: 'test'
+  ...
+# Subtest: default handoff waits to ply 23, optional pressure wins at 21; every five has its own clock
+ok 6 - default handoff waits to ply 23, optional pressure wins at 21; every five has its own clock
+  ---
+  duration_ms: 12.470824
+  type: 'test'
+  ...
+# Subtest: a single move creating six stones chooses a numeric canonical winning five in immediate mode
+ok 7 - a single move creating six stones chooses a numeric canonical winning five in immediate mode
+  ---
+  duration_ms: 71.387073
+  type: 'test'
+  ...
+# Subtest: same-color crossing fives share a formation time without producing ambiguous outcomes in all configurations
+ok 8 - same-color crossing fives share a formation time without producing ambiguous outcomes in all configurations
+  ---
+  duration_ms: 2335.921145
+  type: 'test'
+  ...
+# Subtest: record loading validates every command and version; invalid input never alters the active match
+ok 9 - record loading validates every command and version; invalid input never alters the active match
+  ---
+  duration_ms: 2.745064
+  type: 'test'
+  ...
+# Subtest: off-turn resignation, cancellation consent, no post-terminal commands, and legal action lists
+ok 10 - off-turn resignation, cancellation consent, no post-terminal commands, and legal action lists
+  ---
+  duration_ms: 0.969313
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/0/0/diagonal/positional/fixed-five
+ok 11 - rules 2.1.0-r3/9/0/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 88.263531
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/0/0/diagonal/positional/color-pressure
+ok 12 - rules 2.1.0-r3/9/0/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 55.801241
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/0/0/diagonal/off/fixed-five
+ok 13 - rules 2.1.0-r3/9/0/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 40.432308
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/0/0/diagonal/off/color-pressure
+ok 14 - rules 2.1.0-r3/9/0/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 34.951073
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/0/0/four/positional/fixed-five
+ok 15 - rules 2.1.0-r3/9/0/0/four/positional/fixed-five
+  ---
+  duration_ms: 46.522949
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/0/0/four/positional/color-pressure
+ok 16 - rules 2.1.0-r3/9/0/0/four/positional/color-pressure
+  ---
+  duration_ms: 37.129941
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/0/0/four/off/fixed-five
+ok 17 - rules 2.1.0-r3/9/0/0/four/off/fixed-five
+  ---
+  duration_ms: 38.741731
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/0/0/four/off/color-pressure
+ok 18 - rules 2.1.0-r3/9/0/0/four/off/color-pressure
+  ---
+  duration_ms: 31.67963
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/0/1/diagonal/positional/fixed-five
+ok 19 - rules 2.1.0-r3/9/0/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 41.902214
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/0/1/diagonal/positional/color-pressure
+ok 20 - rules 2.1.0-r3/9/0/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 45.282297
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/0/1/diagonal/off/fixed-five
+ok 21 - rules 2.1.0-r3/9/0/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 39.933017
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/0/1/diagonal/off/color-pressure
+ok 22 - rules 2.1.0-r3/9/0/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 36.12348
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/0/1/four/positional/fixed-five
+ok 23 - rules 2.1.0-r3/9/0/1/four/positional/fixed-five
+  ---
+  duration_ms: 56.499658
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/0/1/four/positional/color-pressure
+ok 24 - rules 2.1.0-r3/9/0/1/four/positional/color-pressure
+  ---
+  duration_ms: 53.987518
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/0/1/four/off/fixed-five
+ok 25 - rules 2.1.0-r3/9/0/1/four/off/fixed-five
+  ---
+  duration_ms: 54.013606
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/0/1/four/off/color-pressure
+ok 26 - rules 2.1.0-r3/9/0/1/four/off/color-pressure
+  ---
+  duration_ms: 35.726399
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/2/0/diagonal/positional/fixed-five
+ok 27 - rules 2.1.0-r3/9/2/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 44.176583
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/2/0/diagonal/positional/color-pressure
+ok 28 - rules 2.1.0-r3/9/2/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 56.047185
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/2/0/diagonal/off/fixed-five
+ok 29 - rules 2.1.0-r3/9/2/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 30.464491
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/2/0/diagonal/off/color-pressure
+ok 30 - rules 2.1.0-r3/9/2/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 37.708876
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/2/0/four/positional/fixed-five
+ok 31 - rules 2.1.0-r3/9/2/0/four/positional/fixed-five
+  ---
+  duration_ms: 51.596801
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/2/0/four/positional/color-pressure
+ok 32 - rules 2.1.0-r3/9/2/0/four/positional/color-pressure
+  ---
+  duration_ms: 44.382491
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/2/0/four/off/fixed-five
+ok 33 - rules 2.1.0-r3/9/2/0/four/off/fixed-five
+  ---
+  duration_ms: 47.137156
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/2/0/four/off/color-pressure
+ok 34 - rules 2.1.0-r3/9/2/0/four/off/color-pressure
+  ---
+  duration_ms: 35.589159
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/2/1/diagonal/positional/fixed-five
+ok 35 - rules 2.1.0-r3/9/2/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 49.071052
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/2/1/diagonal/positional/color-pressure
+ok 36 - rules 2.1.0-r3/9/2/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 69.948405
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/2/1/diagonal/off/fixed-five
+ok 37 - rules 2.1.0-r3/9/2/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 38.743187
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/2/1/diagonal/off/color-pressure
+ok 38 - rules 2.1.0-r3/9/2/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 39.778504
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/2/1/four/positional/fixed-five
+ok 39 - rules 2.1.0-r3/9/2/1/four/positional/fixed-five
+  ---
+  duration_ms: 45.949484
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/2/1/four/positional/color-pressure
+ok 40 - rules 2.1.0-r3/9/2/1/four/positional/color-pressure
+  ---
+  duration_ms: 44.628795
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/2/1/four/off/fixed-five
+ok 41 - rules 2.1.0-r3/9/2/1/four/off/fixed-five
+  ---
+  duration_ms: 46.58495
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/2/1/four/off/color-pressure
+ok 42 - rules 2.1.0-r3/9/2/1/four/off/color-pressure
+  ---
+  duration_ms: 45.213929
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/4/0/diagonal/positional/fixed-five
+ok 43 - rules 2.1.0-r3/9/4/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 50.591024
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/4/0/diagonal/positional/color-pressure
+ok 44 - rules 2.1.0-r3/9/4/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 34.103134
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/4/0/diagonal/off/fixed-five
+ok 45 - rules 2.1.0-r3/9/4/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 45.559626
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/4/0/diagonal/off/color-pressure
+ok 46 - rules 2.1.0-r3/9/4/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 33.428518
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/4/0/four/positional/fixed-five
+ok 47 - rules 2.1.0-r3/9/4/0/four/positional/fixed-five
+  ---
+  duration_ms: 51.611142
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/4/0/four/positional/color-pressure
+ok 48 - rules 2.1.0-r3/9/4/0/four/positional/color-pressure
+  ---
+  duration_ms: 54.763819
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/4/0/four/off/fixed-five
+ok 49 - rules 2.1.0-r3/9/4/0/four/off/fixed-five
+  ---
+  duration_ms: 43.825823
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/4/0/four/off/color-pressure
+ok 50 - rules 2.1.0-r3/9/4/0/four/off/color-pressure
+  ---
+  duration_ms: 46.643923
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/4/1/diagonal/positional/fixed-five
+ok 51 - rules 2.1.0-r3/9/4/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 46.053739
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/4/1/diagonal/positional/color-pressure
+ok 52 - rules 2.1.0-r3/9/4/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 45.5464
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/4/1/diagonal/off/fixed-five
+ok 53 - rules 2.1.0-r3/9/4/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 41.300362
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/4/1/diagonal/off/color-pressure
+ok 54 - rules 2.1.0-r3/9/4/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 61.690694
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/4/1/four/positional/fixed-five
+ok 55 - rules 2.1.0-r3/9/4/1/four/positional/fixed-five
+  ---
+  duration_ms: 58.680102
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/4/1/four/positional/color-pressure
+ok 56 - rules 2.1.0-r3/9/4/1/four/positional/color-pressure
+  ---
+  duration_ms: 68.424743
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/4/1/four/off/fixed-five
+ok 57 - rules 2.1.0-r3/9/4/1/four/off/fixed-five
+  ---
+  duration_ms: 40.723441
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/4/1/four/off/color-pressure
+ok 58 - rules 2.1.0-r3/9/4/1/four/off/color-pressure
+  ---
+  duration_ms: 51.365257
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/6/0/diagonal/positional/fixed-five
+ok 59 - rules 2.1.0-r3/9/6/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 40.337956
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/6/0/diagonal/positional/color-pressure
+ok 60 - rules 2.1.0-r3/9/6/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 41.074467
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/6/0/diagonal/off/fixed-five
+ok 61 - rules 2.1.0-r3/9/6/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 44.729934
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/6/0/diagonal/off/color-pressure
+ok 62 - rules 2.1.0-r3/9/6/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 35.649902
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/6/0/four/positional/fixed-five
+ok 63 - rules 2.1.0-r3/9/6/0/four/positional/fixed-five
+  ---
+  duration_ms: 47.98462
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/6/0/four/positional/color-pressure
+ok 64 - rules 2.1.0-r3/9/6/0/four/positional/color-pressure
+  ---
+  duration_ms: 47.767375
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/6/0/four/off/fixed-five
+ok 65 - rules 2.1.0-r3/9/6/0/four/off/fixed-five
+  ---
+  duration_ms: 51.937382
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/6/0/four/off/color-pressure
+ok 66 - rules 2.1.0-r3/9/6/0/four/off/color-pressure
+  ---
+  duration_ms: 35.140259
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/6/1/diagonal/positional/fixed-five
+ok 67 - rules 2.1.0-r3/9/6/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 55.309619
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/6/1/diagonal/positional/color-pressure
+ok 68 - rules 2.1.0-r3/9/6/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 47.75427
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/6/1/diagonal/off/fixed-five
+ok 69 - rules 2.1.0-r3/9/6/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 55.546742
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/6/1/diagonal/off/color-pressure
+ok 70 - rules 2.1.0-r3/9/6/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 40.500304
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/6/1/four/positional/fixed-five
+ok 71 - rules 2.1.0-r3/9/6/1/four/positional/fixed-five
+  ---
+  duration_ms: 52.07525
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/6/1/four/positional/color-pressure
+ok 72 - rules 2.1.0-r3/9/6/1/four/positional/color-pressure
+  ---
+  duration_ms: 56.409657
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/6/1/four/off/fixed-five
+ok 73 - rules 2.1.0-r3/9/6/1/four/off/fixed-five
+  ---
+  duration_ms: 56.833909
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/6/1/four/off/color-pressure
+ok 74 - rules 2.1.0-r3/9/6/1/four/off/color-pressure
+  ---
+  duration_ms: 47.583029
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/8/0/diagonal/positional/fixed-five
+ok 75 - rules 2.1.0-r3/9/8/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 44.855799
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/8/0/diagonal/positional/color-pressure
+ok 76 - rules 2.1.0-r3/9/8/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 43.38058
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/8/0/diagonal/off/fixed-five
+ok 77 - rules 2.1.0-r3/9/8/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 35.444849
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/8/0/diagonal/off/color-pressure
+ok 78 - rules 2.1.0-r3/9/8/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 45.437537
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/8/0/four/positional/fixed-five
+ok 79 - rules 2.1.0-r3/9/8/0/four/positional/fixed-five
+  ---
+  duration_ms: 42.578059
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/8/0/four/positional/color-pressure
+ok 80 - rules 2.1.0-r3/9/8/0/four/positional/color-pressure
+  ---
+  duration_ms: 52.666818
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/8/0/four/off/fixed-five
+ok 81 - rules 2.1.0-r3/9/8/0/four/off/fixed-five
+  ---
+  duration_ms: 41.637024
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/8/0/four/off/color-pressure
+ok 82 - rules 2.1.0-r3/9/8/0/four/off/color-pressure
+  ---
+  duration_ms: 40.429657
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/8/1/diagonal/positional/fixed-five
+ok 83 - rules 2.1.0-r3/9/8/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 35.849755
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/8/1/diagonal/positional/color-pressure
+ok 84 - rules 2.1.0-r3/9/8/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 41.488001
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/8/1/diagonal/off/fixed-five
+ok 85 - rules 2.1.0-r3/9/8/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 31.704204
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/8/1/diagonal/off/color-pressure
+ok 86 - rules 2.1.0-r3/9/8/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 38.222593
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/8/1/four/positional/fixed-five
+ok 87 - rules 2.1.0-r3/9/8/1/four/positional/fixed-five
+  ---
+  duration_ms: 40.282045
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/8/1/four/positional/color-pressure
+ok 88 - rules 2.1.0-r3/9/8/1/four/positional/color-pressure
+  ---
+  duration_ms: 63.977019
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/8/1/four/off/fixed-five
+ok 89 - rules 2.1.0-r3/9/8/1/four/off/fixed-five
+  ---
+  duration_ms: 39.19456
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/8/1/four/off/color-pressure
+ok 90 - rules 2.1.0-r3/9/8/1/four/off/color-pressure
+  ---
+  duration_ms: 60.438873
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/10/0/diagonal/positional/fixed-five
+ok 91 - rules 2.1.0-r3/9/10/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 32.960241
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/10/0/diagonal/positional/color-pressure
+ok 92 - rules 2.1.0-r3/9/10/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 36.684406
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/10/0/diagonal/off/fixed-five
+ok 93 - rules 2.1.0-r3/9/10/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 30.253981
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/10/0/diagonal/off/color-pressure
+ok 94 - rules 2.1.0-r3/9/10/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 42.569072
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/10/0/four/positional/fixed-five
+ok 95 - rules 2.1.0-r3/9/10/0/four/positional/fixed-five
+  ---
+  duration_ms: 51.909701
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/10/0/four/positional/color-pressure
+ok 96 - rules 2.1.0-r3/9/10/0/four/positional/color-pressure
+  ---
+  duration_ms: 48.509877
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/10/0/four/off/fixed-five
+ok 97 - rules 2.1.0-r3/9/10/0/four/off/fixed-five
+  ---
+  duration_ms: 52.637142
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/10/0/four/off/color-pressure
+ok 98 - rules 2.1.0-r3/9/10/0/four/off/color-pressure
+  ---
+  duration_ms: 61.33602
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/10/1/diagonal/positional/fixed-five
+ok 99 - rules 2.1.0-r3/9/10/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 51.387314
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/10/1/diagonal/positional/color-pressure
+ok 100 - rules 2.1.0-r3/9/10/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 52.444846
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/10/1/diagonal/off/fixed-five
+ok 101 - rules 2.1.0-r3/9/10/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 33.386869
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/10/1/diagonal/off/color-pressure
+ok 102 - rules 2.1.0-r3/9/10/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 46.161774
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/10/1/four/positional/fixed-five
+ok 103 - rules 2.1.0-r3/9/10/1/four/positional/fixed-five
+  ---
+  duration_ms: 55.488323
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/10/1/four/positional/color-pressure
+ok 104 - rules 2.1.0-r3/9/10/1/four/positional/color-pressure
+  ---
+  duration_ms: 49.718894
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/10/1/four/off/fixed-five
+ok 105 - rules 2.1.0-r3/9/10/1/four/off/fixed-five
+  ---
+  duration_ms: 38.631516
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/10/1/four/off/color-pressure
+ok 106 - rules 2.1.0-r3/9/10/1/four/off/color-pressure
+  ---
+  duration_ms: 45.721147
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/12/0/diagonal/positional/fixed-five
+ok 107 - rules 2.1.0-r3/9/12/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 34.498556
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/12/0/diagonal/positional/color-pressure
+ok 108 - rules 2.1.0-r3/9/12/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 39.224644
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/12/0/diagonal/off/fixed-five
+ok 109 - rules 2.1.0-r3/9/12/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 32.049772
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/12/0/diagonal/off/color-pressure
+ok 110 - rules 2.1.0-r3/9/12/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 121.359056
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/12/0/four/positional/fixed-five
+ok 111 - rules 2.1.0-r3/9/12/0/four/positional/fixed-five
+  ---
+  duration_ms: 48.703002
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/12/0/four/positional/color-pressure
+ok 112 - rules 2.1.0-r3/9/12/0/four/positional/color-pressure
+  ---
+  duration_ms: 54.273703
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/12/0/four/off/fixed-five
+ok 113 - rules 2.1.0-r3/9/12/0/four/off/fixed-five
+  ---
+  duration_ms: 33.271404
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/12/0/four/off/color-pressure
+ok 114 - rules 2.1.0-r3/9/12/0/four/off/color-pressure
+  ---
+  duration_ms: 38.958376
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/12/1/diagonal/positional/fixed-five
+ok 115 - rules 2.1.0-r3/9/12/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 45.025199
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/12/1/diagonal/positional/color-pressure
+ok 116 - rules 2.1.0-r3/9/12/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 45.864655
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/12/1/diagonal/off/fixed-five
+ok 117 - rules 2.1.0-r3/9/12/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 35.585005
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/12/1/diagonal/off/color-pressure
+ok 118 - rules 2.1.0-r3/9/12/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 48.438804
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/12/1/four/positional/fixed-five
+ok 119 - rules 2.1.0-r3/9/12/1/four/positional/fixed-five
+  ---
+  duration_ms: 43.872394
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/12/1/four/positional/color-pressure
+ok 120 - rules 2.1.0-r3/9/12/1/four/positional/color-pressure
+  ---
+  duration_ms: 58.184758
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/12/1/four/off/fixed-five
+ok 121 - rules 2.1.0-r3/9/12/1/four/off/fixed-five
+  ---
+  duration_ms: 54.756855
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/9/12/1/four/off/color-pressure
+ok 122 - rules 2.1.0-r3/9/12/1/four/off/color-pressure
+  ---
+  duration_ms: 56.912101
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/0/0/diagonal/positional/fixed-five
+ok 123 - rules 2.1.0-r3/13/0/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 109.715473
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/0/0/diagonal/positional/color-pressure
+ok 124 - rules 2.1.0-r3/13/0/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 93.896474
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/0/0/diagonal/off/fixed-five
+ok 125 - rules 2.1.0-r3/13/0/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 84.389532
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/0/0/diagonal/off/color-pressure
+ok 126 - rules 2.1.0-r3/13/0/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 77.375423
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/0/0/four/positional/fixed-five
+ok 127 - rules 2.1.0-r3/13/0/0/four/positional/fixed-five
+  ---
+  duration_ms: 91.746014
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/0/0/four/positional/color-pressure
+ok 128 - rules 2.1.0-r3/13/0/0/four/positional/color-pressure
+  ---
+  duration_ms: 92.803394
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/0/0/four/off/fixed-five
+ok 129 - rules 2.1.0-r3/13/0/0/four/off/fixed-five
+  ---
+  duration_ms: 102.384345
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/0/0/four/off/color-pressure
+ok 130 - rules 2.1.0-r3/13/0/0/four/off/color-pressure
+  ---
+  duration_ms: 121.859675
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/0/1/diagonal/positional/fixed-five
+ok 131 - rules 2.1.0-r3/13/0/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 109.18937
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/0/1/diagonal/positional/color-pressure
+ok 132 - rules 2.1.0-r3/13/0/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 127.301405
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/0/1/diagonal/off/fixed-five
+ok 133 - rules 2.1.0-r3/13/0/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 127.574148
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/0/1/diagonal/off/color-pressure
+ok 134 - rules 2.1.0-r3/13/0/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 94.692954
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/0/1/four/positional/fixed-five
+ok 135 - rules 2.1.0-r3/13/0/1/four/positional/fixed-five
+  ---
+  duration_ms: 128.840289
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/0/1/four/positional/color-pressure
+ok 136 - rules 2.1.0-r3/13/0/1/four/positional/color-pressure
+  ---
+  duration_ms: 144.03141
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/0/1/four/off/fixed-five
+ok 137 - rules 2.1.0-r3/13/0/1/four/off/fixed-five
+  ---
+  duration_ms: 124.849244
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/0/1/four/off/color-pressure
+ok 138 - rules 2.1.0-r3/13/0/1/four/off/color-pressure
+  ---
+  duration_ms: 154.18496
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/2/0/diagonal/positional/fixed-five
+ok 139 - rules 2.1.0-r3/13/2/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 124.858431
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/2/0/diagonal/positional/color-pressure
+ok 140 - rules 2.1.0-r3/13/2/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 122.549083
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/2/0/diagonal/off/fixed-five
+ok 141 - rules 2.1.0-r3/13/2/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 113.278049
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/2/0/diagonal/off/color-pressure
+ok 142 - rules 2.1.0-r3/13/2/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 105.714609
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/2/0/four/positional/fixed-five
+ok 143 - rules 2.1.0-r3/13/2/0/four/positional/fixed-five
+  ---
+  duration_ms: 132.738509
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/2/0/four/positional/color-pressure
+ok 144 - rules 2.1.0-r3/13/2/0/four/positional/color-pressure
+  ---
+  duration_ms: 95.822859
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/2/0/four/off/fixed-five
+ok 145 - rules 2.1.0-r3/13/2/0/four/off/fixed-five
+  ---
+  duration_ms: 105.0201
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/2/0/four/off/color-pressure
+ok 146 - rules 2.1.0-r3/13/2/0/four/off/color-pressure
+  ---
+  duration_ms: 121.103598
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/2/1/diagonal/positional/fixed-five
+ok 147 - rules 2.1.0-r3/13/2/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 116.439476
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/2/1/diagonal/positional/color-pressure
+ok 148 - rules 2.1.0-r3/13/2/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 113.2536
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/2/1/diagonal/off/fixed-five
+ok 149 - rules 2.1.0-r3/13/2/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 103.779039
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/2/1/diagonal/off/color-pressure
+ok 150 - rules 2.1.0-r3/13/2/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 116.662515
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/2/1/four/positional/fixed-five
+ok 151 - rules 2.1.0-r3/13/2/1/four/positional/fixed-five
+  ---
+  duration_ms: 142.183631
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/2/1/four/positional/color-pressure
+ok 152 - rules 2.1.0-r3/13/2/1/four/positional/color-pressure
+  ---
+  duration_ms: 138.960946
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/2/1/four/off/fixed-five
+ok 153 - rules 2.1.0-r3/13/2/1/four/off/fixed-five
+  ---
+  duration_ms: 141.158876
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/2/1/four/off/color-pressure
+ok 154 - rules 2.1.0-r3/13/2/1/four/off/color-pressure
+  ---
+  duration_ms: 136.445032
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/4/0/diagonal/positional/fixed-five
+ok 155 - rules 2.1.0-r3/13/4/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 128.399745
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/4/0/diagonal/positional/color-pressure
+ok 156 - rules 2.1.0-r3/13/4/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 91.156125
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/4/0/diagonal/off/fixed-five
+ok 157 - rules 2.1.0-r3/13/4/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 83.577691
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/4/0/diagonal/off/color-pressure
+ok 158 - rules 2.1.0-r3/13/4/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 84.355627
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/4/0/four/positional/fixed-five
+ok 159 - rules 2.1.0-r3/13/4/0/four/positional/fixed-five
+  ---
+  duration_ms: 105.379323
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/4/0/four/positional/color-pressure
+ok 160 - rules 2.1.0-r3/13/4/0/four/positional/color-pressure
+  ---
+  duration_ms: 130.293938
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/4/0/four/off/fixed-five
+ok 161 - rules 2.1.0-r3/13/4/0/four/off/fixed-five
+  ---
+  duration_ms: 126.539826
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/4/0/four/off/color-pressure
+ok 162 - rules 2.1.0-r3/13/4/0/four/off/color-pressure
+  ---
+  duration_ms: 116.016778
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/4/1/diagonal/positional/fixed-five
+ok 163 - rules 2.1.0-r3/13/4/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 114.694833
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/4/1/diagonal/positional/color-pressure
+ok 164 - rules 2.1.0-r3/13/4/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 160.063547
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/4/1/diagonal/off/fixed-five
+ok 165 - rules 2.1.0-r3/13/4/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 133.363892
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/4/1/diagonal/off/color-pressure
+ok 166 - rules 2.1.0-r3/13/4/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 106.642658
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/4/1/four/positional/fixed-five
+ok 167 - rules 2.1.0-r3/13/4/1/four/positional/fixed-five
+  ---
+  duration_ms: 147.029795
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/4/1/four/positional/color-pressure
+ok 168 - rules 2.1.0-r3/13/4/1/four/positional/color-pressure
+  ---
+  duration_ms: 128.068085
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/4/1/four/off/fixed-five
+ok 169 - rules 2.1.0-r3/13/4/1/four/off/fixed-five
+  ---
+  duration_ms: 114.180323
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/4/1/four/off/color-pressure
+ok 170 - rules 2.1.0-r3/13/4/1/four/off/color-pressure
+  ---
+  duration_ms: 127.646938
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/6/0/diagonal/positional/fixed-five
+ok 171 - rules 2.1.0-r3/13/6/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 124.361274
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/6/0/diagonal/positional/color-pressure
+ok 172 - rules 2.1.0-r3/13/6/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 88.315542
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/6/0/diagonal/off/fixed-five
+ok 173 - rules 2.1.0-r3/13/6/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 132.849001
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/6/0/diagonal/off/color-pressure
+ok 174 - rules 2.1.0-r3/13/6/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 133.389095
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/6/0/four/positional/fixed-five
+ok 175 - rules 2.1.0-r3/13/6/0/four/positional/fixed-five
+  ---
+  duration_ms: 129.802876
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/6/0/four/positional/color-pressure
+ok 176 - rules 2.1.0-r3/13/6/0/four/positional/color-pressure
+  ---
+  duration_ms: 123.667251
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/6/0/four/off/fixed-five
+ok 177 - rules 2.1.0-r3/13/6/0/four/off/fixed-five
+  ---
+  duration_ms: 128.776952
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/6/0/four/off/color-pressure
+ok 178 - rules 2.1.0-r3/13/6/0/four/off/color-pressure
+  ---
+  duration_ms: 154.511713
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/6/1/diagonal/positional/fixed-five
+ok 179 - rules 2.1.0-r3/13/6/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 145.32491
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/6/1/diagonal/positional/color-pressure
+ok 180 - rules 2.1.0-r3/13/6/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 147.810705
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/6/1/diagonal/off/fixed-five
+ok 181 - rules 2.1.0-r3/13/6/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 104.41087
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/6/1/diagonal/off/color-pressure
+ok 182 - rules 2.1.0-r3/13/6/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 132.272612
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/6/1/four/positional/fixed-five
+ok 183 - rules 2.1.0-r3/13/6/1/four/positional/fixed-five
+  ---
+  duration_ms: 152.376245
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/6/1/four/positional/color-pressure
+ok 184 - rules 2.1.0-r3/13/6/1/four/positional/color-pressure
+  ---
+  duration_ms: 183.871454
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/6/1/four/off/fixed-five
+ok 185 - rules 2.1.0-r3/13/6/1/four/off/fixed-five
+  ---
+  duration_ms: 108.100719
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/6/1/four/off/color-pressure
+ok 186 - rules 2.1.0-r3/13/6/1/four/off/color-pressure
+  ---
+  duration_ms: 113.919007
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/8/0/diagonal/positional/fixed-five
+ok 187 - rules 2.1.0-r3/13/8/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 90.642047
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/8/0/diagonal/positional/color-pressure
+ok 188 - rules 2.1.0-r3/13/8/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 98.145323
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/8/0/diagonal/off/fixed-five
+ok 189 - rules 2.1.0-r3/13/8/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 92.062332
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/8/0/diagonal/off/color-pressure
+ok 190 - rules 2.1.0-r3/13/8/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 130.167844
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/8/0/four/positional/fixed-five
+ok 191 - rules 2.1.0-r3/13/8/0/four/positional/fixed-five
+  ---
+  duration_ms: 151.292925
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/8/0/four/positional/color-pressure
+ok 192 - rules 2.1.0-r3/13/8/0/four/positional/color-pressure
+  ---
+  duration_ms: 156.78427
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/8/0/four/off/fixed-five
+ok 193 - rules 2.1.0-r3/13/8/0/four/off/fixed-five
+  ---
+  duration_ms: 149.701007
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/8/0/four/off/color-pressure
+ok 194 - rules 2.1.0-r3/13/8/0/four/off/color-pressure
+  ---
+  duration_ms: 118.35303
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/8/1/diagonal/positional/fixed-five
+ok 195 - rules 2.1.0-r3/13/8/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 115.882084
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/8/1/diagonal/positional/color-pressure
+ok 196 - rules 2.1.0-r3/13/8/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 124.628593
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/8/1/diagonal/off/fixed-five
+ok 197 - rules 2.1.0-r3/13/8/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 105.127072
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/8/1/diagonal/off/color-pressure
+ok 198 - rules 2.1.0-r3/13/8/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 154.113742
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/8/1/four/positional/fixed-five
+ok 199 - rules 2.1.0-r3/13/8/1/four/positional/fixed-five
+  ---
+  duration_ms: 137.107273
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/8/1/four/positional/color-pressure
+ok 200 - rules 2.1.0-r3/13/8/1/four/positional/color-pressure
+  ---
+  duration_ms: 147.534308
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/8/1/four/off/fixed-five
+ok 201 - rules 2.1.0-r3/13/8/1/four/off/fixed-five
+  ---
+  duration_ms: 131.032094
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/8/1/four/off/color-pressure
+ok 202 - rules 2.1.0-r3/13/8/1/four/off/color-pressure
+  ---
+  duration_ms: 181.170872
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/10/0/diagonal/positional/fixed-five
+ok 203 - rules 2.1.0-r3/13/10/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 132.442529
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/10/0/diagonal/positional/color-pressure
+ok 204 - rules 2.1.0-r3/13/10/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 125.892834
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/10/0/diagonal/off/fixed-five
+ok 205 - rules 2.1.0-r3/13/10/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 83.698105
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/10/0/diagonal/off/color-pressure
+ok 206 - rules 2.1.0-r3/13/10/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 103.435294
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/10/0/four/positional/fixed-five
+ok 207 - rules 2.1.0-r3/13/10/0/four/positional/fixed-five
+  ---
+  duration_ms: 129.779535
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/10/0/four/positional/color-pressure
+ok 208 - rules 2.1.0-r3/13/10/0/four/positional/color-pressure
+  ---
+  duration_ms: 140.679876
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/10/0/four/off/fixed-five
+ok 209 - rules 2.1.0-r3/13/10/0/four/off/fixed-five
+  ---
+  duration_ms: 158.614558
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/10/0/four/off/color-pressure
+ok 210 - rules 2.1.0-r3/13/10/0/four/off/color-pressure
+  ---
+  duration_ms: 161.281389
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/10/1/diagonal/positional/fixed-five
+ok 211 - rules 2.1.0-r3/13/10/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 154.872817
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/10/1/diagonal/positional/color-pressure
+ok 212 - rules 2.1.0-r3/13/10/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 132.448903
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/10/1/diagonal/off/fixed-five
+ok 213 - rules 2.1.0-r3/13/10/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 124.432316
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/10/1/diagonal/off/color-pressure
+ok 214 - rules 2.1.0-r3/13/10/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 120.556101
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/10/1/four/positional/fixed-five
+ok 215 - rules 2.1.0-r3/13/10/1/four/positional/fixed-five
+  ---
+  duration_ms: 139.042838
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/10/1/four/positional/color-pressure
+ok 216 - rules 2.1.0-r3/13/10/1/four/positional/color-pressure
+  ---
+  duration_ms: 144.757184
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/10/1/four/off/fixed-five
+ok 217 - rules 2.1.0-r3/13/10/1/four/off/fixed-five
+  ---
+  duration_ms: 148.28521
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/10/1/four/off/color-pressure
+ok 218 - rules 2.1.0-r3/13/10/1/four/off/color-pressure
+  ---
+  duration_ms: 127.679987
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/12/0/diagonal/positional/fixed-five
+ok 219 - rules 2.1.0-r3/13/12/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 126.081852
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/12/0/diagonal/positional/color-pressure
+ok 220 - rules 2.1.0-r3/13/12/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 96.798478
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/12/0/diagonal/off/fixed-five
+ok 221 - rules 2.1.0-r3/13/12/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 103.386365
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/12/0/diagonal/off/color-pressure
+ok 222 - rules 2.1.0-r3/13/12/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 100.366601
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/12/0/four/positional/fixed-five
+ok 223 - rules 2.1.0-r3/13/12/0/four/positional/fixed-five
+  ---
+  duration_ms: 135.329212
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/12/0/four/positional/color-pressure
+ok 224 - rules 2.1.0-r3/13/12/0/four/positional/color-pressure
+  ---
+  duration_ms: 145.36367
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/12/0/four/off/fixed-five
+ok 225 - rules 2.1.0-r3/13/12/0/four/off/fixed-five
+  ---
+  duration_ms: 142.966691
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/12/0/four/off/color-pressure
+ok 226 - rules 2.1.0-r3/13/12/0/four/off/color-pressure
+  ---
+  duration_ms: 163.683218
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/12/1/diagonal/positional/fixed-five
+ok 227 - rules 2.1.0-r3/13/12/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 138.49202
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/12/1/diagonal/positional/color-pressure
+ok 228 - rules 2.1.0-r3/13/12/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 149.593535
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/12/1/diagonal/off/fixed-five
+ok 229 - rules 2.1.0-r3/13/12/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 141.255472
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/12/1/diagonal/off/color-pressure
+ok 230 - rules 2.1.0-r3/13/12/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 146.149421
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/12/1/four/positional/fixed-five
+ok 231 - rules 2.1.0-r3/13/12/1/four/positional/fixed-five
+  ---
+  duration_ms: 194.202276
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/12/1/four/positional/color-pressure
+ok 232 - rules 2.1.0-r3/13/12/1/four/positional/color-pressure
+  ---
+  duration_ms: 140.775695
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/12/1/four/off/fixed-five
+ok 233 - rules 2.1.0-r3/13/12/1/four/off/fixed-five
+  ---
+  duration_ms: 134.437375
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/13/12/1/four/off/color-pressure
+ok 234 - rules 2.1.0-r3/13/12/1/four/off/color-pressure
+  ---
+  duration_ms: 126.038442
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/0/0/diagonal/positional/fixed-five
+ok 235 - rules 2.1.0-r3/15/0/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 193.139783
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/0/0/diagonal/positional/color-pressure
+ok 236 - rules 2.1.0-r3/15/0/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 154.846035
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/0/0/diagonal/off/fixed-five
+ok 237 - rules 2.1.0-r3/15/0/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 149.171757
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/0/0/diagonal/off/color-pressure
+ok 238 - rules 2.1.0-r3/15/0/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 139.18152
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/0/0/four/positional/fixed-five
+ok 239 - rules 2.1.0-r3/15/0/0/four/positional/fixed-five
+  ---
+  duration_ms: 193.331647
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/0/0/four/positional/color-pressure
+ok 240 - rules 2.1.0-r3/15/0/0/four/positional/color-pressure
+  ---
+  duration_ms: 213.340254
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/0/0/four/off/fixed-five
+ok 241 - rules 2.1.0-r3/15/0/0/four/off/fixed-five
+  ---
+  duration_ms: 179.128758
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/0/0/four/off/color-pressure
+ok 242 - rules 2.1.0-r3/15/0/0/four/off/color-pressure
+  ---
+  duration_ms: 195.879485
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/0/1/diagonal/positional/fixed-five
+ok 243 - rules 2.1.0-r3/15/0/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 174.025568
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/0/1/diagonal/positional/color-pressure
+ok 244 - rules 2.1.0-r3/15/0/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 178.475369
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/0/1/diagonal/off/fixed-five
+ok 245 - rules 2.1.0-r3/15/0/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 161.045405
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/0/1/diagonal/off/color-pressure
+ok 246 - rules 2.1.0-r3/15/0/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 148.408506
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/0/1/four/positional/fixed-five
+ok 247 - rules 2.1.0-r3/15/0/1/four/positional/fixed-five
+  ---
+  duration_ms: 213.737259
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/0/1/four/positional/color-pressure
+ok 248 - rules 2.1.0-r3/15/0/1/four/positional/color-pressure
+  ---
+  duration_ms: 227.561695
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/0/1/four/off/fixed-five
+ok 249 - rules 2.1.0-r3/15/0/1/four/off/fixed-five
+  ---
+  duration_ms: 194.362112
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/0/1/four/off/color-pressure
+ok 250 - rules 2.1.0-r3/15/0/1/four/off/color-pressure
+  ---
+  duration_ms: 187.769896
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/2/0/diagonal/positional/fixed-five
+ok 251 - rules 2.1.0-r3/15/2/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 192.338694
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/2/0/diagonal/positional/color-pressure
+ok 252 - rules 2.1.0-r3/15/2/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 224.672801
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/2/0/diagonal/off/fixed-five
+ok 253 - rules 2.1.0-r3/15/2/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 173.805194
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/2/0/diagonal/off/color-pressure
+ok 254 - rules 2.1.0-r3/15/2/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 157.129329
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/2/0/four/positional/fixed-five
+ok 255 - rules 2.1.0-r3/15/2/0/four/positional/fixed-five
+  ---
+  duration_ms: 184.609221
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/2/0/four/positional/color-pressure
+ok 256 - rules 2.1.0-r3/15/2/0/four/positional/color-pressure
+  ---
+  duration_ms: 190.401002
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/2/0/four/off/fixed-five
+ok 257 - rules 2.1.0-r3/15/2/0/four/off/fixed-five
+  ---
+  duration_ms: 216.508781
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/2/0/four/off/color-pressure
+ok 258 - rules 2.1.0-r3/15/2/0/four/off/color-pressure
+  ---
+  duration_ms: 228.837241
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/2/1/diagonal/positional/fixed-five
+ok 259 - rules 2.1.0-r3/15/2/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 181.152857
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/2/1/diagonal/positional/color-pressure
+ok 260 - rules 2.1.0-r3/15/2/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 169.14707
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/2/1/diagonal/off/fixed-five
+ok 261 - rules 2.1.0-r3/15/2/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 148.017662
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/2/1/diagonal/off/color-pressure
+ok 262 - rules 2.1.0-r3/15/2/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 176.524503
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/2/1/four/positional/fixed-five
+ok 263 - rules 2.1.0-r3/15/2/1/four/positional/fixed-five
+  ---
+  duration_ms: 247.51656
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/2/1/four/positional/color-pressure
+ok 264 - rules 2.1.0-r3/15/2/1/four/positional/color-pressure
+  ---
+  duration_ms: 263.70111
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/2/1/four/off/fixed-five
+ok 265 - rules 2.1.0-r3/15/2/1/four/off/fixed-five
+  ---
+  duration_ms: 213.009806
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/2/1/four/off/color-pressure
+ok 266 - rules 2.1.0-r3/15/2/1/four/off/color-pressure
+  ---
+  duration_ms: 220.530604
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/4/0/diagonal/positional/fixed-five
+ok 267 - rules 2.1.0-r3/15/4/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 214.528124
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/4/0/diagonal/positional/color-pressure
+ok 268 - rules 2.1.0-r3/15/4/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 236.030287
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/4/0/diagonal/off/fixed-five
+ok 269 - rules 2.1.0-r3/15/4/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 179.422618
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/4/0/diagonal/off/color-pressure
+ok 270 - rules 2.1.0-r3/15/4/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 182.855928
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/4/0/four/positional/fixed-five
+ok 271 - rules 2.1.0-r3/15/4/0/four/positional/fixed-five
+  ---
+  duration_ms: 223.29526
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/4/0/four/positional/color-pressure
+ok 272 - rules 2.1.0-r3/15/4/0/four/positional/color-pressure
+  ---
+  duration_ms: 222.878662
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/4/0/four/off/fixed-five
+ok 273 - rules 2.1.0-r3/15/4/0/four/off/fixed-five
+  ---
+  duration_ms: 179.81154
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/4/0/four/off/color-pressure
+ok 274 - rules 2.1.0-r3/15/4/0/four/off/color-pressure
+  ---
+  duration_ms: 201.586259
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/4/1/diagonal/positional/fixed-five
+ok 275 - rules 2.1.0-r3/15/4/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 192.848705
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/4/1/diagonal/positional/color-pressure
+ok 276 - rules 2.1.0-r3/15/4/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 172.085023
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/4/1/diagonal/off/fixed-five
+ok 277 - rules 2.1.0-r3/15/4/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 191.056064
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/4/1/diagonal/off/color-pressure
+ok 278 - rules 2.1.0-r3/15/4/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 181.831868
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/4/1/four/positional/fixed-five
+ok 279 - rules 2.1.0-r3/15/4/1/four/positional/fixed-five
+  ---
+  duration_ms: 231.725934
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/4/1/four/positional/color-pressure
+ok 280 - rules 2.1.0-r3/15/4/1/four/positional/color-pressure
+  ---
+  duration_ms: 268.122073
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/4/1/four/off/fixed-five
+ok 281 - rules 2.1.0-r3/15/4/1/four/off/fixed-five
+  ---
+  duration_ms: 211.673347
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/4/1/four/off/color-pressure
+ok 282 - rules 2.1.0-r3/15/4/1/four/off/color-pressure
+  ---
+  duration_ms: 221.821656
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/6/0/diagonal/positional/fixed-five
+ok 283 - rules 2.1.0-r3/15/6/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 162.652031
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/6/0/diagonal/positional/color-pressure
+ok 284 - rules 2.1.0-r3/15/6/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 186.706778
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/6/0/diagonal/off/fixed-five
+ok 285 - rules 2.1.0-r3/15/6/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 132.113101
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/6/0/diagonal/off/color-pressure
+ok 286 - rules 2.1.0-r3/15/6/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 163.634948
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/6/0/four/positional/fixed-five
+ok 287 - rules 2.1.0-r3/15/6/0/four/positional/fixed-five
+  ---
+  duration_ms: 227.756108
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/6/0/four/positional/color-pressure
+ok 288 - rules 2.1.0-r3/15/6/0/four/positional/color-pressure
+  ---
+  duration_ms: 216.487711
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/6/0/four/off/fixed-five
+ok 289 - rules 2.1.0-r3/15/6/0/four/off/fixed-five
+  ---
+  duration_ms: 213.795375
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/6/0/four/off/color-pressure
+ok 290 - rules 2.1.0-r3/15/6/0/four/off/color-pressure
+  ---
+  duration_ms: 170.999423
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/6/1/diagonal/positional/fixed-five
+ok 291 - rules 2.1.0-r3/15/6/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 162.125575
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/6/1/diagonal/positional/color-pressure
+ok 292 - rules 2.1.0-r3/15/6/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 179.073416
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/6/1/diagonal/off/fixed-five
+ok 293 - rules 2.1.0-r3/15/6/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 212.502045
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/6/1/diagonal/off/color-pressure
+ok 294 - rules 2.1.0-r3/15/6/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 196.80749
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/6/1/four/positional/fixed-five
+ok 295 - rules 2.1.0-r3/15/6/1/four/positional/fixed-five
+  ---
+  duration_ms: 265.353822
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/6/1/four/positional/color-pressure
+ok 296 - rules 2.1.0-r3/15/6/1/four/positional/color-pressure
+  ---
+  duration_ms: 193.594759
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/6/1/four/off/fixed-five
+ok 297 - rules 2.1.0-r3/15/6/1/four/off/fixed-five
+  ---
+  duration_ms: 224.202503
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/6/1/four/off/color-pressure
+ok 298 - rules 2.1.0-r3/15/6/1/four/off/color-pressure
+  ---
+  duration_ms: 244.915287
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/8/0/diagonal/positional/fixed-five
+ok 299 - rules 2.1.0-r3/15/8/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 234.085518
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/8/0/diagonal/positional/color-pressure
+ok 300 - rules 2.1.0-r3/15/8/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 180.658407
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/8/0/diagonal/off/fixed-five
+ok 301 - rules 2.1.0-r3/15/8/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 164.169818
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/8/0/diagonal/off/color-pressure
+ok 302 - rules 2.1.0-r3/15/8/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 144.221395
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/8/0/four/positional/fixed-five
+ok 303 - rules 2.1.0-r3/15/8/0/four/positional/fixed-five
+  ---
+  duration_ms: 236.114878
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/8/0/four/positional/color-pressure
+ok 304 - rules 2.1.0-r3/15/8/0/four/positional/color-pressure
+  ---
+  duration_ms: 262.460563
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/8/0/four/off/fixed-five
+ok 305 - rules 2.1.0-r3/15/8/0/four/off/fixed-five
+  ---
+  duration_ms: 209.47483
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/8/0/four/off/color-pressure
+ok 306 - rules 2.1.0-r3/15/8/0/four/off/color-pressure
+  ---
+  duration_ms: 195.994473
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/8/1/diagonal/positional/fixed-five
+ok 307 - rules 2.1.0-r3/15/8/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 179.796121
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/8/1/diagonal/positional/color-pressure
+ok 308 - rules 2.1.0-r3/15/8/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 171.120406
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/8/1/diagonal/off/fixed-five
+ok 309 - rules 2.1.0-r3/15/8/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 181.238833
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/8/1/diagonal/off/color-pressure
+ok 310 - rules 2.1.0-r3/15/8/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 191.00829
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/8/1/four/positional/fixed-five
+ok 311 - rules 2.1.0-r3/15/8/1/four/positional/fixed-five
+  ---
+  duration_ms: 218.477324
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/8/1/four/positional/color-pressure
+ok 312 - rules 2.1.0-r3/15/8/1/four/positional/color-pressure
+  ---
+  duration_ms: 233.226141
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/8/1/four/off/fixed-five
+ok 313 - rules 2.1.0-r3/15/8/1/four/off/fixed-five
+  ---
+  duration_ms: 212.395704
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/8/1/four/off/color-pressure
+ok 314 - rules 2.1.0-r3/15/8/1/four/off/color-pressure
+  ---
+  duration_ms: 212.144796
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/10/0/diagonal/positional/fixed-five
+ok 315 - rules 2.1.0-r3/15/10/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 170.910462
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/10/0/diagonal/positional/color-pressure
+ok 316 - rules 2.1.0-r3/15/10/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 192.167233
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/10/0/diagonal/off/fixed-five
+ok 317 - rules 2.1.0-r3/15/10/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 156.776314
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/10/0/diagonal/off/color-pressure
+ok 318 - rules 2.1.0-r3/15/10/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 176.969949
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/10/0/four/positional/fixed-five
+ok 319 - rules 2.1.0-r3/15/10/0/four/positional/fixed-five
+  ---
+  duration_ms: 220.998293
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/10/0/four/positional/color-pressure
+ok 320 - rules 2.1.0-r3/15/10/0/four/positional/color-pressure
+  ---
+  duration_ms: 211.469716
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/10/0/four/off/fixed-five
+ok 321 - rules 2.1.0-r3/15/10/0/four/off/fixed-five
+  ---
+  duration_ms: 220.291793
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/10/0/four/off/color-pressure
+ok 322 - rules 2.1.0-r3/15/10/0/four/off/color-pressure
+  ---
+  duration_ms: 200.613018
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/10/1/diagonal/positional/fixed-five
+ok 323 - rules 2.1.0-r3/15/10/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 261.574096
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/10/1/diagonal/positional/color-pressure
+ok 324 - rules 2.1.0-r3/15/10/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 206.967866
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/10/1/diagonal/off/fixed-five
+ok 325 - rules 2.1.0-r3/15/10/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 204.060348
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/10/1/diagonal/off/color-pressure
+ok 326 - rules 2.1.0-r3/15/10/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 205.887009
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/10/1/four/positional/fixed-five
+ok 327 - rules 2.1.0-r3/15/10/1/four/positional/fixed-five
+  ---
+  duration_ms: 222.988294
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/10/1/four/positional/color-pressure
+ok 328 - rules 2.1.0-r3/15/10/1/four/positional/color-pressure
+  ---
+  duration_ms: 205.116541
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/10/1/four/off/fixed-five
+ok 329 - rules 2.1.0-r3/15/10/1/four/off/fixed-five
+  ---
+  duration_ms: 231.307689
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/10/1/four/off/color-pressure
+ok 330 - rules 2.1.0-r3/15/10/1/four/off/color-pressure
+  ---
+  duration_ms: 188.329116
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/12/0/diagonal/positional/fixed-five
+ok 331 - rules 2.1.0-r3/15/12/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 167.860776
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/12/0/diagonal/positional/color-pressure
+ok 332 - rules 2.1.0-r3/15/12/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 155.97744
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/12/0/diagonal/off/fixed-five
+ok 333 - rules 2.1.0-r3/15/12/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 137.280585
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/12/0/diagonal/off/color-pressure
+ok 334 - rules 2.1.0-r3/15/12/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 167.934194
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/12/0/four/positional/fixed-five
+ok 335 - rules 2.1.0-r3/15/12/0/four/positional/fixed-five
+  ---
+  duration_ms: 203.970659
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/12/0/four/positional/color-pressure
+ok 336 - rules 2.1.0-r3/15/12/0/four/positional/color-pressure
+  ---
+  duration_ms: 221.123099
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/12/0/four/off/fixed-five
+ok 337 - rules 2.1.0-r3/15/12/0/four/off/fixed-five
+  ---
+  duration_ms: 164.399019
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/12/0/four/off/color-pressure
+ok 338 - rules 2.1.0-r3/15/12/0/four/off/color-pressure
+  ---
+  duration_ms: 161.366743
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/12/1/diagonal/positional/fixed-five
+ok 339 - rules 2.1.0-r3/15/12/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 157.60724
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/12/1/diagonal/positional/color-pressure
+ok 340 - rules 2.1.0-r3/15/12/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 170.738266
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/12/1/diagonal/off/fixed-five
+ok 341 - rules 2.1.0-r3/15/12/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 181.957998
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/12/1/diagonal/off/color-pressure
+ok 342 - rules 2.1.0-r3/15/12/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 156.107678
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/12/1/four/positional/fixed-five
+ok 343 - rules 2.1.0-r3/15/12/1/four/positional/fixed-five
+  ---
+  duration_ms: 200.833687
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/12/1/four/positional/color-pressure
+ok 344 - rules 2.1.0-r3/15/12/1/four/positional/color-pressure
+  ---
+  duration_ms: 197.214577
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/12/1/four/off/fixed-five
+ok 345 - rules 2.1.0-r3/15/12/1/four/off/fixed-five
+  ---
+  duration_ms: 248.87452
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/15/12/1/four/off/color-pressure
+ok 346 - rules 2.1.0-r3/15/12/1/four/off/color-pressure
+  ---
+  duration_ms: 216.783302
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/0/0/diagonal/positional/fixed-five
+ok 347 - rules 2.1.0-r3/19/0/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 404.801579
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/0/0/diagonal/positional/color-pressure
+ok 348 - rules 2.1.0-r3/19/0/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 381.65327
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/0/0/diagonal/off/fixed-five
+ok 349 - rules 2.1.0-r3/19/0/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 296.928348
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/0/0/diagonal/off/color-pressure
+ok 350 - rules 2.1.0-r3/19/0/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 312.967908
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/0/0/four/positional/fixed-five
+ok 351 - rules 2.1.0-r3/19/0/0/four/positional/fixed-five
+  ---
+  duration_ms: 487.799704
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/0/0/four/positional/color-pressure
+ok 352 - rules 2.1.0-r3/19/0/0/four/positional/color-pressure
+  ---
+  duration_ms: 532.216529
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/0/0/four/off/fixed-five
+ok 353 - rules 2.1.0-r3/19/0/0/four/off/fixed-five
+  ---
+  duration_ms: 463.799253
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/0/0/four/off/color-pressure
+ok 354 - rules 2.1.0-r3/19/0/0/four/off/color-pressure
+  ---
+  duration_ms: 491.149807
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/0/1/diagonal/positional/fixed-five
+ok 355 - rules 2.1.0-r3/19/0/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 415.863308
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/0/1/diagonal/positional/color-pressure
+ok 356 - rules 2.1.0-r3/19/0/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 366.00916
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/0/1/diagonal/off/fixed-five
+ok 357 - rules 2.1.0-r3/19/0/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 354.334705
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/0/1/diagonal/off/color-pressure
+ok 358 - rules 2.1.0-r3/19/0/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 354.254249
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/0/1/four/positional/fixed-five
+ok 359 - rules 2.1.0-r3/19/0/1/four/positional/fixed-five
+  ---
+  duration_ms: 464.439145
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/0/1/four/positional/color-pressure
+ok 360 - rules 2.1.0-r3/19/0/1/four/positional/color-pressure
+  ---
+  duration_ms: 502.454759
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/0/1/four/off/fixed-five
+ok 361 - rules 2.1.0-r3/19/0/1/four/off/fixed-five
+  ---
+  duration_ms: 437.867503
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/0/1/four/off/color-pressure
+ok 362 - rules 2.1.0-r3/19/0/1/four/off/color-pressure
+  ---
+  duration_ms: 405.355839
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/2/0/diagonal/positional/fixed-five
+ok 363 - rules 2.1.0-r3/19/2/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 332.556194
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/2/0/diagonal/positional/color-pressure
+ok 364 - rules 2.1.0-r3/19/2/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 352.806598
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/2/0/diagonal/off/fixed-five
+ok 365 - rules 2.1.0-r3/19/2/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 359.464695
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/2/0/diagonal/off/color-pressure
+ok 366 - rules 2.1.0-r3/19/2/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 333.740609
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/2/0/four/positional/fixed-five
+ok 367 - rules 2.1.0-r3/19/2/0/four/positional/fixed-five
+  ---
+  duration_ms: 491.766752
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/2/0/four/positional/color-pressure
+ok 368 - rules 2.1.0-r3/19/2/0/four/positional/color-pressure
+  ---
+  duration_ms: 491.628208
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/2/0/four/off/fixed-five
+ok 369 - rules 2.1.0-r3/19/2/0/four/off/fixed-five
+  ---
+  duration_ms: 403.737028
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/2/0/four/off/color-pressure
+ok 370 - rules 2.1.0-r3/19/2/0/four/off/color-pressure
+  ---
+  duration_ms: 405.750765
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/2/1/diagonal/positional/fixed-five
+ok 371 - rules 2.1.0-r3/19/2/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 348.958177
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/2/1/diagonal/positional/color-pressure
+ok 372 - rules 2.1.0-r3/19/2/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 340.514483
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/2/1/diagonal/off/fixed-five
+ok 373 - rules 2.1.0-r3/19/2/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 308.968248
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/2/1/diagonal/off/color-pressure
+ok 374 - rules 2.1.0-r3/19/2/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 323.644245
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/2/1/four/positional/fixed-five
+ok 375 - rules 2.1.0-r3/19/2/1/four/positional/fixed-five
+  ---
+  duration_ms: 418.698039
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/2/1/four/positional/color-pressure
+ok 376 - rules 2.1.0-r3/19/2/1/four/positional/color-pressure
+  ---
+  duration_ms: 411.71375
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/2/1/four/off/fixed-five
+ok 377 - rules 2.1.0-r3/19/2/1/four/off/fixed-five
+  ---
+  duration_ms: 384.984825
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/2/1/four/off/color-pressure
+ok 378 - rules 2.1.0-r3/19/2/1/four/off/color-pressure
+  ---
+  duration_ms: 477.709521
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/4/0/diagonal/positional/fixed-five
+ok 379 - rules 2.1.0-r3/19/4/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 389.284293
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/4/0/diagonal/positional/color-pressure
+ok 380 - rules 2.1.0-r3/19/4/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 393.324061
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/4/0/diagonal/off/fixed-five
+ok 381 - rules 2.1.0-r3/19/4/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 368.469684
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/4/0/diagonal/off/color-pressure
+ok 382 - rules 2.1.0-r3/19/4/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 380.747308
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/4/0/four/positional/fixed-five
+ok 383 - rules 2.1.0-r3/19/4/0/four/positional/fixed-five
+  ---
+  duration_ms: 480.708816
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/4/0/four/positional/color-pressure
+ok 384 - rules 2.1.0-r3/19/4/0/four/positional/color-pressure
+  ---
+  duration_ms: 503.770314
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/4/0/four/off/fixed-five
+ok 385 - rules 2.1.0-r3/19/4/0/four/off/fixed-five
+  ---
+  duration_ms: 387.245334
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/4/0/four/off/color-pressure
+ok 386 - rules 2.1.0-r3/19/4/0/four/off/color-pressure
+  ---
+  duration_ms: 496.400436
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/4/1/diagonal/positional/fixed-five
+ok 387 - rules 2.1.0-r3/19/4/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 407.445091
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/4/1/diagonal/positional/color-pressure
+ok 388 - rules 2.1.0-r3/19/4/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 413.525475
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/4/1/diagonal/off/fixed-five
+ok 389 - rules 2.1.0-r3/19/4/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 451.603989
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/4/1/diagonal/off/color-pressure
+ok 390 - rules 2.1.0-r3/19/4/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 423.724608
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/4/1/four/positional/fixed-five
+ok 391 - rules 2.1.0-r3/19/4/1/four/positional/fixed-five
+  ---
+  duration_ms: 452.987549
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/4/1/four/positional/color-pressure
+ok 392 - rules 2.1.0-r3/19/4/1/four/positional/color-pressure
+  ---
+  duration_ms: 477.591246
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/4/1/four/off/fixed-five
+ok 393 - rules 2.1.0-r3/19/4/1/four/off/fixed-five
+  ---
+  duration_ms: 504.50484
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/4/1/four/off/color-pressure
+ok 394 - rules 2.1.0-r3/19/4/1/four/off/color-pressure
+  ---
+  duration_ms: 469.897869
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/6/0/diagonal/positional/fixed-five
+ok 395 - rules 2.1.0-r3/19/6/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 396.17503
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/6/0/diagonal/positional/color-pressure
+ok 396 - rules 2.1.0-r3/19/6/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 399.287641
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/6/0/diagonal/off/fixed-five
+ok 397 - rules 2.1.0-r3/19/6/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 417.290587
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/6/0/diagonal/off/color-pressure
+ok 398 - rules 2.1.0-r3/19/6/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 386.573253
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/6/0/four/positional/fixed-five
+ok 399 - rules 2.1.0-r3/19/6/0/four/positional/fixed-five
+  ---
+  duration_ms: 565.206437
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/6/0/four/positional/color-pressure
+ok 400 - rules 2.1.0-r3/19/6/0/four/positional/color-pressure
+  ---
+  duration_ms: 497.312152
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/6/0/four/off/fixed-five
+ok 401 - rules 2.1.0-r3/19/6/0/four/off/fixed-five
+  ---
+  duration_ms: 447.079333
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/6/0/four/off/color-pressure
+ok 402 - rules 2.1.0-r3/19/6/0/four/off/color-pressure
+  ---
+  duration_ms: 389.401006
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/6/1/diagonal/positional/fixed-five
+ok 403 - rules 2.1.0-r3/19/6/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 395.323278
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/6/1/diagonal/positional/color-pressure
+ok 404 - rules 2.1.0-r3/19/6/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 536.3085
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/6/1/diagonal/off/fixed-five
+ok 405 - rules 2.1.0-r3/19/6/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 520.287144
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/6/1/diagonal/off/color-pressure
+ok 406 - rules 2.1.0-r3/19/6/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 419.499704
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/6/1/four/positional/fixed-five
+ok 407 - rules 2.1.0-r3/19/6/1/four/positional/fixed-five
+  ---
+  duration_ms: 552.575542
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/6/1/four/positional/color-pressure
+ok 408 - rules 2.1.0-r3/19/6/1/four/positional/color-pressure
+  ---
+  duration_ms: 531.499627
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/6/1/four/off/fixed-five
+ok 409 - rules 2.1.0-r3/19/6/1/four/off/fixed-five
+  ---
+  duration_ms: 472.13006
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/6/1/four/off/color-pressure
+ok 410 - rules 2.1.0-r3/19/6/1/four/off/color-pressure
+  ---
+  duration_ms: 529.317599
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/8/0/diagonal/positional/fixed-five
+ok 411 - rules 2.1.0-r3/19/8/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 366.36551
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/8/0/diagonal/positional/color-pressure
+ok 412 - rules 2.1.0-r3/19/8/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 334.714225
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/8/0/diagonal/off/fixed-five
+ok 413 - rules 2.1.0-r3/19/8/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 340.365033
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/8/0/diagonal/off/color-pressure
+ok 414 - rules 2.1.0-r3/19/8/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 336.955849
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/8/0/four/positional/fixed-five
+ok 415 - rules 2.1.0-r3/19/8/0/four/positional/fixed-five
+  ---
+  duration_ms: 492.854217
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/8/0/four/positional/color-pressure
+ok 416 - rules 2.1.0-r3/19/8/0/four/positional/color-pressure
+  ---
+  duration_ms: 499.731129
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/8/0/four/off/fixed-five
+ok 417 - rules 2.1.0-r3/19/8/0/four/off/fixed-five
+  ---
+  duration_ms: 476.175891
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/8/0/four/off/color-pressure
+ok 418 - rules 2.1.0-r3/19/8/0/four/off/color-pressure
+  ---
+  duration_ms: 461.683105
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/8/1/diagonal/positional/fixed-five
+ok 419 - rules 2.1.0-r3/19/8/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 499.749423
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/8/1/diagonal/positional/color-pressure
+ok 420 - rules 2.1.0-r3/19/8/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 399.605499
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/8/1/diagonal/off/fixed-five
+ok 421 - rules 2.1.0-r3/19/8/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 383.358035
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/8/1/diagonal/off/color-pressure
+ok 422 - rules 2.1.0-r3/19/8/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 420.499542
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/8/1/four/positional/fixed-five
+ok 423 - rules 2.1.0-r3/19/8/1/four/positional/fixed-five
+  ---
+  duration_ms: 550.785133
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/8/1/four/positional/color-pressure
+ok 424 - rules 2.1.0-r3/19/8/1/four/positional/color-pressure
+  ---
+  duration_ms: 583.322763
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/8/1/four/off/fixed-five
+ok 425 - rules 2.1.0-r3/19/8/1/four/off/fixed-five
+  ---
+  duration_ms: 512.44446
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/8/1/four/off/color-pressure
+ok 426 - rules 2.1.0-r3/19/8/1/four/off/color-pressure
+  ---
+  duration_ms: 574.468552
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/10/0/diagonal/positional/fixed-five
+ok 427 - rules 2.1.0-r3/19/10/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 429.83647
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/10/0/diagonal/positional/color-pressure
+ok 428 - rules 2.1.0-r3/19/10/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 438.762187
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/10/0/diagonal/off/fixed-five
+ok 429 - rules 2.1.0-r3/19/10/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 434.6721
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/10/0/diagonal/off/color-pressure
+ok 430 - rules 2.1.0-r3/19/10/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 393.284278
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/10/0/four/positional/fixed-five
+ok 431 - rules 2.1.0-r3/19/10/0/four/positional/fixed-five
+  ---
+  duration_ms: 554.094483
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/10/0/four/positional/color-pressure
+ok 432 - rules 2.1.0-r3/19/10/0/four/positional/color-pressure
+  ---
+  duration_ms: 521.34124
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/10/0/four/off/fixed-five
+ok 433 - rules 2.1.0-r3/19/10/0/four/off/fixed-five
+  ---
+  duration_ms: 480.091411
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/10/0/four/off/color-pressure
+ok 434 - rules 2.1.0-r3/19/10/0/four/off/color-pressure
+  ---
+  duration_ms: 409.41013
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/10/1/diagonal/positional/fixed-five
+ok 435 - rules 2.1.0-r3/19/10/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 442.22657
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/10/1/diagonal/positional/color-pressure
+ok 436 - rules 2.1.0-r3/19/10/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 395.288736
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/10/1/diagonal/off/fixed-five
+ok 437 - rules 2.1.0-r3/19/10/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 365.979287
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/10/1/diagonal/off/color-pressure
+ok 438 - rules 2.1.0-r3/19/10/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 398.110057
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/10/1/four/positional/fixed-five
+ok 439 - rules 2.1.0-r3/19/10/1/four/positional/fixed-five
+  ---
+  duration_ms: 595.436549
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/10/1/four/positional/color-pressure
+ok 440 - rules 2.1.0-r3/19/10/1/four/positional/color-pressure
+  ---
+  duration_ms: 480.797584
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/10/1/four/off/fixed-five
+ok 441 - rules 2.1.0-r3/19/10/1/four/off/fixed-five
+  ---
+  duration_ms: 462.173768
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/10/1/four/off/color-pressure
+ok 442 - rules 2.1.0-r3/19/10/1/four/off/color-pressure
+  ---
+  duration_ms: 446.71571
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/12/0/diagonal/positional/fixed-five
+ok 443 - rules 2.1.0-r3/19/12/0/diagonal/positional/fixed-five
+  ---
+  duration_ms: 438.827306
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/12/0/diagonal/positional/color-pressure
+ok 444 - rules 2.1.0-r3/19/12/0/diagonal/positional/color-pressure
+  ---
+  duration_ms: 405.910699
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/12/0/diagonal/off/fixed-five
+ok 445 - rules 2.1.0-r3/19/12/0/diagonal/off/fixed-five
+  ---
+  duration_ms: 327.591203
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/12/0/diagonal/off/color-pressure
+ok 446 - rules 2.1.0-r3/19/12/0/diagonal/off/color-pressure
+  ---
+  duration_ms: 335.707156
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/12/0/four/positional/fixed-five
+ok 447 - rules 2.1.0-r3/19/12/0/four/positional/fixed-five
+  ---
+  duration_ms: 448.893397
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/12/0/four/positional/color-pressure
+ok 448 - rules 2.1.0-r3/19/12/0/four/positional/color-pressure
+  ---
+  duration_ms: 469.147401
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/12/0/four/off/fixed-five
+ok 449 - rules 2.1.0-r3/19/12/0/four/off/fixed-five
+  ---
+  duration_ms: 483.024916
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/12/0/four/off/color-pressure
+ok 450 - rules 2.1.0-r3/19/12/0/four/off/color-pressure
+  ---
+  duration_ms: 478.774491
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/12/1/diagonal/positional/fixed-five
+ok 451 - rules 2.1.0-r3/19/12/1/diagonal/positional/fixed-five
+  ---
+  duration_ms: 401.398669
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/12/1/diagonal/positional/color-pressure
+ok 452 - rules 2.1.0-r3/19/12/1/diagonal/positional/color-pressure
+  ---
+  duration_ms: 467.142476
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/12/1/diagonal/off/fixed-five
+ok 453 - rules 2.1.0-r3/19/12/1/diagonal/off/fixed-five
+  ---
+  duration_ms: 338.652951
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/12/1/diagonal/off/color-pressure
+ok 454 - rules 2.1.0-r3/19/12/1/diagonal/off/color-pressure
+  ---
+  duration_ms: 338.210089
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/12/1/four/positional/fixed-five
+ok 455 - rules 2.1.0-r3/19/12/1/four/positional/fixed-five
+  ---
+  duration_ms: 461.458103
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/12/1/four/positional/color-pressure
+ok 456 - rules 2.1.0-r3/19/12/1/four/positional/color-pressure
+  ---
+  duration_ms: 468.475339
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/12/1/four/off/fixed-five
+ok 457 - rules 2.1.0-r3/19/12/1/four/off/fixed-five
+  ---
+  duration_ms: 450.14967
+  type: 'test'
+  ...
+# Subtest: rules 2.1.0-r3/19/12/1/four/off/color-pressure
+ok 458 - rules 2.1.0-r3/19/12/1/four/off/color-pressure
+  ---
+  duration_ms: 466.559732
+  type: 'test'
+  ...
+# Subtest: session validation copies controller settings and freezes published views
+ok 459 - session validation copies controller settings and freezes published views
+  ---
+  duration_ms: 3.279646
+  type: 'test'
+  ...
+# Subtest: PvP undo requires the other player, blocks live play, then restores the exact complete command
+ok 460 - PvP undo requires the other player, blocks live play, then restores the exact complete command
+  ---
+  duration_ms: 4.162575
+  type: 'test'
+  ...
+# Subtest: rejecting consent preserves the position and declining party can initiate its own request
+ok 461 - rejecting consent preserves the position and declining party can initiate its own request
+  ---
+  duration_ms: 3.031772
+  type: 'test'
+  ...
+# Subtest: opening cancellation cannot be smuggled through approvedBy or unilaterally restarted
+ok 462 - opening cancellation cannot be smuggled through approvedBy or unilaterally restarted
+  ---
+  duration_ms: 1.657716
+  type: 'test'
+  ...
+# Subtest: competition disables undo, cancellation and tactical hints
+ok 463 - competition disables undo, cancellation and tactical hints
+  ---
+  duration_ms: 0.924627
+  type: 'test'
+  ...
+# Subtest: both humans must enable hints; either can disable and both have equal access
+ok 464 - both humans must enable hints; either can disable and both have equal access
+  ---
+  duration_ms: 0.527505
+  type: 'test'
+  ...
+# Subtest: human cannot impersonate AI; AI action and actor are revalidated on commit
+ok 465 - human cannot impersonate AI; AI action and actor are revalidated on commit
+  ---
+  duration_ms: 1.236239
+  type: 'test'
+  ...
+# Subtest: undo cancels AI work; decreasing ply never reuses revision or revives old task id
+ok 466 - undo cancels AI work; decreasing ply never reuses revision or revives old task id
+  ---
+  duration_ms: 1.837192
+  type: 'test'
+  ...
+# Subtest: practice undo is exactly one explicit command, including AI replies
+ok 467 - practice undo is exactly one explicit command, including AI replies
+  ---
+  duration_ms: 1.05987
+  type: 'test'
+  ...
+# Subtest: pause and cancel invalidate tokens, even when task ids are reused
+ok 468 - pause and cancel invalidate tokens, even when task ids are reused
+  ---
+  duration_ms: 0.657168
+  type: 'test'
+  ...
+# Subtest: new game invalidates previous match tasks and refuses reused match identifiers
+ok 469 - new game invalidates previous match tasks and refuses reused match identifiers
+  ---
+  duration_ms: 0.302145
+  type: 'test'
+  ...
+# Subtest: save/load fully replays first; failed loads preserve position, task and id availability
+ok 470 - save/load fully replays first; failed loads preserve position, task and id availability
+  ---
+  duration_ms: 1.727828
+  type: 'test'
+  ...
+# Subtest: off-turn resignation works during AI thinking or pending consent and wins terminal race
+ok 471 - off-turn resignation works during AI thinking or pending consent and wins terminal race
+  ---
+  duration_ms: 1.105094
+  type: 'test'
+  ...
+# Subtest: closing a session rejects stale work and further state changes
+ok 472 - closing a session rejects stale work and further state changes
+  ---
+  duration_ms: 0.361856
+  type: 'test'
+  ...
+1..472
+# tests 472
+# suites 0
+# pass 472
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 90201.391803

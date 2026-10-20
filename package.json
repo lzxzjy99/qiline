@@ -1,0 +1,14 @@
+{
+  "name": "qiline-web",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-web.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "node scripts/check-web.mjs"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}

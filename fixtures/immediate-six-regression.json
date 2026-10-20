@@ -1,0 +1,8 @@
+{
+  "id": "I0_NUMERIC_WINNING_LINE",
+  "basis": "reachable-sequence",
+  "rulePatch": {"swap3": false, "confirmationDelay": 0, "claimMode": "fixed-five"},
+  "coordinates": ["I1","A1","H2","A3","G3","A5","E5","A7","D6","A9","F4"],
+  "expected": {"winner": "black", "ply": 11, "selectedFive": ["I1","H2","G3","F4","E5"]},
+  "resolved": "Multiple same-time fives are ordered by numeric coordinates, rather than lexicographic id strings. Winner was unaffected."
+}

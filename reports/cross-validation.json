@@ -1,0 +1,20 @@
+{
+  "rulesVersion": "2.1.0-r3",
+  "reference_sha256": "561c6cc6d5f10e214c4e9370924e04af614424641a0589b6a6d6a70da48e9573",
+  "statistics": {
+    "state_comparisons": 77816,
+    "accepted_commands": 70512,
+    "undo_checks": 1592,
+    "branch_redo_checks": 1592,
+    "illegal_atomicity_checks": 1554,
+    "legal_set_checks": 780,
+    "replay_checks": 1670,
+    "games": 896,
+    "terminated": 646,
+    "configurations": 448,
+    "truncated_at_120_commands": 250
+  },
+  "failure": null,
+  "elapsed_seconds": 149.156,
+  "scope": "Independent Python and TypeScript engines; all matches start empty; truncated games are not draws."
+}

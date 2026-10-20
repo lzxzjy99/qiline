@@ -1,0 +1,1135 @@
+{
+  "fixtureVersion": 1,
+  "rulesVersion": "2.0.0",
+  "coordinates": "A1 top-left; x/y 0-based; point=y*9+x",
+  "defaultRules": {
+    "rulesVersion": "2.0.0",
+    "boardSize": 9,
+    "swap3": true,
+    "confirmation": "reply",
+    "superko": "positional",
+    "blocked": "pass",
+    "directions": "diagonal"
+  },
+  "notice": "P1 expected examples, not passed P2 engine tests. Projection cases are not asserted reachable.",
+  "cases": [
+    {
+      "id": "C01",
+      "basis": "projection",
+      "category": "capture",
+      "black": [
+        "C5",
+        "D4",
+        "D6",
+        "G5",
+        "F4",
+        "F6"
+      ],
+      "white": [
+        "D5",
+        "F5"
+      ],
+      "move": {
+        "color": "black",
+        "point": "E5"
+      },
+      "expected": {
+        "legal": true,
+        "captured": [
+          "D5",
+          "F5"
+        ]
+      }
+    },
+    {
+      "id": "C02",
+      "basis": "projection",
+      "category": "capture",
+      "black": [],
+      "white": [
+        "D5",
+        "F5",
+        "E4",
+        "E6"
+      ],
+      "move": {
+        "color": "black",
+        "point": "E5"
+      },
+      "expected": {
+        "legal": false,
+        "captured": [],
+        "error": "SUICIDE"
+      }
+    },
+    {
+      "id": "C03",
+      "basis": "projection",
+      "category": "capture",
+      "black": [
+        "C5",
+        "D4",
+        "D6",
+        "G5",
+        "F4",
+        "F6",
+        "E3",
+        "E7"
+      ],
+      "white": [
+        "D5",
+        "F5",
+        "E4",
+        "E6"
+      ],
+      "move": {
+        "color": "black",
+        "point": "E5"
+      },
+      "expected": {
+        "legal": true,
+        "captured": [
+          "E4",
+          "D5",
+          "F5",
+          "E6"
+        ]
+      }
+    },
+    {
+      "id": "C04",
+      "basis": "projection",
+      "category": "capture",
+      "black": [
+        "B1"
+      ],
+      "white": [
+        "A1"
+      ],
+      "move": {
+        "color": "black",
+        "point": "A2"
+      },
+      "expected": {
+        "legal": true,
+        "captured": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "id": "C05",
+      "basis": "projection",
+      "category": "capture",
+      "black": [
+        "C5",
+        "D6",
+        "C4",
+        "D3",
+        "E3",
+        "F4"
+      ],
+      "white": [
+        "D5",
+        "D4",
+        "E4"
+      ],
+      "move": {
+        "color": "black",
+        "point": "E5"
+      },
+      "expected": {
+        "legal": true,
+        "captured": [
+          "D4",
+          "E4",
+          "D5"
+        ]
+      }
+    },
+    {
+      "id": "K01",
+      "basis": "reachable-sequence",
+      "category": "ko",
+      "rulesPatch": {
+        "swap3": false
+      },
+      "prefix": [
+        {
+          "color": "black",
+          "point": "B3"
+        },
+        {
+          "color": "white",
+          "point": "C3"
+        },
+        {
+          "color": "black",
+          "point": "D3"
+        },
+        {
+          "color": "white",
+          "point": "B2"
+        },
+        {
+          "color": "black",
+          "point": "C4"
+        },
+        {
+          "color": "white",
+          "point": "D2"
+        },
+        {
+          "color": "black",
+          "point": "A9"
+        },
+        {
+          "color": "white",
+          "point": "C1"
+        }
+      ],
+      "cycle": [
+        {
+          "color": "black",
+          "point": "C2"
+        },
+        {
+          "color": "white",
+          "point": "C3"
+        }
+      ],
+      "expected": {
+        "allowedWithSuperko": 1,
+        "rejectedWithSuperko": "REPETITION",
+        "allLegalWhenOff": true,
+        "returnsToPrefixBoard": true
+      }
+    },
+    {
+      "id": "K02",
+      "basis": "reachable-sequence",
+      "category": "workflow",
+      "ref": "K01",
+      "steps": [
+        "replay prefix",
+        "black C2",
+        "undo last accepted command",
+        "black C2 again"
+      ],
+      "expected": {
+        "lastActionLegal": true,
+        "positionKeysAfterUndo": 9,
+        "acceptedAfterUndo": 8
+      }
+    },
+    {
+      "id": "K03",
+      "basis": "reachable-sequence",
+      "category": "ko",
+      "rulesPatch": {
+        "swap3": false
+      },
+      "prefix": [
+        {
+          "color": "black",
+          "point": "B3"
+        },
+        {
+          "color": "white",
+          "point": "C3"
+        },
+        {
+          "color": "black",
+          "point": "D3"
+        },
+        {
+          "color": "white",
+          "point": "B2"
+        },
+        {
+          "color": "black",
+          "point": "C4"
+        },
+        {
+          "color": "white",
+          "point": "D2"
+        },
+        {
+          "color": "black",
+          "point": "G3"
+        },
+        {
+          "color": "white",
+          "point": "C1"
+        },
+        {
+          "color": "black",
+          "point": "F2"
+        },
+        {
+          "color": "white",
+          "point": "F3"
+        },
+        {
+          "color": "black",
+          "point": "H2"
+        },
+        {
+          "color": "white",
+          "point": "H3"
+        },
+        {
+          "color": "black",
+          "point": "G1"
+        },
+        {
+          "color": "white",
+          "point": "G4"
+        },
+        {
+          "color": "black",
+          "point": "B8"
+        },
+        {
+          "color": "white",
+          "point": "C8"
+        },
+        {
+          "color": "black",
+          "point": "D8"
+        },
+        {
+          "color": "white",
+          "point": "B7"
+        },
+        {
+          "color": "black",
+          "point": "C9"
+        },
+        {
+          "color": "white",
+          "point": "D7"
+        },
+        {
+          "color": "black",
+          "point": "I9"
+        },
+        {
+          "color": "white",
+          "point": "C6"
+        }
+      ],
+      "cycle": [
+        {
+          "color": "black",
+          "point": "C2"
+        },
+        {
+          "color": "white",
+          "point": "G2"
+        },
+        {
+          "color": "black",
+          "point": "C7"
+        },
+        {
+          "color": "white",
+          "point": "C3"
+        },
+        {
+          "color": "black",
+          "point": "G3"
+        },
+        {
+          "color": "white",
+          "point": "C8"
+        }
+      ],
+      "expected": {
+        "allowedWithSuperko": 5,
+        "rejectedWithSuperko": "REPETITION",
+        "allLegalWhenOff": true,
+        "returnsToPrefixBoard": true
+      }
+    },
+    {
+      "id": "L01",
+      "basis": "projection",
+      "category": "line-move",
+      "black": [
+        "A1",
+        "B2",
+        "C3",
+        "D4"
+      ],
+      "white": [],
+      "move": {
+        "color": "black",
+        "point": "E5"
+      },
+      "expected": {
+        "diagonalLine": true,
+        "immediate": "black-win",
+        "reply": "black-claim",
+        "twoActions": "black-claim"
+      }
+    },
+    {
+      "id": "L02",
+      "basis": "projection",
+      "category": "line-move",
+      "black": [
+        "B5",
+        "C5",
+        "D5",
+        "E5"
+      ],
+      "white": [],
+      "move": {
+        "color": "black",
+        "point": "F5"
+      },
+      "expected": {
+        "diagonalLine": false,
+        "fourLine": true
+      }
+    },
+    {
+      "id": "L03",
+      "basis": "diagram",
+      "category": "line",
+      "black": [
+        "A1",
+        "B2",
+        "C3",
+        "D4",
+        "E5",
+        "F6"
+      ],
+      "white": [],
+      "expected": {
+        "diagonalLine": true,
+        "longest": 6
+      }
+    },
+    {
+      "id": "W01",
+      "basis": "projection",
+      "category": "response",
+      "black": [
+        "A1",
+        "B2",
+        "C3",
+        "D4",
+        "E5"
+      ],
+      "white": [
+        "E9",
+        "F8",
+        "G7",
+        "H6"
+      ],
+      "ply": 9,
+      "toMove": "white",
+      "claims": [
+        {
+          "color": "black",
+          "formedAt": 9,
+          "dueAt": 10
+        }
+      ],
+      "move": {
+        "color": "white",
+        "point": "I5"
+      },
+      "expected": {
+        "winner": "black",
+        "reason": "line",
+        "blackLineAfter": true,
+        "whiteLineAfter": true
+      }
+    },
+    {
+      "id": "W02",
+      "basis": "projection",
+      "category": "response",
+      "black": [
+        "A1",
+        "B2",
+        "C3",
+        "D4",
+        "E5"
+      ],
+      "white": [
+        "A2",
+        "B3",
+        "C4",
+        "D5",
+        "F5",
+        "E4"
+      ],
+      "ply": 9,
+      "toMove": "white",
+      "claims": [
+        {
+          "color": "black",
+          "formedAt": 9,
+          "dueAt": 10
+        }
+      ],
+      "move": {
+        "color": "white",
+        "point": "E6"
+      },
+      "expected": {
+        "winner": null,
+        "captured": [
+          "E5"
+        ],
+        "blackLineAfter": false,
+        "whiteLineAfter": true,
+        "newClaim": {
+          "color": "white",
+          "formedAt": 10,
+          "dueAt": 11
+        }
+      }
+    },
+    {
+      "id": "W03",
+      "basis": "projection",
+      "category": "response",
+      "black": [
+        "A1",
+        "B2",
+        "C3",
+        "D4",
+        "E5",
+        "E1",
+        "F2",
+        "G3",
+        "H4",
+        "I5"
+      ],
+      "white": [
+        "D5",
+        "F5",
+        "E4"
+      ],
+      "ply": 9,
+      "toMove": "white",
+      "claims": [
+        {
+          "color": "black",
+          "formedAt": 9,
+          "dueAt": 10
+        }
+      ],
+      "move": {
+        "color": "white",
+        "point": "E6"
+      },
+      "expected": {
+        "winner": "black",
+        "reason": "line",
+        "captured": [
+          "E5"
+        ],
+        "blackLineAfter": true
+      }
+    },
+    {
+      "id": "W04",
+      "basis": "projection",
+      "category": "confirmation-timeline",
+      "rulesPatch": {
+        "confirmation": "two-actions"
+      },
+      "black": [
+        "A1",
+        "B2",
+        "C3",
+        "D4",
+        "E5"
+      ],
+      "white": [],
+      "ply": 9,
+      "claims": [
+        {
+          "color": "black",
+          "formedAt": 9,
+          "dueAt": 11
+        }
+      ],
+      "moves": [
+        {
+          "color": "white",
+          "point": "F9"
+        },
+        {
+          "color": "black",
+          "point": "I9"
+        }
+      ],
+      "expected": {
+        "winnerAfterFirst": null,
+        "winnerAfterSecond": "black",
+        "dueAt": 11
+      }
+    },
+    {
+      "id": "W05",
+      "basis": "projection",
+      "category": "confirmation-timeline",
+      "rulesPatch": {
+        "confirmation": "two-actions"
+      },
+      "black": [
+        "A1",
+        "B2",
+        "C3",
+        "D4",
+        "E5",
+        "E1",
+        "F2",
+        "G3",
+        "H4"
+      ],
+      "white": [
+        "D5",
+        "F5",
+        "E4"
+      ],
+      "ply": 9,
+      "claims": [
+        {
+          "color": "black",
+          "formedAt": 9,
+          "dueAt": 11
+        }
+      ],
+      "moves": [
+        {
+          "color": "white",
+          "point": "E6"
+        },
+        {
+          "color": "black",
+          "point": "I5"
+        }
+      ],
+      "expected": {
+        "firstCancelsBlack": true,
+        "winnerAfterSecond": null,
+        "newClaim": {
+          "color": "black",
+          "formedAt": 11,
+          "dueAt": 13
+        }
+      }
+    },
+    {
+      "id": "W06",
+      "basis": "projection",
+      "category": "illegal",
+      "black": [
+        "A1",
+        "B2",
+        "C3",
+        "D4",
+        "E5"
+      ],
+      "white": [],
+      "ply": 9,
+      "claims": [
+        {
+          "color": "black",
+          "formedAt": 9,
+          "dueAt": 10
+        }
+      ],
+      "move": {
+        "color": "white",
+        "point": "A1"
+      },
+      "expected": {
+        "error": "OCCUPIED",
+        "unchanged": [
+          "board",
+          "ply",
+          "claims",
+          "captures",
+          "positions",
+          "accepted"
+        ]
+      }
+    },
+    {
+      "id": "P01",
+      "basis": "projection",
+      "category": "normalization",
+      "black": [
+        "B1",
+        "C1",
+        "D1",
+        "F1",
+        "G1",
+        "H1",
+        "A2",
+        "B2",
+        "D2",
+        "E2",
+        "F2",
+        "H2",
+        "I2",
+        "B3",
+        "C3",
+        "D3",
+        "F3",
+        "G3",
+        "H3",
+        "A4",
+        "B4",
+        "D4",
+        "E4",
+        "F4",
+        "H4",
+        "I4",
+        "B5",
+        "C5",
+        "D5",
+        "F5",
+        "G5",
+        "H5",
+        "A6",
+        "B6",
+        "D6",
+        "E6",
+        "F6",
+        "H6",
+        "I6",
+        "B7",
+        "C7",
+        "D7",
+        "F7",
+        "G7",
+        "H7",
+        "A8",
+        "B8",
+        "D8",
+        "E8",
+        "F8",
+        "H8",
+        "I8",
+        "B9",
+        "C9",
+        "D9",
+        "F9",
+        "G9",
+        "H9"
+      ],
+      "white": [],
+      "toMove": "white",
+      "ply": 80,
+      "passStreak": 0,
+      "expected": {
+        "whiteHasNoLegalPlacements": true,
+        "blackHasLegalPlacements": true,
+        "diagonalLine": false,
+        "nextColor": "black",
+        "passStreak": 1
+      }
+    },
+    {
+      "id": "P02",
+      "basis": "projection",
+      "category": "normalization",
+      "black": [
+        "B1",
+        "C1",
+        "D1",
+        "F1",
+        "G1",
+        "H1",
+        "A2",
+        "B2",
+        "D2",
+        "E2",
+        "F2",
+        "H2",
+        "I2",
+        "B3",
+        "C3",
+        "D3",
+        "F3",
+        "G3",
+        "H3",
+        "A4",
+        "B4",
+        "D4",
+        "E4",
+        "F4",
+        "H4",
+        "I4",
+        "B5",
+        "C5",
+        "D5",
+        "F5",
+        "G5",
+        "H5",
+        "A6",
+        "B6",
+        "D6",
+        "E6",
+        "F6",
+        "H6",
+        "I6",
+        "B7",
+        "C7",
+        "D7",
+        "F7",
+        "G7",
+        "H7",
+        "A8",
+        "B8",
+        "D8",
+        "E8",
+        "F8",
+        "H8",
+        "I8",
+        "B9",
+        "C9",
+        "D9",
+        "F9",
+        "G9",
+        "H9"
+      ],
+      "white": [],
+      "toMove": "white",
+      "ply": 80,
+      "passStreak": 0,
+      "historyProjection": {
+        "blockAllBlackPlacements": true
+      },
+      "expected": {
+        "outcome": "draw",
+        "reason": "two-forced-passes",
+        "automaticActions": 2
+      }
+    },
+    {
+      "id": "P03",
+      "basis": "projection",
+      "category": "normalization",
+      "rulesPatch": {
+        "confirmation": "two-actions"
+      },
+      "black": [
+        "B1",
+        "C1",
+        "D1",
+        "F1",
+        "G1",
+        "H1",
+        "A2",
+        "B2",
+        "D2",
+        "E2",
+        "F2",
+        "H2",
+        "I2",
+        "B3",
+        "C3",
+        "D3",
+        "F3",
+        "G3",
+        "H3",
+        "A4",
+        "B4",
+        "D4",
+        "E4",
+        "F4",
+        "H4",
+        "I4",
+        "B5",
+        "C5",
+        "D5",
+        "F5",
+        "G5",
+        "H5",
+        "A6",
+        "B6",
+        "D6",
+        "E6",
+        "F6",
+        "H6",
+        "I6",
+        "B7",
+        "C7",
+        "D7",
+        "F7",
+        "G7",
+        "H7",
+        "A8",
+        "B8",
+        "D8",
+        "E8",
+        "F8",
+        "H8",
+        "I8",
+        "B9",
+        "C9",
+        "D9",
+        "F9",
+        "G9",
+        "H9",
+        "E5"
+      ],
+      "white": [],
+      "toMove": "black",
+      "ply": 10,
+      "passStreak": 1,
+      "claims": [
+        {
+          "color": "black",
+          "formedAt": 9,
+          "dueAt": 11
+        }
+      ],
+      "historyProjection": {
+        "blockAllBlackPlacements": true
+      },
+      "expected": {
+        "outcome": "black-win",
+        "reason": "line",
+        "diagonalLine": true,
+        "automaticActions": 1
+      }
+    },
+    {
+      "id": "P04",
+      "basis": "projection",
+      "category": "normalization",
+      "rulesPatch": {
+        "blocked": "loss"
+      },
+      "black": [
+        "B1",
+        "C1",
+        "D1",
+        "F1",
+        "G1",
+        "H1",
+        "A2",
+        "B2",
+        "D2",
+        "E2",
+        "F2",
+        "H2",
+        "I2",
+        "B3",
+        "C3",
+        "D3",
+        "F3",
+        "G3",
+        "H3",
+        "A4",
+        "B4",
+        "D4",
+        "E4",
+        "F4",
+        "H4",
+        "I4",
+        "B5",
+        "C5",
+        "D5",
+        "F5",
+        "G5",
+        "H5",
+        "A6",
+        "B6",
+        "D6",
+        "E6",
+        "F6",
+        "H6",
+        "I6",
+        "B7",
+        "C7",
+        "D7",
+        "F7",
+        "G7",
+        "H7",
+        "A8",
+        "B8",
+        "D8",
+        "E8",
+        "F8",
+        "H8",
+        "I8",
+        "B9",
+        "C9",
+        "D9",
+        "F9",
+        "G9",
+        "H9"
+      ],
+      "white": [],
+      "toMove": "white",
+      "expected": {
+        "outcome": "black-win",
+        "reason": "blocked"
+      }
+    },
+    {
+      "id": "S01",
+      "basis": "reachable-sequence",
+      "category": "opening",
+      "actions": [
+        {
+          "kind": "place",
+          "actor": "A",
+          "point": "E5"
+        },
+        {
+          "kind": "place",
+          "actor": "A",
+          "point": "D5"
+        },
+        {
+          "kind": "place",
+          "actor": "A",
+          "point": "F5"
+        },
+        {
+          "kind": "choose-color",
+          "actor": "B",
+          "color": "black"
+        }
+      ],
+      "expected": {
+        "phase": "playing",
+        "toMove": "white",
+        "owners": {
+          "black": "B",
+          "white": "A"
+        },
+        "nextActor": "A",
+        "ply": 3,
+        "placements": 3,
+        "positionKeys": 4
+      }
+    },
+    {
+      "id": "S02",
+      "basis": "reachable-sequence",
+      "category": "opening",
+      "actions": [
+        {
+          "kind": "place",
+          "actor": "A",
+          "point": "E5"
+        },
+        {
+          "kind": "place",
+          "actor": "A",
+          "point": "D5"
+        },
+        {
+          "kind": "place",
+          "actor": "A",
+          "point": "F5"
+        },
+        {
+          "kind": "choose-color",
+          "actor": "B",
+          "color": "white"
+        }
+      ],
+      "expected": {
+        "phase": "playing",
+        "toMove": "white",
+        "owners": {
+          "black": "A",
+          "white": "B"
+        },
+        "nextActor": "B",
+        "ply": 3,
+        "placements": 3,
+        "positionKeys": 4
+      }
+    },
+    {
+      "id": "S03",
+      "basis": "reachable-sequence",
+      "category": "illegal-opening",
+      "prefixRef": "S01",
+      "prefixActionCount": 3,
+      "action": {
+        "kind": "choose-color",
+        "actor": "A",
+        "color": "white"
+      },
+      "expected": {
+        "error": "WRONG_ACTOR",
+        "unchanged": true
+      }
+    },
+    {
+      "id": "R01",
+      "basis": "workflow",
+      "category": "record",
+      "steps": [
+        "save and replay K01 prefix + first cycle move",
+        "compare board,phase,owners,ply,claims,captures,positions",
+        "undo and replay branch"
+      ],
+      "expected": {
+        "identicalReplay": true,
+        "oldBranchForgotten": true
+      }
+    },
+    {
+      "id": "R02",
+      "basis": "workflow",
+      "category": "record",
+      "inputs": [
+        {
+          "schemaVersion": 99
+        },
+        {
+          "rulesVersion": "99.0.0"
+        },
+        {
+          "actionPoint": 81
+        },
+        {
+          "unknownField": "unrecognized-rule"
+        },
+        {
+          "actionKind": "pass"
+        }
+      ],
+      "expected": {
+        "unsupportedVersions": "UNSUPPORTED_VERSION",
+        "invalidData": "INVALID_RECORD",
+        "noPartialLoad": true
+      }
+    },
+    {
+      "id": "H01",
+      "basis": "workflow",
+      "category": "session",
+      "steps": [
+        "start AI at match M revision 4 task X",
+        "undo -> same match revision 5, cancel X",
+        "result of X arrives",
+        "start new game N with revision 0",
+        "old M result arrives"
+      ],
+      "expected": {
+        "staleResultsCommitted": 0,
+        "revisionNeverReusedWithinMatch": true
+      }
+    }
+  ]
+}

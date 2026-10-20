@@ -1,0 +1,12 @@
+{
+  "dist/session/src/types.js": "01ae2a5b120382f9a648ced7ee8507493a134f216d100fc61600c6c9738235d2",
+  "dist/session/src/index.js": "3aee3f885fab2979c18276359c0113945f1dff09c25550631c7a27a4df56fea8",
+  "dist/session/src/session.js": "99285be9ecbcbe3c36f3715e4d6ff9345b6d71f0e9e567fa7ecf57409f13ec24",
+  "dist/core/src/types.js": "01ae2a5b120382f9a648ced7ee8507493a134f216d100fc61600c6c9738235d2",
+  "dist/core/src/claims.js": "abf1117269c49068c42865ab641e27b2fa98e39ae445a89e697f0787e591112b",
+  "dist/core/src/geometry.js": "4e4f4a9231631045654f2d79af8dd84f0c5611d6cd888a4ef08867e1928ee8a3",
+  "dist/core/src/engine.js": "e6971da50c80157a393003f735670c0a07c7b44c9d6e0550a61bbf0d8c16602d",
+  "dist/core/src/result.js": "6c43738756f937abee5af928d7a6c4bed283ec98de239147530945f75015fa7a",
+  "dist/core/src/index.js": "2c44dffe8b2a3c124a89b3cbc7374630ff51c59a08065f4069f0d9f352a214c7",
+  "dist/core/src/rules.js": "070ae153e1db6a4f29d8ed4e1ba0328941ed188c956144816f47c905796d8fa9"
+}

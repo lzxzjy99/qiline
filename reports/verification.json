@@ -1,0 +1,76 @@
+{
+  "stage": "P2",
+  "status": "core-complete",
+  "rulesVersion": "2.1.0-r3",
+  "rules_sha256": "0f219b23af7bcf54cb95adc7879742cfb40f3ac9250a06e2d0505d297cd0bb49",
+  "node_groups": [
+    {
+      "file": "reports/node-test.tap",
+      "tests": 472,
+      "passed": 472,
+      "failed": 0
+    },
+    {
+      "file": "reports/session-final.tap",
+      "tests": 15,
+      "passed": 15,
+      "failed": 0
+    }
+  ],
+  "distinct_node_tests": 473,
+  "configuration_matrix": {
+    "rulesVersion": "2.1.0-r3",
+    "configurations": 448,
+    "checks": 8064,
+    "passed": 7680,
+    "notApplicable": 384,
+    "failed": 0
+  },
+  "geometry": {
+    "assignments": 19683,
+    "validBoards": 12675,
+    "moveProbes": 89926,
+    "disagreements": 0
+  },
+  "cross_validation": {
+    "rulesVersion": "2.1.0-r3",
+    "reference_sha256": "561c6cc6d5f10e214c4e9370924e04af614424641a0589b6a6d6a70da48e9573",
+    "statistics": {
+      "state_comparisons": 77816,
+      "accepted_commands": 70512,
+      "undo_checks": 1592,
+      "branch_redo_checks": 1592,
+      "illegal_atomicity_checks": 1554,
+      "legal_set_checks": 780,
+      "replay_checks": 1670,
+      "games": 896,
+      "terminated": 646,
+      "configurations": 448,
+      "truncated_at_120_commands": 250
+    },
+    "failure": null,
+    "elapsed_seconds": 149.156,
+    "scope": "Independent Python and TypeScript engines; all matches start empty; truncated games are not draws."
+  },
+  "runtime": "v24.19.0",
+  "architecture": {
+    "typescript_modules": 10,
+    "platform_or_clock_or_network_dependencies": 0
+  },
+  "platforms": {
+    "actual_browser": "not tested in P2",
+    "actual_windows": "blocked/not tested"
+  },
+  "source_sha256": {
+    "packages/core/src/claims.ts": "c8421d32a166d4c23000392ff919eb13924f6f8f5b62e38b3e005e24e70f8c2f",
+    "packages/core/src/engine.ts": "4ad8b8e9fdfe5310aac6a63e564e042874e6eb40d9843da0dfb6817c00cceeb7",
+    "packages/core/src/geometry.ts": "9fd86ad2cff216a44ca2a796b1509868f59db7f215c21f8889468dfde4a9dc66",
+    "packages/core/src/index.ts": "30c816485193570f862c903ed06396952a7beceb2ab3c68061b2ca4f687fa89b",
+    "packages/core/src/result.ts": "a86c5e77afb590c8a16028741ef8fdf9c9eb431083e8f3c76132b1cbe4df6ab2",
+    "packages/core/src/rules.ts": "fb6b58452239257b87bf4cf0154afc45ab35b823b646fb8f3081e750da8bce68",
+    "packages/core/src/types.ts": "19e0173538ccf59597e9fd705a48b460bc307c6037cabfba947cbe625388b1a1",
+    "packages/session/src/index.ts": "925bebed35869ae69f03e62e58c87f18b6c733071c9e5cb6fca7ef6299fe649b",
+    "packages/session/src/session.ts": "ce2fe875aca55f6e98843835bcffdf7a5ea8c468aaa4e6c82059cadd0c4ed75e",
+    "packages/session/src/types.ts": "4ae3aa26f4085e0ba20b9ae06653b0bfdef1c03480981628b0721933119fac7b"
+  }
+}

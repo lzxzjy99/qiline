@@ -1,5 +1,5 @@
-import {DEFAULT_RULES, activePlayer, formatPoint} from '../core/src/index.js';
-import {createSession} from '../session/src/index.js';
+import {DEFAULT_RULES, activePlayer, formatPoint, undoLastCommand} from '../core/src/index.js';
+import {GameSession, createSession} from '../session/src/index.js';
 import {playModeOf, restorePlayableSession} from '../ai/src/index.js';
 
 export const SAVE_KEY = 'qiline.web.r3.current';
@@ -38,6 +38,54 @@ export function practiceView(session) {
   const aiActor=['A','B'].find(p=>session.state.controllers[p].kind==='ai');
   const {level,seed}=session.state.controllers[aiActor];
   return {humanActor:other(aiActor),aiActor,level,seed};
+}
+/** The host wraps this synchronous pair in one AI controller change(). */
+export function undoPracticePair(session) {
+  if (!(session instanceof GameSession)) return fail('INVALID_SESSION');
+  const state=session.state;
+  if (state.closed) return fail('CLOSED');
+  if (state.match.state.outcome) return fail('FINISHED');
+  if (state.competitive) return fail('COMPETITIVE');
+  const practice=practiceView(session);
+  if (!practice) return fail('AI_MODE_UNSUPPORTED');
+  if (state.consent) return fail('CONSENT_REQUIRED');
+  if (state.paused) return fail('PAUSED');
+  const count=Math.min(2,state.match.accepted.length);
+  if (!count) return fail('NO_UNDO');
+  // Validate both complete-command parents before changing Session authority.
+  // Choices have no ply cost; derived automatic passes belong to their command.
+  let preview=state.match;
+  for (let i=0;i<count;i++) {
+    const result=undoLastCommand(preview);
+    if (!result.ok) return result;
+    preview=result.value;
+  }
+  let result;
+  for (let i=0;i<count;i++) {
+    result=session.requestUndo(practice.humanActor);
+    if (!result.ok) return result;
+  }
+  return result;
+}
+/** One visible consent response authorizes the displayed two-command undo. */
+export function respondUndoPair(session,responder,id,accept) {
+  if (!(session instanceof GameSession)) return fail('INVALID_SESSION');
+  const state=session.state,consent=state.consent;
+  if (state.closed || !consent || consent.kind!=='undo' || consent.id!==id || consent.revision!==state.revision
+    || accept!==true || state.controllers[responder]?.kind!=='human' || responder===consent.requester)
+    return session.respondToConsent(responder,id,accept);
+  const count=Math.min(2,state.match.accepted.length);
+  let preview=state.match;
+  for (let i=0;i<count;i++) {
+    const result=undoLastCommand(preview);
+    if (!result.ok) return result;
+    preview=result.value;
+  }
+  let result=session.respondToConsent(responder,id,true);
+  if (!result.ok || count<2) return result;
+  result=session.requestUndo(consent.requester);
+  if (!result.ok) return result;
+  return session.respondToConsent(responder,session.state.consent.id,true);
 }
 export function parseWebSave(input, matchId) {
   let raw;

@@ -1,0 +1,508 @@
+TAP version 13
+# Subtest: recovery wrapper retains raw validation and never creates a PvP Worker
+ok 1 - recovery wrapper retains raw validation and never creates a PvP Worker
+  ---
+  duration_ms: 2.1953
+  type: 'test'
+  ...
+# Subtest: recoverable failure waits 250/750 ms then exposes final failure after three fresh Workers
+ok 2 - recoverable failure waits 250/750 ms then exposes final failure after three fresh Workers
+  ---
+  duration_ms: 1.4953
+  type: 'test'
+  ...
+# Subtest: hard search timeout and malformed replies are eligible for bounded recovery without a game action
+ok 3 - hard search timeout and malformed replies are eligible for bounded recovery without a game action
+  ---
+  duration_ms: 1.2258
+  type: 'test'
+  ...
+# Subtest: repeated start and sync preserve one scheduled recovery and the visible retrying state
+ok 4 - repeated start and sync preserve one scheduled recovery and the visible retrying state
+  ---
+  duration_ms: 0.5045
+  type: 'test'
+  ...
+# Subtest: startup failure retries on the same position and can recover with a fresh successful Worker
+ok 5 - startup failure retries on the same position and can recover with a fresh successful Worker
+  ---
+  duration_ms: 1.6865
+  type: 'test'
+  ...
+# Subtest: cancelled replies and legal-protocol illegal moves never enter automatic recovery
+ok 6 - cancelled replies and legal-protocol illegal moves never enter automatic recovery
+  ---
+  duration_ms: 1.6981
+  type: 'test'
+  ...
+# Subtest: manual retry resets the recovery budget only when explicitly requested
+ok 7 - manual retry resets the recovery budget only when explicitly requested
+  ---
+  duration_ms: 0.4295
+  type: 'test'
+  ...
+# Subtest: successful position change restores both retries for the next consecutive AI command
+ok 8 - successful position change restores both retries for the next consecutive AI command
+  ---
+  duration_ms: 0.471
+  type: 'test'
+  ...
+# Subtest: pause and close during retry delay cancel timers and cannot be revived by old retry callbacks
+ok 9 - pause and close during retry delay cancel timers and cannot be revived by old retry callbacks
+  ---
+  duration_ms: 0.5296
+  type: 'test'
+  ...
+# Subtest: explicit resume from waiting is immediate and starts a new bounded recovery budget
+ok 10 - explicit resume from waiting is immediate and starts a new bounded recovery budget
+  ---
+  duration_ms: 0.5044
+  type: 'test'
+  ...
+# Subtest: failed commands preserve pending recovery while successful commands cancel it
+ok 11 - failed commands preserve pending recovery while successful commands cancel it
+  ---
+  duration_ms: 1.5359
+  type: 'test'
+  ...
+# Subtest: new match or loaded save discards the old retry even when a retained timeout callback fires
+ok 12 - new match or loaded save discards the old retry even when a retained timeout callback fires
+  ---
+  duration_ms: 0.8694
+  type: 'test'
+  ...
+# Subtest: direct external position change, close or terminal command prevents a delayed retry
+ok 13 - direct external position change, close or terminal command prevents a delayed retry
+  ---
+  duration_ms: 0.454
+  type: 'test'
+  ...
+# Subtest: pause or close reentered by a retrying observer cannot leave a retry timer or resurrect work
+ok 14 - pause or close reentered by a retrying observer cannot leave a retry timer or resurrect work
+  ---
+  duration_ms: 0.3098
+  type: 'test'
+  ...
+# Subtest: manual retry reentered by retrying observer uses one fresh task and cancels the delayed attempt
+ok 15 - manual retry reentered by retrying observer uses one fresh task and cancels the delayed attempt
+  ---
+  duration_ms: 0.2788
+  type: 'test'
+  ...
+# Subtest: observer presentation failure does not block recovery or legal submission
+ok 16 - observer presentation failure does not block recovery or legal submission
+  ---
+  duration_ms: 0.2625
+  type: 'test'
+  ...
+# Subtest: a Worker termination failure cannot accumulate replacement Workers through automatic recovery
+ok 17 - a Worker termination failure cannot accumulate replacement Workers through automatic recovery
+  ---
+  duration_ms: 0.1421
+  type: 'test'
+  ...
+# Subtest: invalid retry policies are rejected before any task, timer or Worker is created
+ok 18 - invalid retry policies are rejected before any task, timer or Worker is created
+  ---
+  duration_ms: 0.1581
+  type: 'test'
+  ...
+# Subtest: a failed recovery timer allocation exposes final failure and never loops on sync
+ok 19 - a failed recovery timer allocation exposes final failure and never loops on sync
+  ---
+  duration_ms: 0.1589
+  type: 'test'
+  ...
+# Subtest: a successful no-op command cancels waiting recovery without consuming another attempt
+ok 20 - a successful no-op command cancels waiting recovery without consuming another attempt
+  ---
+  duration_ms: 0.1308
+  type: 'test'
+  ...
+# Subtest: product settings react to radio changes and practice assigns the selected identity/difficulty
+ok 21 - product settings react to radio changes and practice assigns the selected identity/difficulty
+  ---
+  duration_ms: 8.0357
+  type: 'test'
+  ...
+# Subtest: AI A places three opening stones with fresh workers, saves each once and cannot be impersonated
+ok 22 - AI A places three opening stones with fresh workers, saves each once and cannot be impersonated
+  ---
+  duration_ms: 8.4106
+  type: 'test'
+  ...
+# Subtest: AI B choosing white continues with B; pair undo removes the choice and preceding opening stone
+ok 23 - AI B choosing white continues with B; pair undo removes the choice and preceding opening stone
+  ---
+  duration_ms: 7.5617
+  type: 'test'
+  ...
+# Subtest: pause stops AI while bounded automatic recovery retries twice before a visible final failure
+ok 24 - pause stops AI while bounded automatic recovery retries twice before a visible final failure
+  ---
+  duration_ms: 6.0017
+  type: 'test'
+  ...
+# Subtest: thinking status updates preserve the board DOM and a successful move resets recovery allowance
+ok 25 - thinking status updates preserve the board DOM and a successful move resets recovery allowance
+  ---
+  duration_ms: 6.151
+  type: 'test'
+  ...
+# Subtest: one practice undo removes a complete human/AI pair and restores the human turn
+ok 26 - one practice undo removes a complete human/AI pair and restores the human turn
+  ---
+  duration_ms: 5.5646
+  type: 'test'
+  ...
+# Subtest: undoing two AI opening stones stops the next worker and holds until explicit continue
+ok 27 - undoing two AI opening stones stops the next worker and holds until explicit continue
+  ---
+  duration_ms: 5.4617
+  type: 'test'
+  ...
+# Subtest: pending automatic recovery is cancelled by pause, replacement, load, conflict, undo and page close
+ok 28 - pending automatic recovery is cancelled by pause, replacement, load, conflict, undo and page close
+  ---
+  duration_ms: 24.1203
+  type: 'test'
+  ...
+# Subtest: a final AI failure can be escaped with a one-command fallback undo without restarting AI
+ok 29 - a final AI failure can be escaped with a one-command fallback undo without restarting AI
+  ---
+  duration_ms: 4.489
+  type: 'test'
+  ...
+# Subtest: startup AI restore waits for continue for either real-player identity
+ok 30 - startup AI restore waits for continue for either real-player identity
+  ---
+  duration_ms: 6.6869
+  type: 'test'
+  ...
+# Subtest: new game replacement closes old work and ignores old results; live PvP remains protected
+ok 31 - new game replacement closes old work and ignores old results; live PvP remains protected
+  ---
+  duration_ms: 3.3099
+  type: 'test'
+  ...
+# Subtest: import replacement terminates old work and restored AI waits before creating a fresh task
+ok 32 - import replacement terminates old work and restored AI waits before creating a fresh task
+  ---
+  duration_ms: 3.623
+  type: 'test'
+  ...
+# Subtest: storage events stop current AI work, preserve newer bytes and leave export available
+ok 33 - storage events stop current AI work, preserve newer bytes and leave export available
+  ---
+  duration_ms: 8.9118
+  type: 'test'
+  ...
+# Subtest: a missed storage event is detected at readiness and stops work before sending a request
+ok 34 - a missed storage event is detected at readiness and stops work before sending a request
+  ---
+  duration_ms: 3.1226
+  type: 'test'
+  ...
+# Subtest: invalid imports preserve active work and paused opening cancellation never briefly resumes AI
+ok 35 - invalid imports preserve active work and paused opening cancellation never briefly resumes AI
+  ---
+  duration_ms: 3.5627
+  type: 'test'
+  ...
+# Subtest: practice resignation on an AI turn closes work using the human identity
+ok 36 - practice resignation on an AI turn closes work using the human identity
+  ---
+  duration_ms: 4.6135
+  type: 'test'
+  ...
+# Subtest: one local two-player consent removes two commands and never creates AI work
+ok 37 - one local two-player consent removes two commands and never creates AI work
+  ---
+  duration_ms: 3.5845
+  type: 'test'
+  ...
+# Subtest: pagehide closes active work and a cached pageshow requests a fresh document
+ok 38 - pagehide closes active work and a cached pageshow requests a fresh document
+  ---
+  duration_ms: 2.8345
+  type: 'test'
+  ...
+# Subtest: practice A/easy/swap3=false keeps identity through play and wrapped restore
+ok 39 - practice A/easy/swap3=false keeps identity through play and wrapped restore
+  ---
+  duration_ms: 3.3714
+  type: 'test'
+  ...
+# Subtest: practice A/easy/swap3=true keeps identity through play and wrapped restore
+ok 40 - practice A/easy/swap3=true keeps identity through play and wrapped restore
+  ---
+  duration_ms: 0.7572
+  type: 'test'
+  ...
+# Subtest: practice A/standard/swap3=false keeps identity through play and wrapped restore
+ok 41 - practice A/standard/swap3=false keeps identity through play and wrapped restore
+  ---
+  duration_ms: 0.385
+  type: 'test'
+  ...
+# Subtest: practice A/standard/swap3=true keeps identity through play and wrapped restore
+ok 42 - practice A/standard/swap3=true keeps identity through play and wrapped restore
+  ---
+  duration_ms: 0.8737
+  type: 'test'
+  ...
+# Subtest: practice B/easy/swap3=false keeps identity through play and wrapped restore
+ok 43 - practice B/easy/swap3=false keeps identity through play and wrapped restore
+  ---
+  duration_ms: 0.3591
+  type: 'test'
+  ...
+# Subtest: practice B/easy/swap3=true keeps identity through play and wrapped restore
+ok 44 - practice B/easy/swap3=true keeps identity through play and wrapped restore
+  ---
+  duration_ms: 0.5886
+  type: 'test'
+  ...
+# Subtest: practice B/standard/swap3=false keeps identity through play and wrapped restore
+ok 45 - practice B/standard/swap3=false keeps identity through play and wrapped restore
+  ---
+  duration_ms: 0.728
+  type: 'test'
+  ...
+# Subtest: practice B/standard/swap3=true keeps identity through play and wrapped restore
+ok 46 - practice B/standard/swap3=true keeps identity through play and wrapped restore
+  ---
+  duration_ms: 0.7484
+  type: 'test'
+  ...
+# Subtest: new-game adapter keeps dual-human and competitive dual-human games available
+ok 47 - new-game adapter keeps dual-human and competitive dual-human games available
+  ---
+  duration_ms: 0.2357
+  type: 'test'
+  ...
+# Subtest: bare practice SessionSave has names mapped to human identity rather than color
+ok 48 - bare practice SessionSave has names mapped to human identity rather than color
+  ---
+  duration_ms: 0.199
+  type: 'test'
+  ...
+# Subtest: raw MatchRecord discards AI settings and restores as two humans
+ok 49 - raw MatchRecord discards AI settings and restores as two humans
+  ---
+  duration_ms: 0.3115
+  type: 'test'
+  ...
+# Subtest: restoring during AI calculation removes runtime authority and paused status
+ok 50 - restoring during AI calculation removes runtime authority and paused status
+  ---
+  duration_ms: 0.6386
+  type: 'test'
+  ...
+# Subtest: legacy web wrapper keeps human names and A/B mapping while accepting valid AI save
+ok 51 - legacy web wrapper keeps human names and A/B mapping while accepting valid AI save
+  ---
+  duration_ms: 0.1135
+  type: 'test'
+  ...
+# Subtest: competitive AI and double-AI saves are rejected in bare and wrapped formats
+ok 52 - competitive AI and double-AI saves are rejected in bare and wrapped formats
+  ---
+  duration_ms: 0.1508
+  type: 'test'
+  ...
+# Subtest: practice options and damaged controllers are validated before creating a playable game
+ok 53 - practice options and damaged controllers are validated before creating a playable game
+  ---
+  duration_ms: 0.1737
+  type: 'test'
+  ...
+# Subtest: practice errors describe paused or unsupported state with a recovery action
+ok 54 - practice errors describe paused or unsupported state with a recovery action
+  ---
+  duration_ms: 0.1391
+  type: 'test'
+  ...
+# Subtest: direct session API still rejects non-human submission in practice mode
+ok 55 - direct session API still rejects non-human submission in practice mode
+  ---
+  duration_ms: 0.09
+  type: 'test'
+  ...
+# Subtest: paired practice undo by fixed human A withdraws both explicit commands
+ok 56 - paired practice undo by fixed human A withdraws both explicit commands
+  ---
+  duration_ms: 0.2703
+  type: 'test'
+  ...
+# Subtest: paired practice undo by human A withdraws the only available command
+ok 57 - paired practice undo by human A withdraws the only available command
+  ---
+  duration_ms: 0.1418
+  type: 'test'
+  ...
+# Subtest: paired practice undo by human A counts zero-ply color choice as one command
+ok 58 - paired practice undo by human A counts zero-ply color choice as one command
+  ---
+  duration_ms: 0.3824
+  type: 'test'
+  ...
+# Subtest: paired practice undo by fixed human B withdraws both explicit commands
+ok 59 - paired practice undo by fixed human B withdraws both explicit commands
+  ---
+  duration_ms: 0.124
+  type: 'test'
+  ...
+# Subtest: paired practice undo by human B withdraws the only available command
+ok 60 - paired practice undo by human B withdraws the only available command
+  ---
+  duration_ms: 0.0848
+  type: 'test'
+  ...
+# Subtest: paired practice undo by human B counts zero-ply color choice as one command
+ok 61 - paired practice undo by human B counts zero-ply color choice as one command
+  ---
+  duration_ms: 0.2605
+  type: 'test'
+  ...
+# Subtest: paired undo restores complete claim clocks, PSK history and record rather than editing the board
+ok 62 - paired undo restores complete claim clocks, PSK history and record rather than editing the board
+  ---
+  duration_ms: 0.8622
+  type: 'test'
+  ...
+# Subtest: one host change observes only final paired undo, terminates search and holds a restored AI turn
+ok 63 - one host change observes only final paired undo, terminates search and holds a restored AI turn
+  ---
+  duration_ms: 1.3469
+  type: 'test'
+  ...
+# Subtest: paired undo returning to human leaves play available without requiring AI continue
+ok 64 - paired undo returning to human leaves play available without requiring AI continue
+  ---
+  duration_ms: 0.2194
+  type: 'test'
+  ...
+# Subtest: paired undo gates fail without partially changing history or runtime state
+ok 65 - paired undo gates fail without partially changing history or runtime state
+  ---
+  duration_ms: 0.304
+  type: 'test'
+  ...
+# Subtest: one consent response from B authorizes exactly two PvP commands
+ok 66 - one consent response from B authorizes exactly two PvP commands
+  ---
+  duration_ms: 0.3467
+  type: 'test'
+  ...
+# Subtest: one consent response from A authorizes exactly two PvP commands
+ok 67 - one consent response from A authorizes exactly two PvP commands
+  ---
+  duration_ms: 0.3501
+  type: 'test'
+  ...
+# Subtest: consented paired PvP undo falls back to the only available command
+ok 68 - consented paired PvP undo falls back to the only available command
+  ---
+  duration_ms: 0.1318
+  type: 'test'
+  ...
+# Subtest: declining paired undo keeps both commands and clears the original consent normally
+ok 69 - declining paired undo keeps both commands and clears the original consent normally
+  ---
+  duration_ms: 0.1186
+  type: 'test'
+  ...
+# Subtest: paired consent refuses wrong responder and stale or competing requests without changing state
+ok 70 - paired consent refuses wrong responder and stale or competing requests without changing state
+  ---
+  duration_ms: 0.1819
+  type: 'test'
+  ...
+# Subtest: consented pair counts zero-ply color choice and restores its complete previous opening state
+ok 71 - consented pair counts zero-ply color choice and restores its complete previous opening state
+  ---
+  duration_ms: 0.3158
+  type: 'test'
+  ...
+# Subtest: opening cancellation consent delegates unchanged and never triggers a second undo
+ok 72 - opening cancellation consent delegates unchanged and never triggers a second undo
+  ---
+  duration_ms: 0.2273
+  type: 'test'
+  ...
+# Subtest: paired response preserves closed, no-consent and invalid-session rejection contracts
+ok 73 - paired response preserves closed, no-consent and invalid-session rejection contracts
+  ---
+  duration_ms: 0.1165
+  type: 'test'
+  ...
+# Subtest: web save restores real player mapping, configuration, actions and candidates
+ok 74 - web save restores real player mapping, configuration, actions and candidates
+  ---
+  duration_ms: 3.8928
+  type: 'test'
+  ...
+# Subtest: session and core record imports work without a web wrapper
+ok 75 - session and core record imports work without a web wrapper
+  ---
+  duration_ms: 0.3438
+  type: 'test'
+  ...
+# Subtest: malformed, unknown and tampered imports are rejected; practice saves restore
+ok 76 - malformed, unknown and tampered imports are rejected; practice saves restore
+  ---
+  duration_ms: 0.4104
+  type: 'test'
+  ...
+# Subtest: live human games cannot be replaced through session newGame or loadSave
+ok 77 - live human games cannot be replaced through session newGame or loadSave
+  ---
+  duration_ms: 0.2649
+  type: 'test'
+  ...
+# Subtest: pending consent and permissions never resume from a saved snapshot
+ok 78 - pending consent and permissions never resume from a saved snapshot
+  ---
+  duration_ms: 0.2791
+  type: 'test'
+  ...
+# Subtest: safe storage preserves previous save before accepting the next
+ok 79 - safe storage preserves previous save before accepting the next
+  ---
+  duration_ms: 0.1241
+  type: 'test'
+  ...
+# Subtest: two tabs reject stale writes and preserve both snapshots
+ok 80 - two tabs reject stale writes and preserve both snapshots
+  ---
+  duration_ms: 0.0611
+  type: 'test'
+  ...
+# Subtest: quota and denied access do not replace the current save
+ok 81 - quota and denied access do not replace the current save
+  ---
+  duration_ms: 0.0911
+  type: 'test'
+  ...
+# Subtest: backup failure leaves current data untouched; failed current write retains old bytes
+ok 82 - backup failure leaves current data untouched; failed current write retains old bytes
+  ---
+  duration_ms: 0.482
+  type: 'test'
+  ...
+# Subtest: each color and every fixed-five candidate remains in the presentation
+ok 83 - each color and every fixed-five candidate remains in the presentation
+  ---
+  duration_ms: 0.9619
+  type: 'test'
+  ...
+1..83
+# tests 83
+# suites 0
+# pass 83
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 240.1806

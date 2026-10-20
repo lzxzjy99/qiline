@@ -41,11 +41,11 @@ test('offline protocol serves actual UTF-8 assets and MIME without external requ
 });
 test('offline protocol serves the real module Worker, scheduler and browser adapter as local JavaScript',async()=>{
  const handle=createAssetHandler(path.resolve('dist'));
- for(const file of ['ai/src/worker-entry.js','ai/src/worker-controller.js','ui/ai-host.mjs']){
+ for(const file of ['ai/src/worker-entry.js','ai/src/worker-controller.js','ui/ai-host.mjs','ui/ai-recovery.mjs']){
   const response=await handle({method:'GET',url:`qiline://game/${file}`});
   assert.equal(response.status,200);assert.match(response.headers.get('Content-Type'),/javascript/);
   assert.match(response.headers.get('Content-Security-Policy'),/worker-src 'self'/);
-  assert.match(await response.text(),/runSearch|createAIWorkerController|class AIWorkerController/);
+  assert.match(await response.text(),/runSearch|createAIWorkerController|createRecoveringAI|class AIWorkerController/);
  }
 });
 test('missing, malformed, unsupported and failed reads do not expose arbitrary files',async()=>{

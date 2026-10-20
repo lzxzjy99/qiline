@@ -1,6 +1,6 @@
 import {DEFAULT_RULES, activePlayer, formatPoint, inspectGroup} from './core/src/index.js';
 import {createBrowserAI} from './ui/ai-host.mjs';
-import {SAVE_KEY, SafeStorage, createGameSession, practiceView, makeWebSave, parseWebSave, phaseView, rulesView, claimsView, playerName, colorName, other, errorText} from './ui/model.mjs';
+import {SAVE_KEY, SafeStorage, createGameSession, practiceView, undoPracticePair, respondUndoPair, makeWebSave, parseWebSave, phaseView, rulesView, claimsView, playerName, colorName, other, errorText} from './ui/model.mjs';
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -31,12 +31,17 @@ const replaceable=()=>!live()||!!practice();
 function attachAI(restored=false) {
   aiState=null;observedMatch=match();restoreHold=restored&&!!practice()&&!!live();
   if(!practice())return;
-  const owned=session;
+  const owned=session;let announcedError=null;
   const result=createBrowserAI(owned,state=>{
     if(session!==owned||state.status==='closed')return;
     aiState=state;
     if(!storage.check()&&!owned.state.paused){ai?.pause();render();return;}
     const current=match();
+    if(state.status==='failed'&&!storage.conflict&&state.error!==announcedError){
+      announcedError=state.error;notice(`AI 未能完成这一手${state.retryAttempt?'，已自动重试 '+state.retryAttempt+' 次':''}。${errorText(state.error??{code:'AI_WORKER_FAILED'})}`,true);
+    }else if(!['failed','retrying'].includes(state.status))announcedError=null;
+    // The Worker clock is already running: update only cheap status text before posting.
+    if(current===observedMatch&&['starting','thinking','retrying'].includes(state.status)){renderAI();return;}
     if(current!==observedMatch){
       flash=current.state.placements>observedMatch.state.placements?[...current.state.lastCaptured]:[];
       observedMatch=current;selected=null;save();
@@ -44,7 +49,7 @@ function attachAI(restored=false) {
     }
     render();
   });
-  if(!result.ok){session.setPaused(true);aiState={status:'failed',error:result.error};return;}
+  if(!result.ok){session.setPaused(true);aiState={status:'failed',error:result.error};notice(errorText(result.error),true);return;}
   ai=result.value;
   if(restoreHold||storage.conflict)ai.pause();else ai.start();
   aiState=ai.state;
@@ -150,8 +155,9 @@ function render() {
   }).join('');
   const ended=!m||!!s.outcome,paused=!!session?.state.paused;
   $('pass-btn').disabled=ended||paused||!humanTurn()||s?.phase.kind!=='playing'||storage.conflict;
-  $('undo-btn').disabled=ended||paused||!!session?.state.competitive||!m?.accepted.length||storage.conflict;
-  $('undo-btn').textContent=p?'悔棋一步':'申请悔棋';
+  const recoveryPaused=p&&['retrying','failed'].includes(aiState?.status);
+  $('undo-btn').disabled=ended||(paused&&!recoveryPaused)||!!session?.state.competitive||!m?.accepted.length||storage.conflict;
+  $('undo-btn').textContent=p?'悔棋两手':'申请悔棋';
   $('end-btn').disabled=ended||storage.conflict;
   $('end-btn').textContent=s?.phase.kind==='opening'||s?.phase.kind==='choose'?'双方取消开局':'认输';
   $('end-btn').textContent=p&&['opening','choose'].includes(s?.phase.kind)?'取消开局':$('end-btn').textContent;
@@ -160,13 +166,13 @@ function render() {
   const cs=m?claimsView(m):[];
   $('mobile-status').hidden=ended;
   const nearest=['black','white'].flatMap(color=>{const group=cs.filter(c=>c.color===color);return group.length?[`${colorName(color)} ${group.length}组 · 最近 ${Math.min(...group.map(c=>c.remaining))} 手`]:[];});
-  $('mobile-status').textContent=`${paused?(p?'人机对局已暂停':'等待对方同意'):p&&!humanTurn()?'AI 正在思考 · '+v.title:inspect?'查气模式 · '+v.title:v.title}${nearest.length?' ｜ '+nearest.join(' / '):''}`;
+  $('mobile-status').textContent=`${p&&aiState?.status==='failed'?'AI 未能行棋，请点击“重试 AI”':p&&aiState?.status==='retrying'?'AI 正在思考':paused?(p?'人机对局已暂停':'等待对方同意'):p&&!humanTurn()?'AI 正在思考 · '+v.title:inspect?'查气模式 · '+v.title:v.title}${nearest.length?' ｜ '+nearest.join(' / '):''}`;
   $('claim-count').textContent=cs.length?`${cs.length} 组候选`:'暂无候选';
   $('claims').innerHTML=cs.length?cs.map(c=>`<details class="claim-item"><summary><i class="stone-dot ${c.color}"></i><span>${colorName(c.color)}${m.rules.claimMode==='fixed-five'?'五子组':'持续成五'}</span><strong>${c.remaining} <small>手</small></strong></summary><p>${esc(c.coordinates||'只要同色五连持续存在，允许换线接替。')}<br>形成于第 ${c.formedAt} 手 · 确认点 ${c.dueAt} 手</p></details>`).join(''):`<p class="empty-claims">${s?.outcome?'本局已结束，可查看棋盘或开始新局。':`成五只是开始。<br>${m?.rules.confirmationDelay===0?'本局成五即胜。':`保持连线满 ${m?.rules.confirmationDelay??4} 手，才确认胜利。`}`}</p>`;
   const c=session?.state.consent;
   $('consent-panel').hidden=!c;
   if(c) {
-    const responder=other(c.requester),text=c.kind==='undo'?'撤回最后一条操作':'取消本次开局';
+    const responder=other(c.requester),text=c.kind==='undo'?`撤回最后 ${Math.min(2,m.accepted.length)} 手操作`:'取消本次开局';
     $('consent-panel').innerHTML=`<h3>请${esc(playerName(meta,responder))}回应</h3><p>${esc(playerName(meta,c.requester))}申请${text}。请将设备交给对方。</p><div class="consent-buttons"><button data-consent="no">不同意</button><button data-consent="yes">同意${c.kind==='undo'?'悔棋':'取消'}</button></div>`;
   }
   renderRecords();renderWarning();
@@ -174,10 +180,10 @@ function render() {
 function renderAI(){
   const p=practice(),ended=!live();$('ai-panel').hidden=!p||ended;
   if(!p||ended)return;
-  const status=aiState?.status??'failed',paused=!!session.state.paused,failed=status==='failed';
-  $('ai-indicator').classList.toggle('thinking',['starting','thinking'].includes(status));
-  $('ai-status').textContent=storage.conflict?'存档冲突，AI 已停止':restoreHold?'存档已恢复，等待继续':failed?'AI 暂未完成本手':aiState?.hold==='undo'?'已悔棋，等待继续 AI 回合':paused?'对局已暂停':status==='starting'?'AI 准备中':status==='thinking'?'AI 正在思考':humanTurn()?'轮到你了':'AI 即将行动';
-  $('ai-detail').textContent=failed?errorText(aiState?.error??{code:'AI_WORKER_FAILED'}):restoreHold?'已恢复角色、难度和完整棋谱；继续后再开始新的思考。':aiState?.hold==='undo'?'撤回最后一条操作，AI 不会立即重下。':paused?'棋盘已锁定，查气和导出仍可使用。':'AI 在本机运行。思考时可查气、暂停或结束对局。';
+  const status=aiState?.status??'failed',recovering=status==='retrying',paused=!!session.state.paused&&!recovering,failed=status==='failed';
+  $('ai-indicator').classList.toggle('thinking',['starting','thinking','retrying'].includes(status));
+  $('ai-status').textContent=storage.conflict?'存档冲突，AI 已停止':restoreHold?'存档已恢复，等待继续':failed?'AI 未能完成这一手':aiState?.hold==='undo'?'已悔棋，等待继续 AI 回合':paused?'对局已暂停':status==='starting'?'AI 准备中':status==='thinking'||recovering?'AI 正在思考':humanTurn()?'轮到你了':'AI 即将行动';
+  $('ai-detail').textContent=failed?`${aiState?.retryAttempt?'已自动重试 '+aiState.retryAttempt+' 次。':''}${errorText(aiState?.error??{code:'AI_WORKER_FAILED'})}`:restoreHold?'已恢复角色、难度和完整棋谱；继续后再开始新的思考。':aiState?.hold==='undo'?'已撤回操作，AI 不会立即重下。':paused?'棋盘已锁定，查气和导出仍可使用。':'AI 在本机运行。思考时可查气、暂停或结束对局。';
   $('ai-pause').hidden=paused||failed;$('ai-resume').hidden=!paused||failed;$('ai-retry').hidden=!failed;
   for(const id of ['ai-pause','ai-resume','ai-retry'])$(id).disabled=storage.conflict||!ai;
 }
@@ -218,7 +224,7 @@ $('pass-btn').onclick=()=>{const actor=activePlayer(match());operate(()=>session
 for(const color of ['black','white'])$('choose-'+color).onclick=()=>operate(()=>session.submit('B',{kind:'choose-color',actor:'B',color}));
 $('consent-panel').addEventListener('click',e=>{
   const b=e.target.closest('[data-consent]'),c=session?.state.consent;if(!b||!c)return;
-  operate(()=>session.respondToConsent(other(c.requester),c.id,b.dataset.consent==='yes'),b.dataset.consent==='yes'?'对方已同意，操作已完成。':'对方未同意，继续原局。');
+  operate(()=>respondUndoPair(session,other(c.requester),c.id,b.dataset.consent==='yes'),b.dataset.consent==='yes'?'对方已同意，操作已完成。':'对方未同意，继续原局。');
 });
 
 function actorDialog(kind) {
@@ -226,7 +232,13 @@ function actorDialog(kind) {
   const opening=['opening','choose'].includes(m.state.phase.kind),request=kind==='undo'?'申请悔棋':opening?'申请取消开局':'认输';
   const p=practice();
   if(p){
-    if(kind==='undo'){operate(()=>session.requestUndo(p.humanActor),'已撤回最后一条操作及其自动动作。');return;}
+    if(kind==='undo'){
+      const count=Math.min(2,m.accepted.length);
+      operate(()=>{
+        if(session.state.paused&&['retrying','failed'].includes(aiState?.status))session.setPaused(false);
+        return undoPracticePair(session);
+      },`已撤回最后 ${count} 手操作及其自动动作。`);return;
+    }
     $('action-title').textContent=opening?'确认取消开局？':'确认认输？';
     $('action-body').innerHTML=`<p class="dialog-note">${opening?'取消本次人机开局，不记胜负。':'确认后 AI 获胜，本局结束。'}</p><div class="confirm-resign"><button id="practice-back">继续查看</button><button id="practice-end" class="danger">${opening?'取消开局':'确认认输'}</button></div>`;
     $('practice-back').onclick=()=>$('action-dialog').close();
@@ -241,7 +253,7 @@ function actorDialog(kind) {
     $('action-dialog').showModal();return;
   }
   $('action-title').textContent=`谁要${request}？`;
-  $('action-body').innerHTML=`<p class="dialog-note">${kind==='undo'?'每次撤回最后一条玩家命令，须另一位玩家同意。':opening?'双方同意后取消，不记胜负。':'任一方都可随时认输，确认后本局结束。'}</p><div class="actor-options">${['A','B'].map(p=>`<button data-actor="${p}">${esc(playerName(meta,p))}（${p}）${request}</button>`).join('')}</div>`;
+  $('action-body').innerHTML=`<p class="dialog-note">${kind==='undo'?'每次撤回最后两手操作及其自动动作；不足两手则撤回一手，须另一位玩家同意。':opening?'双方同意后取消，不记胜负。':'任一方都可随时认输，确认后本局结束。'}</p><div class="actor-options">${['A','B'].map(p=>`<button data-actor="${p}">${esc(playerName(meta,p))}（${p}）${request}</button>`).join('')}</div>`;
   $('action-body').onclick=e=>{
     const actor=e.target.closest('[data-actor]')?.dataset.actor;if(!actor)return;
     if(kind==='undo'||opening) {

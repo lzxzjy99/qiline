@@ -1,0 +1,316 @@
+TAP version 13
+# Subtest: recovery wrapper retains raw validation and never creates a PvP Worker
+ok 1 - recovery wrapper retains raw validation and never creates a PvP Worker
+  ---
+  duration_ms: 1.3784
+  type: 'test'
+  ...
+# Subtest: recoverable failure waits 250/750 ms then exposes final failure after three fresh Workers
+ok 2 - recoverable failure waits 250/750 ms then exposes final failure after three fresh Workers
+  ---
+  duration_ms: 0.9428
+  type: 'test'
+  ...
+# Subtest: hard search timeout and malformed replies are eligible for bounded recovery without a game action
+ok 3 - hard search timeout and malformed replies are eligible for bounded recovery without a game action
+  ---
+  duration_ms: 0.9657
+  type: 'test'
+  ...
+# Subtest: repeated start and sync preserve one scheduled recovery and the visible retrying state
+ok 4 - repeated start and sync preserve one scheduled recovery and the visible retrying state
+  ---
+  duration_ms: 0.3303
+  type: 'test'
+  ...
+# Subtest: startup failure retries on the same position and can recover with a fresh successful Worker
+ok 5 - startup failure retries on the same position and can recover with a fresh successful Worker
+  ---
+  duration_ms: 1.028
+  type: 'test'
+  ...
+# Subtest: cancelled replies and legal-protocol illegal moves never enter automatic recovery
+ok 6 - cancelled replies and legal-protocol illegal moves never enter automatic recovery
+  ---
+  duration_ms: 0.6596
+  type: 'test'
+  ...
+# Subtest: manual retry resets the recovery budget only when explicitly requested
+ok 7 - manual retry resets the recovery budget only when explicitly requested
+  ---
+  duration_ms: 0.3196
+  type: 'test'
+  ...
+# Subtest: successful position change restores both retries for the next consecutive AI command
+ok 8 - successful position change restores both retries for the next consecutive AI command
+  ---
+  duration_ms: 0.2867
+  type: 'test'
+  ...
+# Subtest: pause and close during retry delay cancel timers and cannot be revived by old retry callbacks
+ok 9 - pause and close during retry delay cancel timers and cannot be revived by old retry callbacks
+  ---
+  duration_ms: 0.2857
+  type: 'test'
+  ...
+# Subtest: explicit resume from waiting is immediate and starts a new bounded recovery budget
+ok 10 - explicit resume from waiting is immediate and starts a new bounded recovery budget
+  ---
+  duration_ms: 0.3213
+  type: 'test'
+  ...
+# Subtest: failed commands preserve pending recovery while successful commands cancel it
+ok 11 - failed commands preserve pending recovery while successful commands cancel it
+  ---
+  duration_ms: 0.765
+  type: 'test'
+  ...
+# Subtest: new match or loaded save discards the old retry even when a retained timeout callback fires
+ok 12 - new match or loaded save discards the old retry even when a retained timeout callback fires
+  ---
+  duration_ms: 0.499
+  type: 'test'
+  ...
+# Subtest: direct external position change, close or terminal command prevents a delayed retry
+ok 13 - direct external position change, close or terminal command prevents a delayed retry
+  ---
+  duration_ms: 0.3143
+  type: 'test'
+  ...
+# Subtest: pause or close reentered by a retrying observer cannot leave a retry timer or resurrect work
+ok 14 - pause or close reentered by a retrying observer cannot leave a retry timer or resurrect work
+  ---
+  duration_ms: 0.3157
+  type: 'test'
+  ...
+# Subtest: manual retry reentered by retrying observer uses one fresh task and cancels the delayed attempt
+ok 15 - manual retry reentered by retrying observer uses one fresh task and cancels the delayed attempt
+  ---
+  duration_ms: 0.4367
+  type: 'test'
+  ...
+# Subtest: observer presentation failure does not block recovery or legal submission
+ok 16 - observer presentation failure does not block recovery or legal submission
+  ---
+  duration_ms: 0.4038
+  type: 'test'
+  ...
+# Subtest: a Worker termination failure cannot accumulate replacement Workers through automatic recovery
+ok 17 - a Worker termination failure cannot accumulate replacement Workers through automatic recovery
+  ---
+  duration_ms: 0.1662
+  type: 'test'
+  ...
+# Subtest: invalid retry policies are rejected before any task, timer or Worker is created
+ok 18 - invalid retry policies are rejected before any task, timer or Worker is created
+  ---
+  duration_ms: 0.152
+  type: 'test'
+  ...
+# Subtest: a failed recovery timer allocation exposes final failure and never loops on sync
+ok 19 - a failed recovery timer allocation exposes final failure and never loops on sync
+  ---
+  duration_ms: 0.1528
+  type: 'test'
+  ...
+# Subtest: a successful no-op command cancels waiting recovery without consuming another attempt
+ok 20 - a successful no-op command cancels waiting recovery without consuming another attempt
+  ---
+  duration_ms: 0.1296
+  type: 'test'
+  ...
+# Subtest: PE verification catches the truncated-runtime failure before a Windows package is shipped
+ok 21 - PE verification catches the truncated-runtime failure before a Windows package is shipped
+  ---
+  duration_ms: 2.2594
+  type: 'test'
+  ...
+# Subtest: desktop origin accepts only the packaged game and refuses credentials or remote hosts
+ok 22 - desktop origin accepts only the packaged game and refuses credentials or remote hosts
+  ---
+  duration_ms: 0.188
+  type: 'test'
+  ...
+# Subtest: asset containment works with Chinese and spaces on both POSIX and Windows paths
+ok 23 - asset containment works with Chinese and spaces on both POSIX and Windows paths
+  ---
+  duration_ms: 0.4382
+  type: 'test'
+  ...
+# Subtest: offline protocol serves actual UTF-8 assets and MIME without external requests
+ok 24 - offline protocol serves actual UTF-8 assets and MIME without external requests
+  ---
+  duration_ms: 19.3831
+  type: 'test'
+  ...
+# Subtest: offline protocol serves the real module Worker, scheduler and browser adapter as local JavaScript
+ok 25 - offline protocol serves the real module Worker, scheduler and browser adapter as local JavaScript
+  ---
+  duration_ms: 1.8263
+  type: 'test'
+  ...
+# Subtest: missing, malformed, unsupported and failed reads do not expose arbitrary files
+ok 26 - missing, malformed, unsupported and failed reads do not expose arbitrary files
+  ---
+  duration_ms: 0.5856
+  type: 'test'
+  ...
+# Subtest: renderer keeps sandbox, isolation and web security without Node access
+ok 27 - renderer keeps sandbox, isolation and web security without Node access
+  ---
+  duration_ms: 0.0654
+  type: 'test'
+  ...
+# Subtest: trusted JSON export opens the native save dialog with overwrite confirmation
+ok 28 - trusted JSON export opens the native save dialog with overwrite confirmation
+  ---
+  duration_ms: 0.4686
+  type: 'test'
+  ...
+# Subtest: exports reject external initiators, non-blob sources, other windows and non-JSON files
+ok 29 - exports reject external initiators, non-blob sources, other windows and non-JSON files
+  ---
+  duration_ms: 0.1343
+  type: 'test'
+  ...
+# Subtest: interrupted export reports failure; cancelling or finishing does not raise a false error
+ok 30 - interrupted export reports failure; cancelling or finishing does not raise a false error
+  ---
+  duration_ms: 0.1839
+  type: 'test'
+  ...
+# Subtest: closing defaults to continuing the game and prevents duplicate prompts
+ok 31 - closing defaults to continuing the game and prevents duplicate prompts
+  ---
+  duration_ms: 0.1897
+  type: 'test'
+  ...
+# Subtest: approved close flushes storage then closes without asking again
+ok 32 - approved close flushes storage then closes without asking again
+  ---
+  duration_ms: 0.0691
+  type: 'test'
+  ...
+# Subtest: failed close dialog leaves the game open and permits retry
+ok 33 - failed close dialog leaves the game open and permits retry
+  ---
+  duration_ms: 0.0624
+  type: 'test'
+  ...
+# Subtest: product settings react to radio changes and practice assigns the selected identity/difficulty
+ok 34 - product settings react to radio changes and practice assigns the selected identity/difficulty
+  ---
+  duration_ms: 7.5905
+  type: 'test'
+  ...
+# Subtest: AI A places three opening stones with fresh workers, saves each once and cannot be impersonated
+ok 35 - AI A places three opening stones with fresh workers, saves each once and cannot be impersonated
+  ---
+  duration_ms: 8.0891
+  type: 'test'
+  ...
+# Subtest: AI B choosing white continues with B; pair undo removes the choice and preceding opening stone
+ok 36 - AI B choosing white continues with B; pair undo removes the choice and preceding opening stone
+  ---
+  duration_ms: 7.4279
+  type: 'test'
+  ...
+# Subtest: pause stops AI while bounded automatic recovery retries twice before a visible final failure
+ok 37 - pause stops AI while bounded automatic recovery retries twice before a visible final failure
+  ---
+  duration_ms: 5.226
+  type: 'test'
+  ...
+# Subtest: thinking status updates preserve the board DOM and a successful move resets recovery allowance
+ok 38 - thinking status updates preserve the board DOM and a successful move resets recovery allowance
+  ---
+  duration_ms: 5.3069
+  type: 'test'
+  ...
+# Subtest: one practice undo removes a complete human/AI pair and restores the human turn
+ok 39 - one practice undo removes a complete human/AI pair and restores the human turn
+  ---
+  duration_ms: 4.4696
+  type: 'test'
+  ...
+# Subtest: undoing two AI opening stones stops the next worker and holds until explicit continue
+ok 40 - undoing two AI opening stones stops the next worker and holds until explicit continue
+  ---
+  duration_ms: 4.7487
+  type: 'test'
+  ...
+# Subtest: pending automatic recovery is cancelled by pause, replacement, load, conflict, undo and page close
+ok 41 - pending automatic recovery is cancelled by pause, replacement, load, conflict, undo and page close
+  ---
+  duration_ms: 24.6955
+  type: 'test'
+  ...
+# Subtest: a final AI failure can be escaped with a one-command fallback undo without restarting AI
+ok 42 - a final AI failure can be escaped with a one-command fallback undo without restarting AI
+  ---
+  duration_ms: 4.8335
+  type: 'test'
+  ...
+# Subtest: startup AI restore waits for continue for either real-player identity
+ok 43 - startup AI restore waits for continue for either real-player identity
+  ---
+  duration_ms: 6.8534
+  type: 'test'
+  ...
+# Subtest: new game replacement closes old work and ignores old results; live PvP remains protected
+ok 44 - new game replacement closes old work and ignores old results; live PvP remains protected
+  ---
+  duration_ms: 3.4326
+  type: 'test'
+  ...
+# Subtest: import replacement terminates old work and restored AI waits before creating a fresh task
+ok 45 - import replacement terminates old work and restored AI waits before creating a fresh task
+  ---
+  duration_ms: 3.9801
+  type: 'test'
+  ...
+# Subtest: storage events stop current AI work, preserve newer bytes and leave export available
+ok 46 - storage events stop current AI work, preserve newer bytes and leave export available
+  ---
+  duration_ms: 8.545
+  type: 'test'
+  ...
+# Subtest: a missed storage event is detected at readiness and stops work before sending a request
+ok 47 - a missed storage event is detected at readiness and stops work before sending a request
+  ---
+  duration_ms: 3.1948
+  type: 'test'
+  ...
+# Subtest: invalid imports preserve active work and paused opening cancellation never briefly resumes AI
+ok 48 - invalid imports preserve active work and paused opening cancellation never briefly resumes AI
+  ---
+  duration_ms: 3.5709
+  type: 'test'
+  ...
+# Subtest: practice resignation on an AI turn closes work using the human identity
+ok 49 - practice resignation on an AI turn closes work using the human identity
+  ---
+  duration_ms: 4.4058
+  type: 'test'
+  ...
+# Subtest: one local two-player consent removes two commands and never creates AI work
+ok 50 - one local two-player consent removes two commands and never creates AI work
+  ---
+  duration_ms: 3.7199
+  type: 'test'
+  ...
+# Subtest: pagehide closes active work and a cached pageshow requests a fresh document
+ok 51 - pagehide closes active work and a cached pageshow requests a fresh document
+  ---
+  duration_ms: 3.9633
+  type: 'test'
+  ...
+1..51
+# tests 51
+# suites 0
+# pass 51
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 256.6802

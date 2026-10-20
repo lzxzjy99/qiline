@@ -1,0 +1,52 @@
+{
+  "stage": "P5.5.1",
+  "verifiedOn": "2026-10-21",
+  "timezone": "Asia/Shanghai",
+  "baselineCommit": "8d799a658096504c6e08037f76547215540db0dd",
+  "rulesVersion": "2.1.0-r3",
+  "changes": {
+    "productUndo": "last two explicit commands and their derived automatic passes, or one if only one exists; includes zero-ply color choice",
+    "practiceUndo": "one synchronous controller change; no intermediate AI scheduling; returning to AI holds for explicit continue",
+    "pvpUndo": "one responder confirmation authorizes both commands; original Session consent validation retained",
+    "automaticRecovery": {"maxRetries": 2, "delaysMs": [250,750], "retryableErrors": ["AI_WORKER_FAILED","AI_NO_RESULT","INVALID_AI_REPLY"], "newWorkerAndRequestEachTime": true},
+    "recoveryPresentation": "thinking during automatic retries; final failure shows notice, side-panel detail, mobile status and manual retry",
+    "productWorkerLimits": {"startupMs": 5000, "graceMs": 1000},
+    "rendering": "starting/thinking/retrying status updates do not rebuild an unchanged board before the Worker request is posted",
+    "frozenCoreSessionAndAISearchUnchanged": true
+  },
+  "failureInvestigation": {
+    "ordinaryPositionSearches": {"samples": 54, "legalResults": 54, "boards": [9,19]},
+    "coldModuleWorkers": {"samples": 12, "legalResults": 12, "startupMsRange": [20.9,25.3]},
+    "identifiedTimingRisk": "P5.4 arms the deadline before invoking onState; the old product callback synchronously rebuilt the board before sending the search request, consuming the 250 ms grace on slow or delayed hosts",
+    "longRecordBoundary": "a 19x19 record with 10008 legal commands reproduced easy-budget exhaustion during replay before finding a candidate; bounded retries do not guarantee recovery from deterministic budget exhaustion"
+  },
+  "validation": {
+    "build": "passed",
+    "javascriptModulesParsed": 28,
+    "localImports": "passed",
+    "coreSessionSourceAndCompiledHashes": "unchanged",
+    "aiSourceCompiledDistHashes": "unchanged and matched reports/ai-contract-sha256.json",
+    "node": {"tests": 7854, "passed": 7854, "failed": 0, "skipped": 0, "cancelled": 0},
+    "focused": {"recoveryTests": 20, "productEntryTests": 18, "modelTests": 35, "includedInTotal": true},
+    "browserProduct": [
+      "actual module Worker answers a human placement; a single undo returns two moves to an empty board and human turn",
+      "PvP requests explicitly show two commands; one responder confirmation returns two moves to zero",
+      "application console error/warning log empty"
+    ],
+    "browserFaultInjection": [
+      "two injected Worker-constructor failures followed by a real module Worker: exactly three factory calls, two retries and one committed action",
+      "three injected startup failures: final failed state, three factory calls and zero game actions",
+      "pause from retrying observer: one factory call, paused state and zero game actions"
+    ],
+    "faultInjectionScope": "independent temporary local QA page using the production recovery module, real browser timers, injected constructor errors and the actual module Worker for successful recovery; QA is excluded from the deployment archive",
+    "commands": ["npm run build","npm run check","node --test --test-reporter=tap tests/*.test.mjs","git diff --check"],
+    "tap": "reports/p5-5-1-tests.tap",
+    "productScreenshot": "reports/ai-p5-5-1-browser.png",
+    "recoveryScreenshot": "reports/ai-p5-5-1-recovery-browser.png"
+  },
+  "remainingLimits": [
+    "Automatic recovery is bounded and cannot guarantee a move on every hardware, heavily throttled tab or extremely long record.",
+    "Illegal game commands, explicit cancellations and non-retryable protocol errors are never converted into a move, pass or resignation.",
+    "No new Windows package or physical-device acceptance was performed."
+  ]
+}

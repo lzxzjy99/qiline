@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import {activePlayer,exportRecord,DEFAULT_RULES} from '../dist/core/src/index.js';
 import {createSession} from '../dist/session/src/index.js';
 import {beginAITurn} from '../dist/ai/src/index.js';
-import {createGameSession,practiceView,makeWebSave,parseWebSave,playerName,errorText} from '../dist/ui/model.mjs';
+import {createGameSession,practiceView,undoPracticePair,respondUndoPair,makeWebSave,parseWebSave,playerName,errorText} from '../dist/ui/model.mjs';
 import {command,reply} from './ai-helpers.mjs';
+import {workerFixture} from './worker-fakes.mjs';
+import {fingerprint} from './helpers.mjs';
 
 const value=result=>{assert.equal(result.ok,true,JSON.stringify(result));return result.value;};
 const create=(patch={})=>value(createGameSession({matchId:'practice',mode:'practice',...patch}));
@@ -137,4 +139,179 @@ test('direct session API still rejects non-human submission in practice mode',()
   // The shared UI adapter does not introduce an alternative rules or permission path.
   const pvp=value(createSession({matchId:'existing'}));
   assert.equal(value(parseWebSave(pvp.exportSave(),'old')).mode,'pvp');
+});
+
+for(const humanActor of ['A','B']) {
+  test(`paired practice undo by fixed human ${humanActor} withdraws both explicit commands`,()=>{
+    const session=create({humanActor,rules:{...DEFAULT_RULES,swap3:false}}),initial=session.state.match;
+    act(session,'place',{point:40});act(session,'place',{point:0});
+    const before=session.state;
+    assert.equal(value(undoPracticePair(session)),session.state);
+    assert.equal(session.state.match,initial);assert.equal(session.state.match.accepted.length,0);
+    assert.equal(session.state.revision,before.revision+2);
+    assert.equal(session.state.consent,null);assert.equal(session.state.task,null);
+    assert.equal(practiceView(session).humanActor,humanActor);
+  });
+
+  test(`paired practice undo by human ${humanActor} withdraws the only available command`,()=>{
+    const session=create({humanActor}),initial=session.state.match;
+    act(session,'place',{point:40});const before=session.state;
+    value(undoPracticePair(session));assert.equal(session.state.match,initial);
+    assert.equal(session.state.revision,before.revision+1);
+  });
+
+  test(`paired practice undo by human ${humanActor} counts zero-ply color choice as one command`,()=>{
+    const session=create({humanActor});
+    for(const point of [30,40,50])act(session,'place',{point});
+    const choose=session.state.match;
+    act(session,'choose-color',{color:'white'});act(session,'place',{point:0});
+    const before=session.state.match;
+    value(undoPracticePair(session));assert.equal(session.state.match,choose);
+    assert.equal(before.accepted.length-session.state.match.accepted.length,2);
+    assert.equal(before.state.ply-session.state.match.state.ply,1);
+    assert.equal(session.state.match.state.phase.kind,'choose');
+    act(session,'choose-color',{color:'black'});
+    value(undoPracticePair(session));
+    assert.equal(session.state.match.accepted.length,2);
+    assert.equal(session.state.match.state.phase.kind,'opening');
+    assert.equal(session.state.match.state.phase.placed,2);
+  });
+}
+
+test('paired undo restores complete claim clocks, PSK history and record rather than editing the board',()=>{
+  const session=create({rules:{...DEFAULT_RULES,swap3:false}});
+  for(const point of [0,8,10,26,20,44,30,62,40])act(session,'place',{point});
+  const before=fingerprint(session.state.match),claims=session.state.match.state.claims;
+  assert.equal(claims.length,1);
+  act(session,'place',{point:80});act(session,'place',{point:1});
+  value(undoPracticePair(session));
+  assert.equal(fingerprint(session.state.match),before);
+  assert.deepEqual(session.state.match.state.claims,claims);
+  assert.equal(value(parseWebSave(session.exportSave(),'after-undo')).session.state.match.state.ply,9);
+});
+
+test('one host change observes only final paired undo, terminates search and holds a restored AI turn',()=>{
+  const session=create({humanActor:'A',rules:{...DEFAULT_RULES,swap3:false}});
+  act(session,'place',{point:40});const target=session.state.match;
+  act(session,'place',{point:0});act(session,'place',{point:1});
+  const fixture=workerFixture(session),worker=fixture.start();worker.ready();
+  const oldCallback=worker.onmessage,late=worker.result({kind:'place',actor:'B',point:2});
+  const observed=[];fixture.clock.observer=()=>observed.push(session.state.match.accepted.length);
+  value(fixture.driver.change(()=>undoPracticePair(session)));
+  assert.equal(session.state.match,target);assert.equal(worker.terminated,1);
+  assert.equal(session.state.task,null);assert.equal(session.state.paused,true);
+  assert.equal(fixture.driver.state.hold,'undo');assert.equal(fixture.clock.timers.size,0);
+  assert.deepEqual(observed,[1],'host never observes or schedules from the first intermediate undo');
+  oldCallback({data:late});fixture.clock.tick(1000);
+  assert.equal(session.state.match,target);assert.equal(fixture.clock.workers.length,1);
+  fixture.driver.close();
+});
+
+test('paired undo returning to human leaves play available without requiring AI continue',()=>{
+  const session=create({humanActor:'A',rules:{...DEFAULT_RULES,swap3:false}});
+  act(session,'place',{point:40});act(session,'place',{point:0});
+  const fixture=workerFixture(session);fixture.start();
+  value(fixture.driver.change(()=>undoPracticePair(session)));
+  assert.equal(activePlayer(session.state.match),'A');assert.equal(session.state.paused,false);
+  assert.equal(fixture.driver.state.hold,null);assert.equal(fixture.clock.workers.length,0);
+  assert.equal(fixture.clock.timers.size,0);fixture.driver.close();
+});
+
+test('paired undo gates fail without partially changing history or runtime state',()=>{
+  const check=(session,code)=>{
+    const before=session.state;
+    const result=undoPracticePair(session);
+    assert.equal(result.ok,false);assert.equal(result.error.code,code);
+    assert.equal(session.state,before);
+  };
+  check(create(),'NO_UNDO');
+  const paused=create();act(paused,'place',{point:40});value(paused.setPaused(true));check(paused,'PAUSED');
+  const closed=create();act(closed,'place',{point:40});closed.close();check(closed,'CLOSED');
+  const finished=create({rules:{...DEFAULT_RULES,swap3:false}});
+  value(finished.submit('A',{kind:'resign',actor:'A'}));check(finished,'FINISHED');
+  const pvp=value(createGameSession({matchId:'pvp'}));
+  value(pvp.submit('A',{kind:'place',actor:'A',point:40}));check(pvp,'AI_MODE_UNSUPPORTED');
+  for(const competitive of [false,true]) {
+    const session=value(createSession({matchId:'unsupported',competitive,controllers:{
+      A:{kind:'ai',level:'easy',seed:1},B:competitive?{kind:'human'}:{kind:'ai',level:'standard',seed:2}
+    }}));
+    check(session,competitive?'COMPETITIVE':'AI_MODE_UNSUPPORTED');
+  }
+  for(const invalid of [null,{}, {state:create().state}])assert.equal(undoPracticePair(invalid).error.code,'INVALID_SESSION');
+});
+
+const dual=(rules={})=>value(createGameSession({matchId:'dual',rules:{...DEFAULT_RULES,swap3:false,...rules}}));
+const request=(session,actor='A')=>{value(session.requestUndo(actor));return session.state.consent;};
+
+for(const requester of ['A','B']) {
+  test(`one consent response from ${requester==='A'?'B':'A'} authorizes exactly two PvP commands`,()=>{
+    const session=dual();act(session,'place',{point:40});const target=session.state.match;
+    act(session,'place',{point:0});act(session,'place',{point:1});
+    const consent=request(session,requester),responder=requester==='A'?'B':'A';
+    assert.equal(session.state.match.accepted.length,3);
+    assert.equal(value(respondUndoPair(session,responder,consent.id,true)),session.state);
+    assert.equal(session.state.match,target);assert.equal(session.state.match.accepted.length,1);
+    assert.equal(session.state.consent,null);assert.equal(session.state.paused,false);
+  });
+}
+
+test('consented paired PvP undo falls back to the only available command',()=>{
+  const session=dual(),target=session.state.match;act(session,'place',{point:40});
+  const consent=request(session);
+  value(respondUndoPair(session,'B',consent.id,true));
+  assert.equal(session.state.match,target);assert.equal(session.state.consent,null);assert.equal(session.state.paused,false);
+});
+
+test('declining paired undo keeps both commands and clears the original consent normally',()=>{
+  const session=dual();act(session,'place',{point:40});act(session,'place',{point:0});
+  const target=session.state.match,consent=request(session);
+  value(respondUndoPair(session,'B',consent.id,false));
+  assert.equal(session.state.match,target);assert.equal(session.state.match.accepted.length,2);
+  assert.equal(session.state.consent,null);assert.equal(session.state.paused,false);
+});
+
+test('paired consent refuses wrong responder and stale or competing requests without changing state',()=>{
+  const session=dual();act(session,'place',{point:40});act(session,'place',{point:0});
+  const old=request(session),original=session.state;
+  for(const [responder,id,accept,code] of [['A',old.id,true,'WRONG_ACTOR'],['C',old.id,true,'WRONG_ACTOR'],
+    ['B','wrong',true,'STALE_REQUEST'],['B',old.id,'yes','WRONG_ACTOR']]) {
+    const result=respondUndoPair(session,responder,id,accept);
+    assert.equal(result.ok,false);assert.equal(result.error.code,code);assert.equal(session.state,original);
+  }
+  value(respondUndoPair(session,'B',old.id,false));
+  const competing=request(session,'B'),pending=session.state;
+  assert.notEqual(competing.id,old.id);
+  assert.equal(respondUndoPair(session,'A',old.id,true).error.code,'STALE_REQUEST');
+  assert.equal(session.state,pending);assert.equal(session.state.consent,competing);
+  value(respondUndoPair(session,'A',competing.id,true));assert.equal(session.state.match.accepted.length,0);
+});
+
+test('consented pair counts zero-ply color choice and restores its complete previous opening state',()=>{
+  const session=dual({swap3:true});act(session,'place',{point:30});act(session,'place',{point:40});
+  const target=session.state.match;
+  act(session,'place',{point:50});act(session,'choose-color',{color:'white'});
+  const before=session.state.match,consent=request(session);
+  value(respondUndoPair(session,'B',consent.id,true));
+  assert.equal(session.state.match,target);
+  assert.equal(before.accepted.length-session.state.match.accepted.length,2);
+  assert.equal(before.state.ply-session.state.match.state.ply,1);
+  assert.equal(session.state.match.state.phase.kind,'opening');assert.equal(session.state.match.state.phase.placed,2);
+});
+
+test('opening cancellation consent delegates unchanged and never triggers a second undo',()=>{
+  for(const accept of [false,true]) {
+    const session=dual({swap3:true});act(session,'place',{point:40});
+    const target=session.state.match;value(session.requestCancelOpening('A'));const consent=session.state.consent;
+    value(respondUndoPair(session,'B',consent.id,accept));
+    assert.equal(session.state.consent,null);
+    if(accept){assert.equal(session.state.match.state.outcome.kind,'cancelled');assert.equal(session.state.match.accepted.length,2);}
+    else assert.equal(session.state.match,target);
+  }
+});
+
+test('paired response preserves closed, no-consent and invalid-session rejection contracts',()=>{
+  assert.equal(respondUndoPair(null,'B','x',true).error.code,'INVALID_SESSION');
+  const session=dual();assert.equal(respondUndoPair(session,'B','x',true).error.code,'STALE_REQUEST');
+  act(session,'place',{point:40});const consent=request(session);session.close();const before=session.state;
+  assert.equal(respondUndoPair(session,'B',consent.id,true).error.code,'CLOSED');assert.equal(session.state,before);
 });

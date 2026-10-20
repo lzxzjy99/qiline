@@ -19,12 +19,12 @@ class Surface {
   constructor(document,id=''){
     this.document=document;this.id=id;this.dataset={};this.listeners=new Map();this.attributes=new Map();
     this.hidden=false;this.disabled=false;this.open=false;this.value='';this.checked=false;this.children=[];
-    this.style={setProperty(){}};this.classList={toggle(){}};this._html='';this._text='';this.cells=[];
+    this.style={setProperty(){}};this.classList={toggle(){}};this._html='';this._text='';this.cells=[];this.htmlWrites=0;
   }
   set textContent(value){this._text=String(value);this.children=[];}
   get textContent(){return this._text;}
   set innerHTML(value){
-    this._html=String(value);this.cells=[];
+    this._html=String(value);this.cells=[];this.htmlWrites++;
     for(const m of this._html.matchAll(/\bid="([^"]+)"/g))this.document.add(m[1]);
     if(this.id==='board')for(const m of this._html.matchAll(/<button\b([^>]*\bdata-point="(\d+)"[^>]*)>/g)){
       const cell=new Surface(this.document);cell.dataset.point=m[2];cell.parent=this;
@@ -168,34 +168,113 @@ test('AI A places three opening stones with fresh workers, saves each once and c
   }finally{h.close();}
 });
 
-test('AI B choosing white continues with B on a fresh worker and undo waits for explicit continue',async()=>{
+test('AI B choosing white continues with B; pair undo removes the choice and preceding opening stone',async()=>{
   const h=await harness();try{
     h.start({humanActor:'A'});for(const point of [40,42,44])h.point(point);h.clock.tick();
     const choice=h.workers.at(-1);answer(choice,{kind:'choose-color',actor:'B',color:'white'});
     assert.equal(h.$('choice-actions').hidden,true);assert.equal(h.$('pass-btn').disabled,true);h.clock.tick();
     const move=h.workers.at(-1);assert.notEqual(move,choice);move.ready();
     assert.equal(move.sent[0].context.actor,'B');const before=h.commits();h.$('undo-btn').click();
-    assert.equal(move.terminated,1);assert.equal(h.current().session.record.actions.length,3);
-    assert.match(h.$('ai-status').textContent,/悔棋.*继续/);assert.equal(h.$('ai-resume').hidden,false);
-    assert.equal(h.$('undo-btn').disabled,true);assert.equal(h.commits(),before+1);h.clock.tick(1000);
-    assert.equal(h.workers.length,2);h.$('ai-resume').click();h.clock.tick();
-    assert.equal(h.workers.length,3);answer(h.workers.at(-1),{kind:'choose-color',actor:'B',color:'white'});
+    assert.equal(move.terminated,1);assert.equal(h.current().session.record.actions.length,2);
+    assert.equal(h.$('ai-resume').hidden,true);assert.equal(h.$('board').cells.some(c=>!c.disabled),true);
+    assert.equal(h.commits(),before+1);h.clock.tick(1000);assert.equal(h.workers.length,2);
+    h.point(44);h.clock.tick();assert.equal(h.workers.length,3);
+    answer(h.workers.at(-1),{kind:'choose-color',actor:'B',color:'white'});
     h.clock.tick();answer(h.workers.at(-1),{kind:'place',actor:'B',point:0});
     assert.equal(h.$('pass-btn').disabled,false);assert.equal(h.current().session.record.actions.at(-1).actor,'B');
   }finally{h.close();}
 });
 
-test('pause and worker failure leave the game intact and expose continue or explicit retry',async()=>{
+test('pause stops AI while bounded automatic recovery retries twice before a visible final failure',async()=>{
   const h=await harness();try{
     h.start();h.clock.tick();const first=h.workers.at(-1);first.ready();const raw=h.data.get(SAVE_KEY),count=h.commits();
     h.$('ai-pause').click();assert.equal(first.terminated,1);assert.equal(h.commits(),count);
     assert.equal(h.$('ai-resume').hidden,false);assert.equal(h.$('board').cells.every(c=>c.disabled),true);
     h.$('ai-resume').click();h.clock.tick();const second=h.workers.at(-1);assert.notEqual(first,second);
-    second.onerror({});assert.equal(second.terminated,1);assert.equal(h.$('ai-retry').hidden,false);
-    assert.match(h.$('ai-detail').textContent,/重试/);assert.equal(h.data.get(SAVE_KEY),raw);h.clock.tick(10000);
-    assert.equal(h.workers.length,2,'a failed job must not silently retry');h.$('ai-retry').click();h.clock.tick();
-    const third=h.workers.at(-1);answer(third,{kind:'place',actor:'A',point:40});
+    second.ready();const precedingNotice=h.$('notice').textContent;second.onerror({});
+    assert.equal(second.terminated,1);assert.equal(h.$('ai-retry').hidden,true);
+    assert.match(h.$('ai-status').textContent,/思考|重试|尝试/);assert.equal(h.$('notice').textContent,precedingNotice);
+    assert.equal(h.data.get(SAVE_KEY),raw);h.clock.tick(249);assert.equal(h.workers.length,2);
+    h.clock.tick(1);const third=h.workers.at(-1);assert.equal(h.workers.length,3);
+    third.ready();assert.notEqual(third.sent[0].context.requestId,second.sent[0].context.requestId);third.onerror({});
+    h.clock.tick(749);assert.equal(h.workers.length,3);h.clock.tick(1);const fourth=h.workers.at(-1);
+    fourth.ready();fourth.onerror({});assert.equal(h.$('ai-retry').hidden,false);
+    assert.equal(h.$('notice').hidden,false);assert.match(h.$('notice').textContent,/重试|失败|未能|中断/);
+    assert.match(h.$('ai-detail').textContent,/重试/);h.clock.tick(10000);
+    assert.equal(h.workers.length,4,'three attempts exhaust one recovery cycle');assert.equal(h.data.get(SAVE_KEY),raw);
+    h.$('ai-retry').click();h.clock.tick();const fifth=h.workers.at(-1);answer(fifth,{kind:'place',actor:'A',point:40});
     assert.equal(h.current().session.record.actions.length,1);assert.equal(h.$('ai-retry').hidden,true);
+  }finally{h.close();}
+});
+
+test('thinking status updates preserve the board DOM and a successful move resets recovery allowance',async()=>{
+  const h=await harness();try{
+    h.start({humanActor:'A',swap3:false});h.point(40);h.clock.tick();const first=h.workers.at(-1);
+    const boardWrites=h.$('board').htmlWrites;first.ready();
+    assert.equal(h.$('board').htmlWrites,boardWrites,'ready must not reconstruct the board before sending the request');
+    assert.match(h.$('ai-status').textContent,/思考/);first.onerror({});h.clock.tick(250);
+    answer(h.workers.at(-1),{kind:'place',actor:'B',point:0});h.point(42);h.clock.tick();
+    const nextPosition=h.workers.at(-1);nextPosition.ready();nextPosition.onerror({});
+    assert.match(h.$('ai-status').textContent,/思考|重试|尝试/);assert.equal(h.$('ai-retry').hidden,true);
+    h.clock.tick(249);assert.equal(h.workers.length,3);h.clock.tick(1);assert.equal(h.workers.length,4);
+  }finally{h.close();}
+});
+
+test('one practice undo removes a complete human/AI pair and restores the human turn',async()=>{
+  const h=await harness();try{
+    h.start({humanActor:'A',swap3:false});h.point(40);h.clock.tick();
+    answer(h.workers.at(-1),{kind:'place',actor:'B',point:0});
+    assert.equal(h.current().session.record.actions.length,2);assert.match(h.$('undo-btn').textContent,/两手/);
+    const writes=h.commits();h.$('undo-btn').click();assert.equal(h.current().session.record.actions.length,0);
+    assert.equal(h.commits(),writes+1);assert.equal(h.$('board').cells.some(c=>!c.disabled),true);
+    assert.equal(h.$('ai-resume').hidden,true);h.clock.tick(10000);assert.equal(h.workers.length,1);
+  }finally{h.close();}
+});
+
+test('undoing two AI opening stones stops the next worker and holds until explicit continue',async()=>{
+  const h=await harness();try{
+    h.start();h.clock.tick();answer(h.workers.at(-1),{kind:'place',actor:'A',point:40});h.clock.tick();
+    answer(h.workers.at(-1),{kind:'place',actor:'A',point:42});h.clock.tick();const third=h.workers.at(-1);third.ready();
+    h.$('undo-btn').click();assert.equal(third.terminated,1);assert.equal(h.current().session.record.actions.length,0);
+    assert.match(h.$('ai-status').textContent,/悔棋.*继续/);assert.equal(h.$('ai-resume').hidden,false);
+    assert.equal(h.$('undo-btn').disabled,true);h.clock.tick(10000);assert.equal(h.workers.length,3);
+    h.$('ai-resume').click();h.clock.tick();assert.equal(h.workers.length,4);
+  }finally{h.close();}
+});
+
+test('pending automatic recovery is cancelled by pause, replacement, load, conflict, undo and page close',async()=>{
+  for(const action of ['pause','replace','load','conflict','undo','close']){
+    const h=await harness();try{
+      h.start({humanActor:'A',swap3:false});h.point(40);h.clock.tick();const worker=h.workers.at(-1);
+      worker.ready();const callback=worker.onmessage,reply=worker.result({kind:'place',actor:'B',point:0});worker.onerror({});
+      assert.match(h.$('ai-status').textContent,/思考|重试|尝试/);
+      if(action==='pause')h.$('ai-pause').click();
+      if(action==='replace'){h.start({humanActor:'A',swap3:false});h.$('replace-confirm').click();}
+      if(action==='load'){await h.import(savedPractice('B',{swap3:false}));h.$('replace-confirm').click();}
+      if(action==='conflict'){h.data.set(SAVE_KEY,'latest-tab');h.dispatch('storage',{key:SAVE_KEY,newValue:'latest-tab'});}
+      if(action==='undo'){
+        assert.equal(h.$('undo-btn').disabled,false,'undo is available while automatic recovery waits');
+        h.$('undo-btn').click();assert.equal(h.current().session.record.actions.length,0);
+        assert.equal(h.$('board').cells.some(c=>!c.disabled),true);
+      }
+      if(action==='close')h.dispatch('pagehide');
+      const raw=h.data.get(SAVE_KEY);callback({data:reply});h.clock.tick(10000);
+      assert.equal(h.workers.length,1,`${action} must cancel pending retries`);assert.equal(h.data.get(SAVE_KEY),raw);
+      if(action==='pause')assert.equal(h.$('ai-resume').hidden,false);
+    }finally{h.close();}
+  }
+});
+
+test('a final AI failure can be escaped with a one-command fallback undo without restarting AI',async()=>{
+  const h=await harness();try{
+    h.start({humanActor:'A',swap3:false});h.point(40);h.clock.tick();
+    for(const delay of [250,750,0]){
+      const worker=h.workers.at(-1);worker.ready();worker.onerror({});if(delay)h.clock.tick(delay);
+    }
+    assert.equal(h.$('ai-retry').hidden,false);assert.equal(h.$('undo-btn').disabled,false);
+    h.$('undo-btn').click();assert.equal(h.current().session.record.actions.length,0);
+    assert.equal(h.$('board').cells.some(c=>!c.disabled),true);assert.equal(h.$('ai-retry').hidden,true);
+    h.clock.tick(10000);assert.equal(h.workers.length,3);
   }finally{h.close();}
 });
 
@@ -282,9 +361,9 @@ test('practice resignation on an AI turn closes work using the human identity',a
   }finally{h.close();}
 });
 
-test('local two-player undo retains the original consent workflow and never creates AI work',async()=>{
+test('one local two-player consent removes two commands and never creates AI work',async()=>{
   const h=await harness();try{
-    h.start({mode:'pvp'});h.point(40);h.$('undo-btn').click();
+    h.start({mode:'pvp'});h.point(40);h.point(42);h.$('undo-btn').click();
     assert.match(h.$('action-body').innerHTML,/data-actor="A"/);
     const actor=new Surface(h.$('board').document);actor.dataset.actor='A';
     h.$('action-body').dispatch('click',{target:actor});assert.equal(h.$('consent-panel').hidden,false);

@@ -29,8 +29,8 @@ export function validateSearchBudget(raw) {
         return aiFail("INVALID_AI_BUDGET");
     return aiOK(freeze({ timeMs: raw.timeMs, maxNodes: raw.maxNodes, maxDepth: raw.maxDepth }));
 }
-/** Worker entry boundary: validate and replay the full record before searching. */
-export function prepareSearch(raw) {
+/** Header validation without replay; the timed runner validates each record command separately. */
+export function readSearchEnvelope(raw) {
     if (!plain(raw))
         return aiFail("INVALID_AI_REQUEST");
     if (raw.protocolVersion !== AI_PROTOCOL_VERSION)
@@ -44,16 +44,23 @@ export function prepareSearch(raw) {
     const budget = validateSearchBudget(raw.budget);
     if (!budget.ok)
         return budget;
-    const replay = validateRecord(raw.record);
+    return aiOK(Object.freeze({ protocolVersion: AI_PROTOCOL_VERSION, kind: "search", context, record: raw.record,
+        level: raw.level, seed: raw.seed, budget: budget.value }));
+}
+/** Untimed convenience boundary. The production search entry is runSearch, which includes replay in its budget. */
+export function prepareSearch(raw) {
+    const header = readSearchEnvelope(raw);
+    if (!header.ok)
+        return header;
+    const replay = validateRecord(header.value.record);
     if (!replay.ok)
         return aiFail("INVALID_AI_REQUEST", replay.error.path, replay.error.code);
     const { record, match } = replay.value;
     if (match.state.outcome)
         return aiFail("FINISHED");
-    if (activePlayer(match) !== context.actor)
+    if (activePlayer(match) !== header.value.context.actor)
         return aiFail("WRONG_ACTOR");
-    const request = freeze({ protocolVersion: AI_PROTOCOL_VERSION, kind: "search", context, record,
-        level: raw.level, seed: raw.seed, budget: budget.value });
+    const request = freeze({ ...header.value, record });
     return aiOK(Object.freeze({ request, match }));
 }
 /** Check a serialized reply against an already validated request. Legality is checked by Session on commit. */

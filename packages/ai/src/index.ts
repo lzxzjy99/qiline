@@ -6,3 +6,6 @@ export { playModeOf, restorePlayableSession } from "./save.js";
 export type { TacticalAnalysis, TacticalCandidate, TacticalSignals, TacticalReason } from "./tactics.js";
 export { listAIActions, analyzeTactics } from "./tactics.js";
 export { pickBasicAction, recommendBasicAction } from "./basic.js";
+export type { SearchHost, SearchOutcome, SearchStop } from "./search.js";
+export { SEARCH_POLICIES, runSearch } from "./search.js";
+export { evaluatePosition, WIN_VALUE } from "./evaluation.js";

@@ -10,7 +10,12 @@ export declare function aiFail(code: AIErrorCode, path?: string, cause?: ErrorCo
     readonly error: AIError;
 };
 export declare function validateSearchBudget(raw: unknown): AIResult<SearchBudget>;
-/** Worker entry boundary: validate and replay the full record before searching. */
+export type SearchEnvelope = Omit<SearchRequest, "record"> & {
+    readonly record: unknown;
+};
+/** Header validation without replay; the timed runner validates each record command separately. */
+export declare function readSearchEnvelope(raw: unknown): AIResult<SearchEnvelope>;
+/** Untimed convenience boundary. The production search entry is runSearch, which includes replay in its budget. */
 export declare function prepareSearch(raw: unknown): AIResult<PreparedSearch>;
 /** Check a serialized reply against an already validated request. Legality is checked by Session on commit. */
 export declare function validateSearchReply(request: SearchRequest, raw: unknown): AIResult<SearchReply>;

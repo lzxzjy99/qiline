@@ -30,8 +30,9 @@ export function validateSearchBudget(raw:unknown):AIResult<SearchBudget> {
     || !positive(raw.maxDepth,AI_BUDGET_LIMITS.maxDepth)) return aiFail("INVALID_AI_BUDGET");
   return aiOK(freeze({timeMs:raw.timeMs,maxNodes:raw.maxNodes,maxDepth:raw.maxDepth}));
 }
-/** Worker entry boundary: validate and replay the full record before searching. */
-export function prepareSearch(raw:unknown):AIResult<PreparedSearch> {
+export type SearchEnvelope=Omit<SearchRequest,"record"> & {readonly record:unknown};
+/** Header validation without replay; the timed runner validates each record command separately. */
+export function readSearchEnvelope(raw:unknown):AIResult<SearchEnvelope> {
   if (!plain(raw)) return aiFail("INVALID_AI_REQUEST");
   if (raw.protocolVersion!==AI_PROTOCOL_VERSION) return aiFail("UNSUPPORTED_AI_PROTOCOL");
   if (!keysAre(raw,["protocolVersion","kind","context","record","level","seed","budget"])
@@ -39,12 +40,17 @@ export function prepareSearch(raw:unknown):AIResult<PreparedSearch> {
     return aiFail("INVALID_AI_REQUEST");
   const context=contextOf(raw.context);if (!context) return aiFail("INVALID_AI_REQUEST","context");
   const budget=validateSearchBudget(raw.budget);if (!budget.ok) return budget;
-  const replay=validateRecord(raw.record);if (!replay.ok) return aiFail("INVALID_AI_REQUEST",replay.error.path,replay.error.code);
+  return aiOK(Object.freeze({protocolVersion:AI_PROTOCOL_VERSION,kind:"search",context,record:raw.record,
+    level:raw.level,seed:raw.seed,budget:budget.value}));
+}
+/** Untimed convenience boundary. The production search entry is runSearch, which includes replay in its budget. */
+export function prepareSearch(raw:unknown):AIResult<PreparedSearch> {
+  const header=readSearchEnvelope(raw);if (!header.ok) return header;
+  const replay=validateRecord(header.value.record);if (!replay.ok) return aiFail("INVALID_AI_REQUEST",replay.error.path,replay.error.code);
   const {record,match}=replay.value;
   if (match.state.outcome) return aiFail("FINISHED");
-  if (activePlayer(match)!==context.actor) return aiFail("WRONG_ACTOR");
-  const request:SearchRequest=freeze({protocolVersion:AI_PROTOCOL_VERSION,kind:"search",context,record,
-    level:raw.level,seed:raw.seed,budget:budget.value});
+  if (activePlayer(match)!==header.value.context.actor) return aiFail("WRONG_ACTOR");
+  const request:SearchRequest=freeze({...header.value,record});
   return aiOK(Object.freeze({request,match}));
 }
 /** Check a serialized reply against an already validated request. Legality is checked by Session on commit. */

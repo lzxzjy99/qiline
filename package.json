@@ -9,6 +9,7 @@
     "check": "node scripts/check-web.mjs",
     "build:ai": "node scripts/build-ai.mjs",
     "test:ai": "node --test tests/ai.test.mjs tests/ai-matrix.test.mjs tests/ai-tactics.test.mjs tests/ai-tactics-matrix.test.mjs",
+    "test:search": "node --test tests/ai-tree.test.mjs tests/ai-search.test.mjs tests/ai-search-matrix.test.mjs",
     "build:desktop": "node scripts/build-desktop.mjs",
     "test:desktop": "node --test tests/desktop.test.mjs",
     "verify:desktop": "node scripts/verify-desktop.mjs"

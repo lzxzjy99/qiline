@@ -1,0 +1,84 @@
+{
+  "stage":"P5.3",
+  "verifiedOn":"2026-10-20",
+  "rulesVersion":"2.1.0-r3",
+  "baselineCommit":"f9b228f7b48b38a7250b26e56ba422a07e8ce24f",
+  "implementation":{
+    "iterativeDeepening":true,
+    "realPlayerAlphaBeta":true,
+    "fullHistoryTimedReplay":true,
+    "hardNodeAndExplicitDepthLimits":true,
+    "monotonicClockCheckpoints":true,
+    "lastCompleteIterationFallback":true,
+    "criticalMoveRetention":true,
+    "differentLevelPolicies":true,
+    "crossPositionTranspositionTable":false,
+    "workerAndHostHardTermination":false,
+    "humanVsAIInterface":false,
+    "newWindowsPackage":false
+  },
+  "policies":{
+    "easy":{"defaultTimeMs":300,"defaultMaxNodes":2500,"defaultMaxDepth":2,"quietWidth":6},
+    "standard":{"defaultTimeMs":1200,"defaultMaxNodes":15000,"defaultMaxDepth":4,"quietWidth":12},
+    "nodeDefinition":"one root plus every attempted core search simulation, including rejected probes; replay costs time but no search nodes",
+    "depthDefinition":"explicit command layers; derived automatic passes belong to their command"
+  },
+  "validation":{
+    "typescriptVersion":"7.0.2",
+    "strictTypecheck":"passed",
+    "javascriptModulesParsed":24,
+    "localImports":"passed",
+    "p2CoreSessionSourceAndCompiledHashes":"unchanged",
+    "aiSourceCompiledDistHashes":"matched reports/ai-contract-sha256.json",
+    "boundedSearchMatrix":{"rules":448,"aiRoles":2,"levels":2,"tests":1792,"passed":1792,"nodeCaps":[48,96],"clock":"deterministic"},
+    "newSearchAndTreeTests":{"tests":33,"passed":33,"exhaustiveOracleComparisons":400},
+    "contractTacticsSessionWebRegression":{"tests":1869,"passed":1869},
+    "totalTests":3694,
+    "passed":3694,
+    "failed":0,
+    "skipped":0,
+    "commands":[
+      "npm run build:ai",
+      "npm run build",
+      "npm run check",
+      "node --test --test-reporter=spec tests/ai-search-matrix.test.mjs",
+      "node --test --test-reporter=spec tests/ai-tree.test.mjs tests/ai-search.test.mjs",
+      "node --test --test-reporter=spec tests/ai.test.mjs tests/ai-matrix.test.mjs tests/ai-tactics.test.mjs tests/session.test.mjs tests/restore-session.test.mjs tests/web.test.mjs",
+      "git diff --check"
+    ]
+  },
+  "coveredBoundaries":[
+    "consecutive A turns during opening and consecutive B turns after choosing white",
+    "alpha-beta cutoffs compared with an independent exhaustive mixed-turn oracle",
+    "immediate win, direct defense, three-command winning fork and far capture of a pending five",
+    "one-node no-action failure; two-node legal fallback; no node-budget overrun",
+    "explicit depth caps and incomplete-iteration preservation",
+    "deadline and cancellation during replay and search",
+    "latched cancellation when the deadline is also reached while finishing",
+    "illegal PSK recaptures consume allowance and never become fallback actions",
+    "fixed-five clocks, pressure inheritance, pass confirmation, legal draw and automatic passes",
+    "same request and deterministic clock reproducibility",
+    "actual monotonic-clock cutoff and default easy/standard profiles on 9 and 19 boards",
+    "real reply commit-once and stale-after-pause/new-game guards"
+  ],
+  "complexExample":{
+    "setup":["B2","I1","C3","I3","D4","I5"],
+    "confirmationDelay":0,
+    "recommendedPoint":"E5",
+    "easyCompletedDepth":2,
+    "easyValue":614,
+    "standardCompletedDepth":4,
+    "standardValue":1000000000,
+    "standardVariation":["E5","F6","A1"],
+    "result":"standard reaches a core-confirmed black win after three explicit commands; easy depth two has not reached the terminal result"
+  },
+  "limits":[
+    "Deeper search is selective: critical moves are preserved and ordinary candidates are limited by policy.",
+    "Completed depth describes the selected tree with legitimate alpha-beta pruning, not exhaustive whole-board play.",
+    "Time is checked between atomic operations. One indivisible core or feature computation can overshoot the deadline.",
+    "The current synchronous function is not a UI-thread responsiveness or Worker hard-termination guarantee.",
+    "The matrix uses deterministic small node budgets; it is not 1792 full games or a strength/fairness evaluation.",
+    "The earlier P5.2 full decision matrix is historical evidence; this round reran its 26 tactical tests, not that separate full matrix.",
+    "No browser human-vs-AI or actual Windows runtime verification in this stage."
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "stage":"P5.2",
+  "verifiedOn":"2026-10-20",
+  "rulesVersion":"2.1.0-r3",
+  "baselineCommit":"6592d466fe7e53403154c4dd0f8eb2818ae3083d",
+  "implementation":{
+    "allLegalRootCandidates":true,
+    "noRootPruning":true,
+    "coreVerifiedTerminalOutcomes":true,
+    "verifiedDirectTacticalReplies":true,
+    "globalCapturesAndAtariRescue":true,
+    "openingAndColorChoice":true,
+    "passPolicy":true,
+    "seededTieBreaks":true,
+    "strictBudgetEnforcement":false,
+    "iterativeDeepeningOrAlphaBeta":false,
+    "differentPlayingStrengthPerLevel":false,
+    "workerOrHumanVsAIInterface":false,
+    "newWindowsPackage":false
+  },
+  "validation":{
+    "typescriptVersion":"7.0.2",
+    "strictTypecheck":"passed",
+    "javascriptModulesParsed":20,
+    "localImports":"passed",
+    "p2CoreSessionSourceAndCompiledHashes":"unchanged",
+    "aiSourceCompiledDistHashes":"matched reports/ai-contract-sha256.json",
+    "actualDecisionMatrix":{"rules":448,"aiRoles":2,"levels":2,"tests":1792,"passed":1792},
+    "newTacticalAndIntegrationTests":{"tests":26,"passed":26},
+    "p51ContractAndSessionWebRegression":{"tests":1843,"passed":1843},
+    "totalTests":3661,
+    "passed":3661,
+    "failed":0,
+    "skipped":0,
+    "commands":[
+      "npm run build:ai",
+      "npm run build",
+      "npm run check",
+      "node --test --test-reporter=spec tests/ai-tactics-matrix.test.mjs",
+      "node --test --test-reporter=spec tests/ai-tactics.test.mjs",
+      "node --test --test-reporter=spec tests/ai.test.mjs tests/ai-matrix.test.mjs tests/session.test.mjs tests/restore-session.test.mjs tests/web.test.mjs",
+      "git diff --check"
+    ]
+  },
+  "complexExamples":{
+    "remoteCapture":{
+      "boardSize":9,
+      "confirmationDelay":12,
+      "modes":["fixed-five","color-pressure"],
+      "currentPly":61,
+      "enemyDueAt":63,
+      "recommendedPoint":"F8",
+      "capturedStones":12,
+      "nearestChebyshevDistanceToFive":3,
+      "result":"pending enemy five cancelled; other legal roots have a verified losing reply"
+    },
+    "overlineClockDifference":{
+      "confirmationDelay":12,
+      "formedAt":[9,11],
+      "currentPly":19,
+      "captureOldEndpoint":"A2",
+      "fixedFiveRemainingDueAt":23,
+      "colorPressureInheritedDueAt":21,
+      "result":"fixed-five saves a turn; color-pressure still has a verified losing reply"
+    }
+  },
+  "limits":[
+    "Both level settings currently use the same basic strategy; strength differentiation belongs to P5.3.",
+    "All legal root commands are evaluated. Opponent ordinary replies and multi-command tactics are not exhaustively searched.",
+    "Absence of a winning reply in the selected tactical probes is not a proof of safety.",
+    "Resource budgets are still contracts; strict enforcement and deep search belong to P5.3.",
+    "No actual Worker, browser AI integration or Windows runtime verification in this stage.",
+    "Headless AI games are bounded smoke checks, not win-rate fairness measurements."
+  ]
+}

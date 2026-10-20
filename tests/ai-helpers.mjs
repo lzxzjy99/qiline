@@ -17,7 +17,7 @@ export const reply=(turn,action,status='move',stats={elapsedMs:1,nodes:1,complet
  protocolVersion:1,kind:'result',context:structuredClone(turn.request.context),status,
  ...(action?{action}:{}),stats,
 });
-/** Test fixture only. P5.1 contains no move-selection implementation. */
+/** Supplied test actions only. Tactical decision tests use recommendBasicAction separately. */
 export function command(s,action){
  if(s.state.controllers[action.actor].kind==='human')return value(s.submit(action.actor,action));
  const turn=value(beginAITurn(s));return value(turn.accept(reply(turn,action)));

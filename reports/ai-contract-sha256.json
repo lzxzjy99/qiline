@@ -1,8 +1,11 @@
 {
   "source": {
-    "packages/ai/src/index.ts": "bcecd31a860efa4c2a86b012a5dc348206beee30e58592408a7218ba76c85348",
+    "packages/ai/src/basic.ts": "0ec07b50e915ffd9e148aad2b4c9d1b97940500a43535e91612c978f003b42b1",
+    "packages/ai/src/features.ts": "645675d1a87450cb5049f53c9d9e924a1b83dee098af5b836a6e8710e2695770",
+    "packages/ai/src/index.ts": "b44d94c04f55edc97d48a23ffba7b15cc90cc1511bfd950fc91cc8f63da9c61f",
     "packages/ai/src/protocol.ts": "7acd359bcbd47523060cf961f73c341bd5741bea318cd2a48633c90d4b28ca70",
     "packages/ai/src/save.ts": "b0da6ba20565ef694898d348c6e38b87cade692c7bf943bdb0b6ca5776debdc6",
+    "packages/ai/src/tactics.ts": "76d8f9367c8f69bce406fddc40137e253ffc06ce21eb530b0c26d33c95312556",
     "packages/ai/src/turn.ts": "e10438b1ae3cda8eff42be3907cf38aaa01682c00dcbffec555817f1a43d3204",
     "packages/ai/src/types.ts": "a781372ca104c43359d56ffd01854c41125eba8a700ffc40019f30b4eaba8771",
     "tsconfig.json": "f822dd201ea0420bf9a1753c73dad0d2085de53081e7be4faa5d9c530cdf46ca",
@@ -11,12 +14,18 @@
     "scripts/build-ai.mjs": "d362cfbb95b14cf0de02fe9a08d8d2a802c6a121d06b9af0dbaa366dcbe12e73"
   },
   "compiled": {
-    "compiled/ai/src/index.d.ts": "bcecd31a860efa4c2a86b012a5dc348206beee30e58592408a7218ba76c85348",
-    "compiled/ai/src/index.js": "0b0c144e50fa725b388351f340932df37f247267799528a799ed9e89759575bd",
+    "compiled/ai/src/basic.d.ts": "e7c4c5e53fefa0a9ede2bfa9cf171a3e16597ad9d3906826ec81430418807fad",
+    "compiled/ai/src/basic.js": "039795e7302fa9d2be5dbebcd983c46e50246578e1f768a68ea28723f67c66b2",
+    "compiled/ai/src/features.d.ts": "4e4c684dbae4bed12326453d288f1f4459cacf295dd427fbdf2517539b97ca1b",
+    "compiled/ai/src/features.js": "9a25bf751d0a847aedec4ac802a6d496dd0168ab66c39891f906c4186e161a60",
+    "compiled/ai/src/index.d.ts": "b44d94c04f55edc97d48a23ffba7b15cc90cc1511bfd950fc91cc8f63da9c61f",
+    "compiled/ai/src/index.js": "2682b2d4a13cc2c66e4c6b3e586d01d75a15d4435adb4a824108f7f71a721747",
     "compiled/ai/src/protocol.d.ts": "888f36ba5f8082d06219c880cc43e3aa0583b8370d0722bf6d26d72465148428",
     "compiled/ai/src/protocol.js": "6ff4899da4e6325d5a7bfc97740be46e063a5ae8e8cd2851c86031ffb131c2f1",
     "compiled/ai/src/save.d.ts": "b97df8a1044aa4cd3552da11bc988575df2278fe209c87bac7b2cd3037f4605e",
     "compiled/ai/src/save.js": "62a12e249c03421b005e0c6488e8187d7821da78b35201e8d5a72ab67556d978",
+    "compiled/ai/src/tactics.d.ts": "56462c32d536ff6348552daebab0f6d3ed49cb98a5a9fca3ed33294e020f7f6c",
+    "compiled/ai/src/tactics.js": "e9c37c3d7790521e75d6cb5e2a94455849a23ae4de2b351aaf2ad3f8e169440d",
     "compiled/ai/src/turn.d.ts": "fe54c942eb404076ff8b7325823ce6e0e0570f05dfc8f9b5049cabfa9425d227",
     "compiled/ai/src/turn.js": "7c758e97a9a27fe80c4b8aba1f38dd833f9b88565b25f2c68bd5f91cba034ebc",
     "compiled/ai/src/types.d.ts": "032b8006fcd87b106f359b9d1cdfdbe1a66886c016c0d1f5665057c360cdf137",

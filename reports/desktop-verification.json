@@ -1,0 +1,613 @@
+{
+  "version": "0.4.0",
+  "rulesVersion": "2.1.0-r3",
+  "electronVersion": "44.9.0",
+  "target": "win32-x64",
+  "runtimeTested": false,
+  "checks": {
+    "peFiles": 7,
+    "asarFiles": 40,
+    "versionResource": true,
+    "allAssetsMatchSource": true,
+    "sharedCoreMatchesWeb": true
+  },
+  "peFiles": [
+    {
+      "file": "d3dcompiler_47.dll",
+      "architecture": "x64",
+      "bytes": 4741488,
+      "sections": [
+        {
+          "name": ".text",
+          "size": 3547136,
+          "pointer": 4096
+        },
+        {
+          "name": "fothk",
+          "size": 4096,
+          "pointer": 3551232
+        },
+        {
+          "name": ".rdata",
+          "size": 937984,
+          "pointer": 3555328
+        },
+        {
+          "name": ".data",
+          "size": 65536,
+          "pointer": 4493312
+        },
+        {
+          "name": ".pdata",
+          "size": 126976,
+          "pointer": 4558848
+        },
+        {
+          "name": ".fptable",
+          "size": 4096,
+          "pointer": 4685824
+        },
+        {
+          "name": ".rsrc",
+          "size": 4096,
+          "pointer": 4689920
+        },
+        {
+          "name": ".reloc",
+          "size": 36864,
+          "pointer": 4694016
+        }
+      ],
+      "sha256": "a05f99734f7c4822fefc12b367af21fd0976ed6608752fb1e1e80b6ece7ecbbb"
+    },
+    {
+      "file": "dxcompiler.dll",
+      "architecture": "x64",
+      "bytes": 25744384,
+      "sections": [
+        {
+          "name": ".text",
+          "size": 20997120,
+          "pointer": 1024
+        },
+        {
+          "name": ".rdata",
+          "size": 4000256,
+          "pointer": 20998144
+        },
+        {
+          "name": ".data",
+          "size": 32768,
+          "pointer": 24998400
+        },
+        {
+          "name": ".pdata",
+          "size": 636416,
+          "pointer": 25031168
+        },
+        {
+          "name": ".fptable",
+          "size": 512,
+          "pointer": 25667584
+        },
+        {
+          "name": ".tls",
+          "size": 512,
+          "pointer": 25668096
+        },
+        {
+          "name": "_RDATA",
+          "size": 512,
+          "pointer": 25668608
+        },
+        {
+          "name": ".rsrc",
+          "size": 1024,
+          "pointer": 25669120
+        },
+        {
+          "name": ".reloc",
+          "size": 74240,
+          "pointer": 25670144
+        }
+      ],
+      "sha256": "464772bfaa07fdb378e14f8ccf6d6e8b1d053dddcc2b59f57862d6912f39a023"
+    },
+    {
+      "file": "dxil.dll",
+      "architecture": "x64",
+      "bytes": 1509760,
+      "sections": [
+        {
+          "name": ".text",
+          "size": 1163264,
+          "pointer": 1024
+        },
+        {
+          "name": ".rdata",
+          "size": 254464,
+          "pointer": 1164288
+        },
+        {
+          "name": ".data",
+          "size": 25088,
+          "pointer": 1418752
+        },
+        {
+          "name": ".pdata",
+          "size": 46592,
+          "pointer": 1443840
+        },
+        {
+          "name": ".rsrc",
+          "size": 1536,
+          "pointer": 1490432
+        },
+        {
+          "name": ".reloc",
+          "size": 7168,
+          "pointer": 1491968
+        }
+      ],
+      "sha256": "77e039c905030a641e53658a008b74e90635a5ea9b6b79eabd0f2003bdfca59a"
+    },
+    {
+      "file": "ffmpeg.dll",
+      "architecture": "x64",
+      "bytes": 3113472,
+      "sections": [
+        {
+          "name": ".text",
+          "size": 2510848,
+          "pointer": 1024
+        },
+        {
+          "name": ".rdata",
+          "size": 535040,
+          "pointer": 2511872
+        },
+        {
+          "name": ".data",
+          "size": 8704,
+          "pointer": 3046912
+        },
+        {
+          "name": ".pdata",
+          "size": 41984,
+          "pointer": 3055616
+        },
+        {
+          "name": ".fptable",
+          "size": 512,
+          "pointer": 3097600
+        },
+        {
+          "name": ".tls",
+          "size": 512,
+          "pointer": 3098112
+        },
+        {
+          "name": "_RDATA",
+          "size": 512,
+          "pointer": 3098624
+        },
+        {
+          "name": ".reloc",
+          "size": 14336,
+          "pointer": 3099136
+        }
+      ],
+      "sha256": "96094bc6b5082e6372a9aa21970fcecfc069abd68caf4b48673b84dc3e8cf99b"
+    },
+    {
+      "file": "vk_swiftshader.dll",
+      "architecture": "x64",
+      "bytes": 5519872,
+      "sections": [
+        {
+          "name": ".text",
+          "size": 4520448,
+          "pointer": 1024
+        },
+        {
+          "name": ".rdata",
+          "size": 769024,
+          "pointer": 4521472
+        },
+        {
+          "name": ".data",
+          "size": 109056,
+          "pointer": 5290496
+        },
+        {
+          "name": ".pdata",
+          "size": 91136,
+          "pointer": 5399552
+        },
+        {
+          "name": ".fptable",
+          "size": 512,
+          "pointer": 5490688
+        },
+        {
+          "name": ".tls",
+          "size": 512,
+          "pointer": 5491200
+        },
+        {
+          "name": "_RDATA",
+          "size": 512,
+          "pointer": 5491712
+        },
+        {
+          "name": ".rsrc",
+          "size": 1536,
+          "pointer": 5492224
+        },
+        {
+          "name": ".reloc",
+          "size": 26112,
+          "pointer": 5493760
+        }
+      ],
+      "sha256": "2ae263d1079d9b1e4a231879cf7048dc517b2806748b38f36547b5b8c649cddd"
+    },
+    {
+      "file": "vulkan-1.dll",
+      "architecture": "x64",
+      "bytes": 939520,
+      "sections": [
+        {
+          "name": ".text",
+          "size": 602624,
+          "pointer": 1024
+        },
+        {
+          "name": ".rdata",
+          "size": 293888,
+          "pointer": 603648
+        },
+        {
+          "name": ".data",
+          "size": 8704,
+          "pointer": 897536
+        },
+        {
+          "name": ".pdata",
+          "size": 27136,
+          "pointer": 906240
+        },
+        {
+          "name": ".fptable",
+          "size": 512,
+          "pointer": 933376
+        },
+        {
+          "name": ".tls",
+          "size": 512,
+          "pointer": 933888
+        },
+        {
+          "name": "_RDATA",
+          "size": 512,
+          "pointer": 934400
+        },
+        {
+          "name": ".rsrc",
+          "size": 1024,
+          "pointer": 934912
+        },
+        {
+          "name": ".reloc",
+          "size": 3584,
+          "pointer": 935936
+        }
+      ],
+      "sha256": "03120814ccb06e0fa9141cfa7c2ec906984f32ef56f8caf50e56e97a7a3225fa"
+    },
+    {
+      "file": "弈合.exe",
+      "architecture": "x64",
+      "bytes": 247184896,
+      "sections": [
+        {
+          "name": ".text",
+          "size": 193196544,
+          "pointer": 1536
+        },
+        {
+          "name": ".rdata",
+          "size": 45667840,
+          "pointer": 193198080
+        },
+        {
+          "name": ".data",
+          "size": 1385472,
+          "pointer": 238865920
+        },
+        {
+          "name": ".pdata",
+          "size": 5590528,
+          "pointer": 240251392
+        },
+        {
+          "name": ".eh_fram",
+          "size": 512,
+          "pointer": 245841920
+        },
+        {
+          "name": ".fptable",
+          "size": 512,
+          "pointer": 245842432
+        },
+        {
+          "name": ".rodata",
+          "size": 4608,
+          "pointer": 245842944
+        },
+        {
+          "name": ".tls",
+          "size": 2560,
+          "pointer": 245847552
+        },
+        {
+          "name": "CPADinfo",
+          "size": 512,
+          "pointer": 245850112
+        },
+        {
+          "name": "LZMADEC",
+          "size": 4608,
+          "pointer": 245850624
+        },
+        {
+          "name": "_RDATA",
+          "size": 512,
+          "pointer": 245855232
+        },
+        {
+          "name": "malloc_h",
+          "size": 2048,
+          "pointer": 245855744
+        },
+        {
+          "name": "prot",
+          "size": 512,
+          "pointer": 245857792
+        },
+        {
+          "name": ".rsrc",
+          "size": 99328,
+          "pointer": 245858304
+        },
+        {
+          "name": ".reloc",
+          "size": 1227264,
+          "pointer": 245957632
+        }
+      ],
+      "sha256": "e51453a4188371fe8cd1424eac0c7bac9e11516d7f81c0bf796e6e58348a155d"
+    }
+  ],
+  "asarFiles": [
+    {
+      "file": "icon.ico",
+      "sha256": "413ec1a4226c3f17553f06142a3975fa29b40e811278b88260d322d4e793a611",
+      "bytes": 14996
+    },
+    {
+      "file": "main.cjs",
+      "sha256": "67f2811b8fe6bc3c0fa4be8890e1c6fccbfdf82900e7fc14de8ddbc9d1f539d3",
+      "bytes": 3422
+    },
+    {
+      "file": "manual.html",
+      "sha256": "39913acb5564942346f8d1d755a96fba601131998344d94342068ab44ff3324c",
+      "bytes": 7801
+    },
+    {
+      "file": "package.json",
+      "sha256": "f097074cecbcfbde337b8cf59dcabb2614531240b927c485d67273fc93136250",
+      "bytes": 190
+    },
+    {
+      "file": "policy.cjs",
+      "sha256": "5fe9b7350ac31779dc0a4d85d1a502131cab0d48dc8305863bd211374f906ee5",
+      "bytes": 4212
+    },
+    {
+      "file": "web/app.mjs",
+      "sha256": "72461af0f30270a838ca5b8d1f27089e6eb2c7951e8e3d01f2181c6df9839876",
+      "bytes": 19377
+    },
+    {
+      "file": "web/core/src/claims.d.ts",
+      "sha256": "28fde761a4aae1e4cb1a937f82257bf9d51d7fba332ca045d49b97d458151138",
+      "bytes": 202
+    },
+    {
+      "file": "web/core/src/claims.js",
+      "sha256": "abf1117269c49068c42865ab641e27b2fa98e39ae445a89e697f0787e591112b",
+      "bytes": 1296
+    },
+    {
+      "file": "web/core/src/claims.js.map",
+      "sha256": "0ad5c47babcb3b16c7cc9cb768107f980490561110ece05f88cae67d33558c59",
+      "bytes": 2093
+    },
+    {
+      "file": "web/core/src/engine.d.ts",
+      "sha256": "7c50f57bb38bb2c13a919ae3813262a2ee5177f7fd17811fd16fac11ad3d233b",
+      "bytes": 1245
+    },
+    {
+      "file": "web/core/src/engine.js",
+      "sha256": "e6971da50c80157a393003f735670c0a07c7b44c9d6e0550a61bbf0d8c16602d",
+      "bytes": 15746
+    },
+    {
+      "file": "web/core/src/engine.js.map",
+      "sha256": "0570d26b8252769b3bcdf84dbf408ae655c3e795f24e357060e36e12330c5328",
+      "bytes": 20537
+    },
+    {
+      "file": "web/core/src/geometry.d.ts",
+      "sha256": "f1b8275fddd9ac3736e8d1bf79f0081fcbfac4017bc15b2ccfc5482bb0f60112",
+      "bytes": 1420
+    },
+    {
+      "file": "web/core/src/geometry.js",
+      "sha256": "4e4f4a9231631045654f2d79af8dd84f0c5611d6cd888a4ef08867e1928ee8a3",
+      "bytes": 3473
+    },
+    {
+      "file": "web/core/src/geometry.js.map",
+      "sha256": "9504d1e87556809634223ed3ca01388b89d0179ecb9b0943534069bdbeae8ee8",
+      "bytes": 5540
+    },
+    {
+      "file": "web/core/src/index.d.ts",
+      "sha256": "15f434c2b5acd63a80efcb30f2b7a4285611db6a24dfab18513f64737c996ef4",
+      "bytes": 431
+    },
+    {
+      "file": "web/core/src/index.js",
+      "sha256": "2c44dffe8b2a3c124a89b3cbc7374630ff51c59a08065f4069f0d9f352a214c7",
+      "bytes": 431
+    },
+    {
+      "file": "web/core/src/index.js.map",
+      "sha256": "bc3e7f9fa36a2afb0556fe5c372da068d8967a8f67b0860a8ca3593f9b7d544f",
+      "bytes": 428
+    },
+    {
+      "file": "web/core/src/result.d.ts",
+      "sha256": "a2831fd559c01d72aa752c712a67b866c4226d9f37d78416af4031381086cf6c",
+      "bytes": 521
+    },
+    {
+      "file": "web/core/src/result.js",
+      "sha256": "6c43738756f937abee5af928d7a6c4bed283ec98de239147530945f75015fa7a",
+      "bytes": 1061
+    },
+    {
+      "file": "web/core/src/result.js.map",
+      "sha256": "bcb8317c278ca41c89abc55d49909cfc4cfe0aa71da5180c6c414a241cf6a890",
+      "bytes": 1438
+    },
+    {
+      "file": "web/core/src/rules.d.ts",
+      "sha256": "eeb63efbef94e847cbb0e8149648f362e1027143487f60cbe0dc954e64e2cbe8",
+      "bytes": 483
+    },
+    {
+      "file": "web/core/src/rules.js",
+      "sha256": "070ae153e1db6a4f29d8ed4e1ba0328941ed188c956144816f47c905796d8fa9",
+      "bytes": 2201
+    },
+    {
+      "file": "web/core/src/rules.js.map",
+      "sha256": "0fab4a90a1a64fd74094df63bd02ff4875688cb523aafa83693e63d1bcfb8c7d",
+      "bytes": 2493
+    },
+    {
+      "file": "web/core/src/types.d.ts",
+      "sha256": "d780ee53f728f2729b0cbcdd08dd9f3e46f2deec41afc5c13c6c926d4f857853",
+      "bytes": 4845
+    },
+    {
+      "file": "web/core/src/types.js",
+      "sha256": "01ae2a5b120382f9a648ced7ee8507493a134f216d100fc61600c6c9738235d2",
+      "bytes": 44
+    },
+    {
+      "file": "web/core/src/types.js.map",
+      "sha256": "1a5a1b992455346189207cb1a431e8d14b88fc4756b9f6d2df03badd916e6dab",
+      "bytes": 122
+    },
+    {
+      "file": "web/favicon.svg",
+      "sha256": "e2ace55819344cb53aadcda053564c836e7da62f854195c436bf8d8efb692883",
+      "bytes": 250
+    },
+    {
+      "file": "web/index.html",
+      "sha256": "2ec77dc6833a12642c793ee2b32b8b528d700cac77231c9dcb97f4b64d35ee1f",
+      "bytes": 12115
+    },
+    {
+      "file": "web/session/src/index.d.ts",
+      "sha256": "925bebed35869ae69f03e62e58c87f18b6c733071c9e5cb6fca7ef6299fe649b",
+      "bytes": 108
+    },
+    {
+      "file": "web/session/src/index.js",
+      "sha256": "3aee3f885fab2979c18276359c0113945f1dff09c25550631c7a27a4df56fea8",
+      "bytes": 108
+    },
+    {
+      "file": "web/session/src/index.js.map",
+      "sha256": "685a1ea63c67d246704873d4c4c61de28943bef16d7ab34eb42c267953b22557",
+      "bytes": 184
+    },
+    {
+      "file": "web/session/src/session.d.ts",
+      "sha256": "88ca2627997eb58d443d8a042b42db188c673acd8416e073c6c1e6b6011268de",
+      "bytes": 1685
+    },
+    {
+      "file": "web/session/src/session.js",
+      "sha256": "99285be9ecbcbe3c36f3715e4d6ff9345b6d71f0e9e567fa7ecf57409f13ec24",
+      "bytes": 12526
+    },
+    {
+      "file": "web/session/src/session.js.map",
+      "sha256": "338d946ac89ad9d4dccfe9a426746defb7ecb6ba6a2f2a7c2ffaf00fec017117",
+      "bytes": 14994
+    },
+    {
+      "file": "web/session/src/types.d.ts",
+      "sha256": "41f77a8de925d04931fce5085a306bddb2eeb0daa513471e94cbbf0cfd8cb293",
+      "bytes": 1414
+    },
+    {
+      "file": "web/session/src/types.js",
+      "sha256": "01ae2a5b120382f9a648ced7ee8507493a134f216d100fc61600c6c9738235d2",
+      "bytes": 44
+    },
+    {
+      "file": "web/session/src/types.js.map",
+      "sha256": "3d5508d6da24ac9d649590eb9e0a3099eaca999ee1bb4cec49bd0270b34587f3",
+      "bytes": 125
+    },
+    {
+      "file": "web/style.css",
+      "sha256": "d05ed1363d91b685e0f637c4093294462aca2fc20d9fef803fcc0f34f2ca84a7",
+      "bytes": 17182
+    },
+    {
+      "file": "web/ui/model.mjs",
+      "sha256": "6ce80503e6171c48a8706e103e6743d5e197ecc1f7ea29a38aa5cd67b41b2232",
+      "bytes": 6445
+    }
+  ],
+  "asarSHA256": "716938a6d9d7fec963f3d212e56ca7e7d04f22d43b447b4d874a597f82aa68f3",
+  "metadata": {
+    "CompanyName": "QiLine",
+    "FileDescription": "弈合 · 吃子与五连",
+    "FileVersion": "0.4.0",
+    "InternalName": "QiLine",
+    "LegalCopyright": "Copyright (C) 2015 GitHub, Inc. All rights reserved.",
+    "OriginalFilename": "弈合.exe",
+    "ProductName": "弈合",
+    "ProductVersion": "0.4.0",
+    "SquirrelAwareVersion": "1"
+  },
+  "hostPlatform": "linux",
+  "originalRuntimeArchiveSHA256": "88e08039d0ef359bab9f674e8051fa103bd8628ea7c5a5e1daaa610a8a0c6931",
+  "rejectedP1Probe": {
+    "actualExeBytes": 173151744,
+    "requiredSectionEnd": 247184896,
+    "reason": "truncated PE"
+  }
+}

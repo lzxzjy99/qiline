@@ -2,3 +2,4 @@ node_modules/
 .openai/local/
 *.log
 __pycache__/
+build/

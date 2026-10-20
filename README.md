@@ -20,6 +20,7 @@ node --test tests/web.test.mjs
 
 - `packages/core`：不可变棋局、提子、五连、PSK 和完整重放。
 - `packages/session`：真实玩家身份、共同同意和过期任务保护。
+- `packages/ai`：P5.1 AI 协议、完整棋谱重建、任务提交边界及存档适配；尚无选点算法或后台计算。
 - `packages/ui/model.mjs`：中文展示、存档外壳、存储冲突保护。
 - `apps/web`：响应式棋盘、浏览器入口、文件导入导出和内置手册。
 - `scripts/build-web.mjs`：复制已验证的核心和网页资产，生成静态目录。
@@ -38,4 +39,6 @@ node --test tests/web.test.mjs
 
 P3：12 个 JavaScript 模块语法/本地依赖检查通过；10 个网页模型与存储测试通过；核心与 P2 编译结果逐字节一致。云端 Chromium 中验证默认开局至终局、换线继承 21 手 / 固定五子 23 手差异、查气只读、悔棋双方同意、导出导入、刷新恢复、键盘、大棋盘、竞技权限、认输和和棋。窄屏使用 390px iframe 检查，不等于实体手机触摸或 Safari 真机验收。
 
-P4 已加入离线桌面壳、原生存档保存对话框、退出保护和 Windows 构建／校验脚本；可生成包含“弈合.exe”的完整运行目录。构建步骤与本轮修复见 `docs/desktop-build.md`，真实 Windows 运行、离线、缩放和中文路径仍按 `docs/Windows真机验收清单.md` 待测。P5 AI 未接入。未完成分配置的胜率公平性研究；不能把规则对称或随机对局看作公平证明。
+P4 已加入离线桌面壳、原生存档保存对话框、退出保护和 Windows 构建／校验脚本；可生成包含“弈合.exe”的完整运行目录。构建步骤与本轮修复见 `docs/desktop-build.md`，真实 Windows 运行、离线、缩放和中文路径仍按 `docs/Windows真机验收清单.md` 待测。
+
+P5.1 已完成独立 AI 契约包和接口兼容验证，详见 [AI 接口与实施框架](docs/AI接口与实施框架.md)。`npm run test:ai` 运行 1,792 个基础组合及专项边界测试；`npm run build:ai` 用固定 TypeScript 工具重新编译新模块。人机搜索、Worker 和界面待后续阶段接入，当前可玩版本继续为本地双人。未完成分配置的胜率公平性研究；不能把规则对称或随机对局看作公平证明。

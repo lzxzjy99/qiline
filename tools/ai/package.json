@@ -1,0 +1,6 @@
+{
+  "name":"qiline-ai-build-tools",
+  "private":true,
+  "type":"module",
+  "dependencies":{"typescript":"7.0.2"}
+}

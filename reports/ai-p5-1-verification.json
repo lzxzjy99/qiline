@@ -1,0 +1,58 @@
+{
+  "stage":"P5.1",
+  "verifiedAt":"2026-10-20T09:13:22Z",
+  "rulesVersion":"2.1.0-r3",
+  "aiProtocolVersion":1,
+  "sessionSchemaVersion":1,
+  "implementation":{
+    "requestAndReplyValidation":true,
+    "fullRecordWorkerReconstruction":true,
+    "privateTokenCommitAdapter":true,
+    "cancellationAndStaleReplyBoundary":true,
+    "practiceSaveAdapter":true,
+    "moveSelection":false,
+    "searchBudgetEnforcement":false,
+    "workerAndTimers":false,
+    "humanVsAIInterface":false,
+    "newWindowsPackage":false
+  },
+  "validation":{
+    "typescriptVersion":"7.0.2",
+    "strictTypecheck":"passed",
+    "javascriptModulesParsed":17,
+    "localImports":"passed",
+    "p2CoreSessionSourceAndCompiledHashes":"unchanged",
+    "aiSourceCompiledDistHashes":"matched reports/ai-contract-sha256.json",
+    "matrix":{"rules":448,"aiRoles":2,"levels":2,"tests":1792,"passed":1792},
+    "aiBoundaryTests":{"tests":26,"passed":26},
+    "sessionAndWebRegressionTests":{"tests":25,"passed":25},
+    "totalTests":1843,
+    "passed":1843,
+    "failed":0,
+    "skipped":0,
+    "testCommand":"node --test --test-reporter=spec tests/ai.test.mjs tests/ai-matrix.test.mjs tests/session.test.mjs tests/restore-session.test.mjs tests/web.test.mjs",
+    "buildCommands":["npm run build:ai","npm run build","npm run check"],
+    "gitDiffCheck":"passed"
+  },
+  "coveredBoundaries":[
+    "all rule configurations, true-player identities and AI levels",
+    "structured clone, immutable data and branded core match reconstruction",
+    "full positional-superko history and recapture validation",
+    "all simultaneous claim clocks and both claim modes",
+    "A places three times; B may choose white and move again",
+    "opening capture prohibition and delayed terminal confirmation",
+    "single commit with derived automatic passes and atomic undo",
+    "stale replies after pause, cancellation, undo, new game, load, resignation and close",
+    "distinct requests across restored Session instances",
+    "invalid, forged, illegal and missing-action responses",
+    "timeout with legal best action; cancellation, crash and timeout without result",
+    "legacy PvP saves, practice controller settings and non-restoration of runtime permissions",
+    "current PvP web import gate preserved"
+  ],
+  "limits":[
+    "Matrix actions are test fixtures, not AI decisions or a playing-strength evaluation.",
+    "Budget field validation is implemented; actual search and resource enforcement are later stages.",
+    "No real Worker, browser integration or Windows runtime test in P5.1.",
+    "This report does not establish win-rate fairness."
+  ]
+}

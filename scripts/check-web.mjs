@@ -18,4 +18,10 @@ const sourceHashes=JSON.parse(await readFile('reports/verification.json','utf8')
 for(const [file,expected] of Object.entries(sourceHashes))assert.equal(hash(await readFile(file)),expected,`P2 source changed: ${file}`);
 const compiledHashes=JSON.parse(await readFile('reports/p2-compiled-sha256.json','utf8'));
 for(const [file,expected] of Object.entries(compiledHashes))assert.equal(hash(await readFile(file)),expected,`P2 compiled changed: ${file}`);
-console.log(`${files.length} JavaScript modules parsed; local imports resolve; P2 core/session bytes unchanged.`);
+const aiHashes=JSON.parse(await readFile('reports/ai-contract-sha256.json','utf8'));
+for(const [file,expected] of Object.entries(aiHashes.source))assert.equal(hash(await readFile(file)),expected,`AI source changed; run build:ai: ${file}`);
+for(const [file,expected] of Object.entries(aiHashes.compiled)){
+ assert.equal(hash(await readFile(file)),expected,`AI compiled changed: ${file}`);
+ assert.equal(hash(await readFile(file.replace(/^compiled\//,'dist/'))),expected,`AI dist changed: ${file}`);
+}
+console.log(`${files.length} JavaScript modules parsed; local imports resolve; P2 core/session bytes unchanged; AI source/compiled/dist hashes match.`);

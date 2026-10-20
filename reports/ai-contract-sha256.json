@@ -1,0 +1,25 @@
+{
+  "source": {
+    "packages/ai/src/index.ts": "bcecd31a860efa4c2a86b012a5dc348206beee30e58592408a7218ba76c85348",
+    "packages/ai/src/protocol.ts": "7acd359bcbd47523060cf961f73c341bd5741bea318cd2a48633c90d4b28ca70",
+    "packages/ai/src/save.ts": "b0da6ba20565ef694898d348c6e38b87cade692c7bf943bdb0b6ca5776debdc6",
+    "packages/ai/src/turn.ts": "e10438b1ae3cda8eff42be3907cf38aaa01682c00dcbffec555817f1a43d3204",
+    "packages/ai/src/types.ts": "a781372ca104c43359d56ffd01854c41125eba8a700ffc40019f30b4eaba8771",
+    "tsconfig.json": "f822dd201ea0420bf9a1753c73dad0d2085de53081e7be4faa5d9c530cdf46ca",
+    "tsconfig.ai.json": "26fd5f76d17258cb14ddca19ca3042994afd8e029aca1e4be6217dc49045e518",
+    "tools/ai/package.json": "3aa24081f1a8710a3f84db11b19ac5b8c796983243a89b2efaba5d040e435fb2",
+    "scripts/build-ai.mjs": "d362cfbb95b14cf0de02fe9a08d8d2a802c6a121d06b9af0dbaa366dcbe12e73"
+  },
+  "compiled": {
+    "compiled/ai/src/index.d.ts": "bcecd31a860efa4c2a86b012a5dc348206beee30e58592408a7218ba76c85348",
+    "compiled/ai/src/index.js": "0b0c144e50fa725b388351f340932df37f247267799528a799ed9e89759575bd",
+    "compiled/ai/src/protocol.d.ts": "888f36ba5f8082d06219c880cc43e3aa0583b8370d0722bf6d26d72465148428",
+    "compiled/ai/src/protocol.js": "6ff4899da4e6325d5a7bfc97740be46e063a5ae8e8cd2851c86031ffb131c2f1",
+    "compiled/ai/src/save.d.ts": "b97df8a1044aa4cd3552da11bc988575df2278fe209c87bac7b2cd3037f4605e",
+    "compiled/ai/src/save.js": "62a12e249c03421b005e0c6488e8187d7821da78b35201e8d5a72ab67556d978",
+    "compiled/ai/src/turn.d.ts": "fe54c942eb404076ff8b7325823ce6e0e0570f05dfc8f9b5049cabfa9425d227",
+    "compiled/ai/src/turn.js": "7c758e97a9a27fe80c4b8aba1f38dd833f9b88565b25f2c68bd5f91cba034ebc",
+    "compiled/ai/src/types.d.ts": "032b8006fcd87b106f359b9d1cdfdbe1a66886c016c0d1f5665057c360cdf137",
+    "compiled/ai/src/types.js": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+  }
+}

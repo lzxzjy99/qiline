@@ -1,0 +1,38 @@
+{
+  "stage": "P5.6",
+  "version": "0.5.6",
+  "rulesVersion": "2.1.0-r3",
+  "verifiedOn": "2026-10-21",
+  "timezone": "Asia/Shanghai",
+  "status": "automated-passed; limited Windows runtime scope passed",
+  "automated": {
+    "tests": 9653, "passed": 9653, "failed": 0, "skipped": 0, "cancelled": 0,
+    "tap": "reports/p5-6-tests.tap",
+    "focusedIncludedInTotal": {"recovery":22,"productEntry":19,"p56Regression":3},
+    "productMatrix": {
+      "report": "reports/product-p5-6-matrix.json",
+      "configurations": 448, "aiRoles": 2, "levels": 2, "tests": 1792, "passed": 1792,
+      "actualSearchCalls": 6272, "acceptedSearchReplies": 4480, "staleCallbacksRejected": 5376, "injectedFailures": 7168,
+      "scope": "Product create/restore/save/pair-undo/recovery/task authority with virtual Worker ports and scheduling clock; actual search capped at 48/96 nodes and depth 2/4, zero search clock. Not full games or wall-clock/platform acceptance."
+    }
+  },
+  "fixes": [
+    {"issue":"UTC export date differed from the user's local calendar","change":"localCalendarDate() and product export use local year/month/day","verification":"actual product export at China midnight plus isolated Asia/Shanghai, America/Los_Angeles and UTC/year-rollover checks"},
+    {"issue":"a missed storage event allowed a ready Worker's stale reply to change memory before conflict detection","change":"browser Worker adapter checks storage before ready/reply/error/messageerror reaches the original controller","verification":"position, counters, new save bytes and write count stay unchanged; Worker and retries stop; export remains available"}
+  ],
+  "desktop": {
+    "version":"0.5.6","target":"win32-x64","electronVersion":"44.9.0",
+    "structure":"reports/desktop-p5-6-verification.json","peFiles":7,"asarFiles":70,
+    "asarSHA256":"d28d3cdc4c7a8dc17d6eb3efec8de571d10c0e7dcff4b9873d8f13e00b1bd6bf",
+    "runtime":"reports/windows-p5-6-runtime.json",
+    "runtimeScope":"Windows NT 10.0.26200.0 x64, Chinese/space-path launch twice with exit 0, standard 9x9 AI A opening and reply, two-command undo, pause/export, native JSON save/open/import, explicit-continue restore after import and restart, close guard",
+    "staticRuntimeTestedRemainsFalse":true
+  },
+  "remainingLimits": [
+    "Physical disconnection, system-scale combinations, second-instance activation, multi-monitor/window combinations, other Windows architectures, Safari and physical mobile devices were not accepted.",
+    "Native runtime checks cover standard AI A on 9x9; the automated matrix is not full platform coverage.",
+    "A historical 19x19 record of 10008 commands can exhaust easy replay budget; bounded recovery does not guarantee a move on all hardware, throttled tabs or very long records.",
+    "No win-rate fairness or general playing-strength claim is established."
+  ],
+  "report":"docs/P5.6验收报告.md"
+}

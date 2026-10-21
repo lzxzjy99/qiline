@@ -1,8 +1,8 @@
 {
   "name":"qiline",
   "productName":"弈合",
-  "version":"0.4.0",
-  "description":"围棋提子与五连确认的本地双人游戏",
+  "version":"0.5.6",
+  "description":"围棋提子与五连确认的离线双人与人机练习游戏",
   "main":"main.cjs",
   "private":true,
   "license":"UNLICENSED"

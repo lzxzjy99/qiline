@@ -1,6 +1,6 @@
 import {DEFAULT_RULES, activePlayer, formatPoint, inspectGroup} from './core/src/index.js';
 import {createBrowserAI} from './ui/ai-host.mjs';
-import {SAVE_KEY, SafeStorage, createGameSession, practiceView, undoPracticePair, respondUndoPair, makeWebSave, parseWebSave, phaseView, rulesView, claimsView, playerName, colorName, other, errorText} from './ui/model.mjs';
+import {SAVE_KEY, SafeStorage, createGameSession, practiceView, undoPracticePair, respondUndoPair, localCalendarDate, makeWebSave, parseWebSave, phaseView, rulesView, claimsView, playerName, colorName, other, errorText} from './ui/model.mjs';
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -48,7 +48,7 @@ function attachAI(restored=false) {
       if(flash.length)setTimeout(()=>{flash=[];renderBoard();},750);
     }
     render();
-  });
+  },undefined,()=>storage.check());
   if(!result.ok){session.setPaused(true);aiState={status:'failed',error:result.error};notice(errorText(result.error),true);return;}
   ai=result.value;
   if(restoreHold||storage.conflict)ai.pause();else ai.start();
@@ -319,7 +319,7 @@ function download(content,name) {
   const blob=new Blob([content],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-$('export-btn').onclick=()=>{if(session)download(JSON.stringify(makeWebSave(session,meta,uid()),null,2),`弈合_第${meta.round}局_${new Date().toISOString().slice(0,10)}.json`);};
+$('export-btn').onclick=()=>{if(session)download(JSON.stringify(makeWebSave(session,meta,uid()),null,2),`弈合_第${meta.round}局_${localCalendarDate()}.json`);};
 $('import-btn').onclick=()=>$('import-file').click();
 $('import-file').onchange=async e=>{
   const file=e.target.files[0];e.target.value='';if(!file)return;

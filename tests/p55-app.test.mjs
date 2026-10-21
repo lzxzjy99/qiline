@@ -339,6 +339,28 @@ test('a missed storage event is detected at readiness and stops work before send
   }finally{h.close();}
 });
 
+test('a missed storage update after readiness rejects replies and failures before the active position changes',async()=>{
+  for(const event of ['reply','error','messageerror']){
+    const h=await harness();try{
+      h.start({humanActor:'A',swap3:false});h.point(40);h.clock.tick();const worker=h.workers.at(-1);worker.ready();
+      const beforeCount=h.$('move-count').textContent,beforeBoard=h.$('board').innerHTML,writes=h.commits();
+      const obsolete=worker.onmessage,reply=worker.result({kind:'place',actor:'B',point:0});
+      const external=JSON.stringify({...h.current(),snapshotId:'newer-other-tab'});h.data.set(SAVE_KEY,external);
+      if(event==='reply')worker.emit(reply);
+      else worker[event==='error'?'onerror':'onmessageerror']({});
+      assert.equal(worker.terminated,1,`${event}: conflict must stop the current Worker`);
+      assert.equal(h.$('move-count').textContent,beforeCount,`${event}: no command may commit into stale memory`);
+      assert.equal(h.$('board').innerHTML,beforeBoard,`${event}: stale result must not change the displayed position`);
+      assert.equal(h.commits(),writes,`${event}: no autosave may overwrite or back up stale bytes`);
+      assert.equal(h.data.get(SAVE_KEY),external);assert.match(h.$('ai-status').textContent,/冲突/);
+      assert.equal(h.$('ai-resume').disabled,true);assert.equal(h.$('export-btn').disabled,false);
+      obsolete({data:reply});h.clock.tick(10000);
+      assert.equal(h.workers.length,1);assert.equal(h.$('move-count').textContent,beforeCount);
+      assert.equal(h.data.get(SAVE_KEY),external);
+    }finally{h.close();}
+  }
+});
+
 test('invalid imports preserve active work and paused opening cancellation never briefly resumes AI',async()=>{
   const h=await harness();try{
     h.start();h.clock.tick();const worker=h.workers.at(-1);worker.ready();const raw=h.data.get(SAVE_KEY);

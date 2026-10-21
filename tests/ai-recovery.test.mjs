@@ -210,3 +210,24 @@ test('a successful no-op command cancels waiting recovery without consuming anot
  assert.equal(f.clock.timers.size,0);assert.equal(f.driver.state.status,'failed');
  f.clock.tick(10000);assert.equal(f.clock.workers.length,1);f.driver.close();
 });
+
+test('out-of-order callbacks from a failed Worker cannot pause or commit into the replacement task',()=>{
+ const f=fixture(),old=f.start();old.ready();
+ const oldMessage=old.onmessage,oldError=old.onerror,oldResult=old.result({kind:'place',actor:'A',point:40});
+ oldError({});f.clock.tick(250);const fresh=f.clock.workers.at(-1);fresh.ready();
+ const task=f.session.state.task,before=f.session.state.match;
+ oldMessage({data:oldResult});oldError({});
+ assert.equal(f.session.state.task,task);assert.equal(f.session.state.match,before);
+ assert.equal(f.driver.state.status,'thinking');assert.equal(fresh.terminated,0);assert.equal(f.clock.workers.length,2);
+ fresh.emit(fresh.result({kind:'place',actor:'A',point:0}));
+ assert.equal(f.session.state.match.state.ply,1);assert.equal(f.session.state.match.accepted[0].point,0);f.driver.close();
+});
+
+test('a cancelled retry timeout arriving after explicit resume cannot stop the resumed task',()=>{
+ const f=fixture();f.start();failWorker(f);const obsolete=[...f.clock.timers.values()].map(t=>t.callback);
+ value(f.driver.pause());value(f.driver.resume());f.clock.tick();const fresh=f.clock.workers.at(-1);fresh.ready();
+ const task=f.session.state.task;for(const callback of obsolete)callback();
+ assert.equal(f.session.state.task,task);assert.equal(f.driver.state.status,'thinking');assert.equal(fresh.terminated,0);
+ fresh.emit(fresh.result({kind:'place',actor:'A',point:0}));assert.equal(f.session.state.match.state.ply,1);
+ f.clock.tick(10000);assert.equal(f.clock.workers.length,2);assert.equal(f.clock.timers.size,0);f.driver.close();
+});

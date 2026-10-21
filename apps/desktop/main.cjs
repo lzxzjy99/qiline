@@ -2,13 +2,16 @@
 const {app,BrowserWindow,protocol,session,dialog,Menu} = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
+const {version} = require('./package.json');
 const {HOME,WEB_PREFERENCES,isGameURL,isHomeURL,createAssetHandler,configureDownload,installCloseGuard} = require('./policy.cjs');
 
 // A stable, standard origin keeps modules and local saves independent of install path.
 protocol.registerSchemesAsPrivileged([{scheme:'qiline',privileges:{standard:true,secure:true,supportFetchAPI:true,corsEnabled:true}}]);
 app.setName('QiLine');
 app.setAppUserModelId('org.qiline.game');
-const profile=path.join(app.getPath('appData'),'QiLine');
+const profileOverride=process.env.QILINE_PROFILE_DIR;
+if(profileOverride&&!path.isAbsolute(profileOverride))throw new Error('QILINE_PROFILE_DIR must be an absolute path');
+const profile=profileOverride?path.resolve(profileOverride):path.join(app.getPath('appData'),'QiLine');
 fs.mkdirSync(profile,{recursive:true});app.setPath('userData',profile);
 let win;
 if(!app.requestSingleInstanceLock()) app.quit();
@@ -31,7 +34,7 @@ else {
     Menu.setApplicationMenu(Menu.buildFromTemplate([
       {label:'文件',submenu:[{label:'退出',accelerator:'Alt+F4',click:()=>app.quit()}]},
       {label:'显示',submenu:[{label:'放大',role:'zoomIn'},{label:'缩小',role:'zoomOut'},{label:'恢复原始大小',role:'resetZoom'},{type:'separator'},{label:'全屏',role:'togglefullscreen'}]},
-      {label:'帮助',submenu:[{label:'关于弈合',click:()=>dialog.showMessageBox(win,{type:'info',title:'弈合',message:'弈合 · 桌面双人版 v0.4',detail:'规则 2.1.0-r3\n完整玩法见游戏右上角“玩法手册”。\n此包为 Windows 候选版，尚待 Windows 真机验收。',buttons:['知道了']})}]}
+      {label:'帮助',submenu:[{label:'关于弈合',click:()=>dialog.showMessageBox(win,{type:'info',title:'弈合',message:`弈合 · 离线版 v${version}`,detail:'规则 2.1.0-r3\n支持同设备双人与人机练习，AI 提供简单／标准两档。\n完整玩法见游戏右上角“玩法手册”。\nWindows x64 候选版，实际验收范围见随包记录。',buttons:['知道了']})}]}
     ]));
     win.once('ready-to-show',()=>win.show());
     await win.loadURL(HOME);

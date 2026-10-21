@@ -2,12 +2,27 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {EventEmitter} from 'node:events';
-import {mkdtemp,writeFile,rm} from 'node:fs/promises';
+import {mkdtemp,writeFile,readFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {checkPE} from '../scripts/pe-check.mjs';
 const require=createRequire(import.meta.url);
 const {HOME,WEB_PREFERENCES,isGameURL,isHomeURL,resolveAsset,createAssetHandler,configureDownload,installCloseGuard}=require('../apps/desktop/policy.cjs');
+
+test('desktop release metadata and standalone manual describe the current human-AI build',async()=>{
+ const [desktop,project,tools,manual]=await Promise.all([
+  readFile(new URL('../apps/desktop/package.json',import.meta.url),'utf8').then(JSON.parse),
+  readFile(new URL('../package.json',import.meta.url),'utf8').then(JSON.parse),
+  readFile(new URL('../tools/desktop/package.json',import.meta.url),'utf8').then(JSON.parse),
+  readFile(new URL('../apps/desktop/manual.html',import.meta.url),'utf8'),
+ ]);
+ assert.equal(desktop.version,'0.5.6');assert.equal(project.version,desktop.version);assert.equal(tools.version,desktop.version);
+ assert.equal(tools.devDependencies['@electron/packager'],'20.3.0');assert.equal(tools.qilineDesktop.electronVersion,'44.9.0');
+ assert.match(tools.qilineDesktop.electronSHA256,/^[0-9a-f]{64}$/);
+ assert.ok(manual.includes(`v${desktop.version}`));assert.match(manual,/人机练习.*简单／标准/);
+ assert.match(manual,/最后两条玩家命令/);assert.match(manual,/原始棋谱恢复为双人/);
+ assert.doesNotMatch(manual,/不含.*AI|人机存档会被拒绝|v0\.4/);
+});
 
 test('PE verification catches the truncated-runtime failure before a Windows package is shipped',()=>{
  const bytes=Buffer.alloc(1024);bytes.write('MZ');bytes.writeUInt32LE(128,0x3c);bytes.write('PE\0\0',128);bytes.writeUInt16LE(0x8664,132);bytes.writeUInt16LE(1,134);bytes.writeUInt16LE(240,148);bytes.writeUInt16LE(0x20b,152);bytes.write('.text',392);bytes.writeUInt32LE(512,408);bytes.writeUInt32LE(512,412);

@@ -1,4 +1,4 @@
-# 弈合 · 网页与桌面共用棋局（P5.5 人机入口）
+# 弈合 · 网页与桌面共用棋局（P5.6 / v0.5.6）
 
 规则版本 `2.1.0-r3`。9 / 13 / 15 / 19 路、默认对角线、固定五子延迟四手、三手换色、PSK；可切换延迟、方向和同色换线继承。支持同设备双人和一人对 AI 的人机练习，网页与 Electron 共用界面和会话逻辑。
 
@@ -9,7 +9,7 @@
 ```sh
 npm run build
 npm run check
-node --test tests/web.test.mjs
+npm test
 ```
 
 将 `dist/` 用 HTTP(S) 静态服务托管，入口 `index.html`。不要直接双击 `file://` 页面：浏览器会限制 ESM 模块。托管配置见 `.openai/hosting.json`。
@@ -27,6 +27,7 @@ node --test tests/web.test.mjs
 - `apps/web`：响应式棋盘、浏览器入口、文件导入导出和内置手册。
 - `scripts/build-web.mjs`：复制已验证的核心和网页资产，生成静态目录。
 - `tests/web.test.mjs`：网页模型、展示和存档检查。
+- `tests/product-matrix.test.mjs`：P5.6 的 1,792 个产品配置检查；测试条件与范围见对应报告。
 - 其他测试、fixtures、reports、examples 和 docs/API.md 保留 P2 验证资料。P2 历史报告不代表网页和 Windows 验收结果。
 
 ## 存档与权限
@@ -45,10 +46,12 @@ node --test tests/web.test.mjs
 
 P3：12 个 JavaScript 模块语法/本地依赖检查通过；10 个网页模型与存储测试通过；核心与 P2 编译结果逐字节一致。云端 Chromium 中验证默认开局至终局、换线继承 21 手 / 固定五子 23 手差异、查气只读、悔棋双方同意、导出导入、刷新恢复、键盘、大棋盘、竞技权限、认输和和棋。窄屏使用 390px iframe 检查，不等于实体手机触摸或 Safari 真机验收。
 
-P4 已加入离线桌面壳、原生存档保存对话框、退出保护和 Windows 构建／校验脚本；可生成包含“弈合.exe”的完整运行目录。构建步骤与本轮修复见 `docs/desktop-build.md`，真实 Windows 运行、离线、缩放和中文路径仍按 `docs/Windows真机验收清单.md` 待测。
+P4 加入离线桌面壳、原生存档保存对话框、退出保护和 Windows 构建／校验脚本。P5.6 已生成 v0.5.6 Windows x64 完整运行目录，并在包含中文与空格的路径启动两次、正常退出。9 路标准 AI=A 的摆局与应手、两手悔棋、暂停、原生保存／导入、重启恢复后等待继续，以及退出保护均完成实际检查。保留整个目录，运行其中的“弈合.exe”；构建见 [Windows 构建与验证](docs/desktop-build.md)，限定通过范围见 [P5.6 验收报告](docs/P5.6验收报告.md) 及 [Windows 清单](docs/Windows真机验收清单.md)。
 
-P5.1–P5.3 的接口、战术与预算搜索已完成；P5.4 已加入独立模块 Worker、实际终止、超时守护、暂停／重试及悔棋后的等待。P5.5 将人机入口、难度、开局身份和保存恢复接入既有网站，并沿用规则、会话和 AI 算法。详见 [AI 实施框架](docs/AI接口与实施框架.md)、[基础战术](docs/AI基础战术P5.2.md)、[搜索与预算](docs/AI搜索与预算P5.3.md)、[后台任务](docs/AI后台任务P5.4.md) 和 [人机界面](docs/AI人机界面P5.5.md)。`npm run test:ai`、`test:search`、`test:worker` 分别运行对应检查；`npm run build:ai` 重新编译 AI。本阶段实际验证范围与结果以 `reports/ai-p5-5-verification.json` 为准。
+P5.1–P5.3 的接口、战术与预算搜索已完成；P5.4 已加入独立模块 Worker、实际终止、超时守护、暂停／重试及悔棋后的等待。P5.5 将人机入口、难度、开局身份和保存恢复接入既有网站。P5.5.1 将界面悔棋改为两手，加入有限自动恢复、最终失败提示和轻量状态更新；历史结果见 `reports/ai-p5-5-1-verification.json`。
 
-本阶段未生成新的 Windows 安装或运行包；Electron 共用此渲染器源码，真实 Windows Worker、离线、缩放和中文路径验收仍属 P5.6 范围。未完成分配置的胜率公平性研究；不能把规则对称或随机对局看作公平证明。
+P5.6 自动检查共 9,653 项通过，无失败、跳过或取消，详见 `reports/p5-6-tests.tap`。其中产品矩阵为 448 种规则 × 两种 AI 身份 × 两档难度，共 1,792 项；矩阵使用虚拟 Worker／时钟和受限真实搜索，不代表 1,792 局完整对战或真实平台验收。本阶段另修复了本地导出日期，以及漏掉存储事件时 AI 回复先改变内存棋局的竞态。
 
-2026-10-21 的 P5.5.1 修订将界面悔棋改为两手，加入有限自动恢复、最终失败提示和轻量状态更新。7,854 项自动检查通过，另完成实际浏览器两手悔棋与故障注入；详见 `reports/ai-p5-5-1-verification.json`。
+实现说明见 [AI 实施框架](docs/AI接口与实施框架.md)、[基础战术](docs/AI基础战术P5.2.md)、[搜索与预算](docs/AI搜索与预算P5.3.md)、[后台任务](docs/AI后台任务P5.4.md) 和 [人机界面](docs/AI人机界面P5.5.md)。`npm run test:ai`、`test:search`、`test:worker` 分别运行对应检查；`npm run build:ai` 重新编译 AI。
+
+物理断网、系统缩放 150%／200%、单实例第二次启动、窗口／多屏、实体手机、Safari 和其他 CPU 架构仍待验收；Windows 实测也不覆盖全部配置。未完成分配置的胜率公平性研究，不能把规则对称或随机对局看作公平证明。

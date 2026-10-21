@@ -1,0 +1,59 @@
+{
+  "stage": "P5.6",
+  "version": "0.5.6",
+  "rulesVersion": "2.1.0-r3",
+  "verifiedOn": "2026-10-21",
+  "timezone": "Asia/Shanghai",
+  "environment": {
+    "os": "Windows NT 10.0.26200.0",
+    "architecture": "x64",
+    "application": "C:/Users/lzx21/Documents/qiline/releases/中文 路径/弈合-0.5.6-win-x64/弈合.exe",
+    "isolatedProfile": "C:/Users/lzx21/Documents/qiline/qa-profile-p56",
+    "displayScale": "not recorded; no 150%/200% system-scale acceptance"
+  },
+  "runtimeScope": {
+    "status": "limited-pass",
+    "launches": 2,
+    "exitCodes": [0, 0],
+    "chineseAndSpacePath": "passed",
+    "closeGuard": "both continue-playing and confirm-close observed",
+    "practice": {
+      "boardSize": 9,
+      "level": "standard",
+      "aiActor": "A",
+      "humanActor": "B",
+      "humanColor": "white",
+      "opening": ["A black F1", "A white D1", "A black D9", "B chooses white"],
+      "response": ["B white E5", "A black E8"],
+      "pairUndo": "5 plies/5 stones to 3 plies/3 stones; E5 and E8 empty",
+      "pause": "board locked while export remained available"
+    },
+    "nativeSaveAndOpenDialogs": {
+      "fileName": "桌面测试存档.json",
+      "bytes": 1180,
+      "export": "passed",
+      "importAndConfirmReplacement": "passed",
+      "restored": {"aiActor":"A","level":"standard","humanActor":"B","humanColor":"white","explicitCommands":4,"plies":3,"stones":3,"heldUntilContinue":true}
+    },
+    "restartRestore": {
+      "sameIsolatedProfile": true,
+      "restored": "3 plies/3 stones, standard AI A, human B white, waiting for explicit continue",
+      "continued": "after continue, B white E5 received A black E8; 5 plies/5 stones"
+    }
+  },
+  "evidence": ["reports/windows-p5-6-restored.jpg", "reports/windows-p5-6-ai-after-restart.jpg"],
+  "notPerformed": [
+    "physical network disconnection",
+    "150%/200% system scaling and full zoom combinations",
+    "single-instance second-launch behavior",
+    "window-size and multi-monitor combinations",
+    "Windows full configuration, both difficulty levels and all opening-role combinations",
+    "native Worker failure injection and active-search pause timing",
+    "complete terminal games and fixed-five/color-pressure comparison on Windows",
+    "Safari or physical mobile devices",
+    "Windows ARM or 32-bit builds"
+  ],
+  "structuralReport": "reports/desktop-p5-6-verification.json",
+  "structuralReportRuntimeTested": false,
+  "interpretation": "Static build reports retain runtimeTested:false; this separate runtimeScope records only the actual Windows operations above, not blanket platform acceptance."
+}

@@ -6,6 +6,9 @@ export const SAVE_KEY = 'qiline.web.r3.current';
 export const BACKUP_KEY = 'qiline.web.r3.previous';
 export const other = p => p === 'A' ? 'B' : 'A';
 export const colorName = c => c === 'black' ? '黑棋' : '白棋';
+export function localCalendarDate(date=new Date()) {
+  return `${String(date.getFullYear()).padStart(4,'0')}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
 export const fail = code => ({ok:false,error:{code}});
 const plain = x => x !== null && typeof x === 'object' && !Array.isArray(x);
 export const playerName = (meta, p) => meta.names[p === 'A' ? meta.aIndex : 1-meta.aIndex];

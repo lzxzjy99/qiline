@@ -7,7 +7,7 @@ export const AI_PROTOCOL_VERSION = 1;
 /** Initial engineering budgets, not measured playing-strength ratings. */
 export const AI_PROFILES:Readonly<Record<AILevel,SearchBudget>> = freeze({
   easy:{timeMs:300,maxNodes:2500,maxDepth:2},
-  standard:{timeMs:1200,maxNodes:15000,maxDepth:4},
+  standard:{timeMs:1200,maxNodes:15000,maxDepth:6},
 });
 export const AI_BUDGET_LIMITS:SearchBudget = freeze({timeMs:10000,maxNodes:1000000,maxDepth:12});
 export const aiOK = <T>(value:T):AIResult<T> => Object.freeze({ok:true,value});

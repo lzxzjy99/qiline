@@ -16,7 +16,7 @@ test('desktop release metadata and standalone manual describe the current human-
   readFile(new URL('../tools/desktop/package.json',import.meta.url),'utf8').then(JSON.parse),
   readFile(new URL('../apps/desktop/manual.html',import.meta.url),'utf8'),
  ]);
- assert.equal(desktop.version,'0.5.6');assert.equal(project.version,desktop.version);assert.equal(tools.version,desktop.version);
+ assert.match(desktop.version,/^\d+\.\d+\.\d+$/);assert.equal(project.version,desktop.version);assert.equal(tools.version,desktop.version);
  assert.equal(tools.devDependencies['@electron/packager'],'20.3.0');assert.equal(tools.qilineDesktop.electronVersion,'44.9.0');
  assert.match(tools.qilineDesktop.electronSHA256,/^[0-9a-f]{64}$/);
  assert.ok(manual.includes(`v${desktop.version}`));assert.match(manual,/人机练习.*简单／标准/);

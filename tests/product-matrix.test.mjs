@@ -12,10 +12,12 @@ import {value,fingerprint} from './helpers.mjs';
 // clocks are deterministic substitutes; search really runs, capped at 48/96 nodes.
 // This is not a matrix of native threads, complete games, or strength measurements.
 const results=[];
+const phase=process.env.QILINE_MATRIX_PHASE??'P5.6';
+assert.ok(['P5.6','P5.7'].includes(phase));
 after(()=>{
   const sum=key=>results.reduce((total,row)=>total+(row[key]??0),0);
-  writeFileSync(new URL('../reports/product-p5-6-matrix.json',import.meta.url),JSON.stringify({
-    phase:'P5.6',rulesVersion:'2.1.0-r3',configurations:448,aiRoles:2,levels:2,expected:1792,
+  writeFileSync(new URL(`../reports/product-${phase.toLowerCase().replace('.','-')}-matrix.json`,import.meta.url),JSON.stringify({
+    phase,rulesVersion:'2.1.0-r3',configurations:448,aiRoles:2,levels:2,expected:1792,
     coverage:'Product create/restore/save/pair-undo adapters, bounded recovery and original task authority with virtual Worker ports and clock; actual bounded runSearch, not full games or platform execution.',
     searchBudget:{easy:{maxNodes:48,maxDepth:2},standard:{maxNodes:96,maxDepth:4},clock:'fixed zero inside search; virtual monotonic scheduling outside search'},
     passed:results.filter(row=>row.status==='passed').length,

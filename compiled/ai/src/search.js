@@ -5,7 +5,9 @@ import { alphaBeta } from "./tree.js";
 import { evaluatePosition, WIN_VALUE } from "./evaluation.js";
 import { actionKey, orderActions, tieRank } from "./ordering.js";
 import { featuresOf, otherColor, playerColor, rescuedStones } from "./features.js";
-export const SEARCH_POLICIES = freeze({ easy: { quietWidth: 6 }, standard: { quietWidth: 12 } });
+export const SEARCH_POLICIES = freeze({
+    easy: { quietWidth: 6, rootWidth: 12 }, standard: { quietWidth: 12, rootWidth: 24 },
+});
 class Stopped {
     reason;
     constructor(reason) {
@@ -20,6 +22,9 @@ class Control {
     last;
     nodes = 0;
     maxVisitedDepth = 0;
+    // Request-local identity cache: distinct ko histories/claim clocks never share entries.
+    transitions = new WeakMap();
+    cachedTransitions = 0;
     constructor(budget, now, cancelled, started) {
         this.budget = budget;
         this.now = now;
@@ -43,9 +48,23 @@ class Control {
         this.check();
         if (this.nodes >= this.budget.maxNodes)
             throw new Stopped("nodes");
+        // Revisited probes still spend a node; memoization saves computation, not budget checks.
         this.nodes++;
         this.maxVisitedDepth = Math.max(this.maxVisitedDepth, depth);
-        return applyAction(match, action);
+        const key = actionKey(action), cached = this.transitions.get(match)?.get(key);
+        if (cached)
+            return cached;
+        const result = applyAction(match, action);
+        if (this.cachedTransitions < 2048) {
+            let entries = this.transitions.get(match);
+            if (!entries) {
+                entries = new Map();
+                this.transitions.set(match, entries);
+            }
+            entries.set(key, result);
+            this.cachedTransitions++;
+        }
+        return result;
     }
 }
 const defaultNow = () => globalThis.performance.now();
@@ -82,6 +101,25 @@ function isCritical(before, after, action, transition, hinted) {
     if (!color)
         return false;
     return rescuedStones(before, after, color) > 0 || featuresOf(after)[otherColor(color)].completions.length < featuresOf(before)[otherColor(color)].completions.length;
+}
+/** Only an actually legal, core-confirmed winning reply proves a direct tactical loss. */
+function losingReply(match, justMoved, control, depth) {
+    if (match.state.outcome || match.state.phase.kind !== "playing")
+        return false;
+    const actor = activePlayer(match);
+    if (!actor || actor === justMoved)
+        return false;
+    const color = match.state.phase.toMove;
+    const probes = match.rules.confirmationDelay === 0
+        ? featuresOf(match)[color].completions.map(point => ({ kind: "place", actor, point })) : [];
+    if (match.state.claims.some(c => c.color === color && c.dueAt <= match.state.ply + 1))
+        probes.push({ kind: "pass", actor });
+    for (const action of probes) {
+        const result = control.simulate(match, action, depth);
+        if (result.ok && result.value.match.state.outcome?.kind === "win" && result.value.match.state.outcome.winner === actor)
+            return true;
+    }
+    return false;
 }
 /** Timed local search. It returns a serialized reply, not an authorization token or a live move. */
 export function runSearch(raw, host = {}) {
@@ -146,11 +184,29 @@ export function runSearch(raw, host = {}) {
         const ordered = orderActions(match, header.seed);
         control.check();
         const roots = [];
+        const orders = new WeakMap();
+        const proposalsFor = (match, preferred) => {
+            let proposals = orders.get(match);
+            if (!proposals) {
+                proposals = orderActions(match, header.seed);
+                orders.set(match, proposals);
+            }
+            if (!preferred)
+                return proposals;
+            const key = actionKey(preferred);
+            return [...proposals.filter(p => actionKey(p.action) === key), ...proposals.filter(p => actionKey(p.action) !== key)];
+        };
         let values = new Map();
+        let quietRoots = 0;
         for (const proposal of ordered) {
+            control.check();
+            if (!proposal.critical && quietRoots >= SEARCH_POLICIES[header.level].rootWidth)
+                continue;
             const result = control.simulate(match, proposal.action, 1);
             if (!result.ok)
                 continue;
+            if (!proposal.critical)
+                quietRoots++;
             const next = result.value.match;
             rootCount++;
             // Retain a known-legal root even if the next clock check interrupts its evaluation.
@@ -186,28 +242,51 @@ export function runSearch(raw, host = {}) {
             const sorted = roots.slice().sort((a, b) => (previousValues.get(actionKey(b.action)) ?? -Infinity) - (previousValues.get(actionKey(a.action)) ?? -Infinity)
                 || b.order - a.order || tieRank(b.action, header.seed) - tieRank(a.action, header.seed));
             let quiet = 0;
-            const selected = sorted.filter(r => r.critical || quiet++ < width);
+            const candidates = sorted.filter(r => r.critical || quiet++ < width), safe = [];
+            for (const root of candidates) {
+                if (losingReply(root.next, actor, control, 2))
+                    cutoffs++;
+                else
+                    safe.push(root);
+            }
+            const selected = safe.length ? safe : candidates;
             const tree = {
                 check: () => control.check(), terminal: n => !!n.match.state.outcome, player: n => activePlayer(n.match),
                 evaluate: n => { control.check(); return evaluatePosition(n.match, actor); }, cutoff: () => { cutoffs++; },
                 children: function* (node) {
                     control.check();
                     const pref = node.onPV ? preferred[node.pathDepth] ?? null : null;
-                    const proposals = orderActions(node.match, header.seed, pref);
+                    const proposals = proposalsFor(node.match, pref);
                     control.check();
                     let quietLegal = 0;
+                    const quietWidth = header.level === "standard" ? Math.max(4, width - node.pathDepth * 2) : width;
+                    const moving = activePlayer(node.match);
+                    let losingChild = null, any = false;
                     for (const proposal of proposals) {
                         control.check();
-                        if (!proposal.critical && quietLegal >= width)
+                        if (!proposal.critical && quietLegal >= quietWidth)
                             continue;
                         const result = control.simulate(node.match, proposal.action, node.pathDepth + 1);
                         if (!result.ok)
                             continue;
                         if (!proposal.critical)
                             quietLegal++;
-                        yield { move: proposal.action, node: { match: result.value.match, pathDepth: node.pathDepth + 1,
+                        const child = { move: proposal.action, node: { match: result.value.match, pathDepth: node.pathDepth + 1,
                                 onPV: node.onPV && !!pref && actionKey(proposal.action) === actionKey(pref) } };
+                        if (node.pathDepth + 2 <= depth && losingReply(child.node.match, moving, control, node.pathDepth + 2)) {
+                            losingChild ??= child;
+                            cutoffs++;
+                            continue;
+                        }
+                        any = true;
+                        yield child;
+                        const outcome = child.node.match.state.outcome;
+                        if (outcome?.kind === "win" && outcome.winner === moving)
+                            return;
                     }
+                    // If all searched moves lose, retain a legal branch instead of inventing a pass or score.
+                    if (!any && losingChild)
+                        yield losingChild;
                 },
             };
             let iterationBest = null, iterationValue = -Infinity, iterationPV = [];

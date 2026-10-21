@@ -8,30 +8,6 @@ export function tieRank(a, seed) {
     x = Math.imul(x ^ (x >>> 15), 0x846ca68b);
     return (x ^ (x >>> 16)) >>> 0;
 }
-function lineHint(match, p, color) {
-    const n = match.rules.boardSize, board = match.state.board, own = cellOf(color), weights = [0, 1, 8, 60, 500, 2000];
-    let score = 0;
-    const dirs = match.rules.directions === "four" ? [[1, 1], [-1, 1], [1, 0], [0, 1]] : [[1, 1], [-1, 1]];
-    for (const [dx, dy] of dirs) {
-        let count = 1, open = 0;
-        for (const sign of [-1, 1])
-            for (let k = 1; k <= 5; k++) {
-                const x = p % n + dx * k * sign, y = Math.floor(p / n) + dy * k * sign;
-                if (x < 0 || x >= n || y < 0 || y >= n)
-                    break;
-                const c = board[y * n + x];
-                if (c === own)
-                    count++;
-                else {
-                    if (c === 0)
-                        open++;
-                    break;
-                }
-            }
-        score += weights[Math.min(5, count)] * (open + 1);
-    }
-    return score;
-}
 /** Whole-board hints only. Every returned proposal is still checked by the core before use. */
 export function orderActions(match, seed, preferred = null) {
     const actor = activePlayer(match);
@@ -48,6 +24,14 @@ export function orderActions(match, seed, preferred = null) {
             mark(p, 1000000);
         for (const p of f[opponent].completions)
             mark(p, 800000);
+        for (const p of f[color].forcing)
+            mark(p, 20000);
+        for (const p of f[opponent].forcing)
+            mark(p, 18000);
+        for (const p of f[color].forks)
+            mark(p, 60000);
+        for (const p of f[opponent].forks)
+            mark(p, 55000);
         for (const group of f.groups.groups)
             if (group.liberties.size === 1) {
                 const point = group.liberties.values().next().value;
@@ -57,6 +41,14 @@ export function orderActions(match, seed, preferred = null) {
                     const breaks = match.state.claims.some(c => c.color === opponent && (c.points.length === 0 || c.points.some(p => group.stones.includes(p))));
                     mark(point, (breaks ? 3000000 : 200000) + group.stones.length * 20000);
                 }
+            }
+        // Approaching a two-liberty line group can break a delayed claim before it matures.
+        for (const group of f.groups.groups)
+            if (group.liberties.size === 2) {
+                const groupColor = group.color === 1 ? "black" : "white";
+                if (group.stones.some(p => f[groupColor].lineStones.has(p)))
+                    for (const point of group.liberties)
+                        mark(point, groupColor === opponent ? 90000 : 80000);
             }
         for (const p of capturePoints(match, color))
             important.add(p);
@@ -72,7 +64,7 @@ export function orderActions(match, seed, preferred = null) {
                 }
             }
             else
-                order += lineHint(match, point, color) * 1.1 + lineHint(match, point, opponent);
+                order += f[color].moves[point] * 1.1 + f[opponent].moves[point];
             list.push({ action: { kind: "place", actor, point }, critical: important.has(point), order: order + (priorities.get(point) ?? 0) });
         }
     if (phase.kind === "playing") {

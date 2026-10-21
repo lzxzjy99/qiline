@@ -1,6 +1,7 @@
 import type { AIAction, AILevel, AIResult, SearchReply } from "./types.js";
 export declare const SEARCH_POLICIES: Readonly<Record<AILevel, {
     readonly quietWidth: number;
+    readonly rootWidth: number;
 }>>;
 export interface SearchHost {
     readonly now?: () => number;

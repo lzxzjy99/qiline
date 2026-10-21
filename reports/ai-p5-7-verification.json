@@ -1,0 +1,96 @@
+{
+  "stage": "P5.7",
+  "version": "0.5.7",
+  "rulesVersion": "2.1.0-r3",
+  "verifiedOn": "2026-10-21",
+  "automated": {
+    "tests": 9659,
+    "passed": 9659,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "tap": "reports/p5-7-tests.tap",
+    "newTacticalTests": 6,
+    "productMatrix": {
+      "report": "reports/product-p5-7-matrix.json",
+      "tests": 1792,
+      "passed": 1792,
+      "failed": 0,
+      "actualSearchCalls": 6272,
+      "acceptedSearchReplies": 4480,
+      "scope": "Product create/restore/save/pair-undo adapters, bounded recovery and original task authority with virtual Worker ports and clock; actual bounded runSearch, not full games or platform execution."
+    }
+  },
+  "strength": {
+    "games": 24,
+    "wins": 17,
+    "losses": 7,
+    "draws": 0,
+    "unfinished": 0,
+    "report": "reports/ai-p5-7-strength.json",
+    "conditions": {
+      "boardSize": 9,
+      "swap3": true,
+      "directions": [
+        "diagonal",
+        "four"
+      ],
+      "delays": [
+        0,
+        4
+      ],
+      "seeds": [
+        17,
+        83,
+        941
+      ],
+      "maxNodes": 2000,
+      "maxDepth": 6,
+      "timeMs": 10000,
+      "maxCommands": 100,
+      "clock": "fixed zero; node/depth limited",
+      "roles": "each seed/configuration alternates the improved player A/B"
+    },
+    "notGeneralWinRate": true
+  },
+  "profiles": {
+    "easy": {
+      "timeMs": 300,
+      "maxNodes": 2500,
+      "maxDepth": 2
+    },
+    "standard": {
+      "timeMs": 1200,
+      "maxNodes": 15000,
+      "maxDepth": 6
+    }
+  },
+  "changes": [
+    "distinct completion points for open/broken-three forks",
+    "capture-aware line/group safety and delayed-claim attack/defense",
+    "12/24 quiet root caps; all identified tactical candidates retained; deeper standard quiet narrowing",
+    "core-verified immediate-loss pruning and terminal-win branch closure",
+    "request-local identity transition cache capped at 2048, still charged to budgets"
+  ],
+  "sourceAtBuild": {
+    "baseCommit": "59b3bcabf14d45f66579696fb819de85590ac067",
+    "uncommittedChangesAtBuild": true,
+    "aiContractSHA256": "22431a56a8ed4e692fe6dc8da311b0c1bcf9db34174a25ed2df6e90edefb1d8b",
+    "coreAndSessionUnchanged": true
+  },
+  "desktop": {
+    "version": "0.5.7",
+    "structure": "reports/desktop-p5-7-verification.json",
+    "peFiles": 7,
+    "asarFiles": 70,
+    "asarSHA256": "19dda9a4c5ba257df5535f3bc88368fd16526b7d692a0a1ad221e7a9ddb7077a",
+    "runtime": "reports/windows-p5-7-runtime.json",
+    "runtimeScope": "limited smoke passed; static runtimeTested remains false"
+  },
+  "limits": [
+    "fixed 24-game/node-bounded set is not a general win-rate or fairness proof",
+    "selective quiet pruning is not exhaustive minimax",
+    "very long records still replay under the search clock; no cross-request hydration cache",
+    "physical mobile/Safari/scaling combinations remain unaccepted"
+  ]
+}

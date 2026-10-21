@@ -23,6 +23,9 @@ test(`bounded search ${configIdOf(cfg)} ${actor} ${level}`,()=>{
  ai();
  if(cfg.swap3&&actor==='B'){
   if(activePlayer(s.state.match)!=='B'){const human=activePlayer(s.state.match);value(s.submit(human,{kind:'pass',actor:human}));}
-  ai();assert.equal(s.state.match.state.ply,4);
+  // A stronger evaluation may choose black; A's explicit handoff pass then also counts.
+  const beforePly=s.state.match.state.ply,beforeCommands=s.state.match.accepted.length;
+  ai();assert.equal(s.state.match.state.ply,beforePly+1);
+  assert.equal(s.state.match.accepted.length,beforeCommands+1);
  }
 });

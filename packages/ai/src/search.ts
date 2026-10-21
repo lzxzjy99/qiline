@@ -10,7 +10,9 @@ import { evaluatePosition, WIN_VALUE } from "./evaluation.js";
 import { actionKey, orderActions, tieRank } from "./ordering.js";
 import { featuresOf, otherColor, playerColor, rescuedStones } from "./features.js";
 
-export const SEARCH_POLICIES:Readonly<Record<AILevel,{readonly quietWidth:number}>>=freeze({easy:{quietWidth:6},standard:{quietWidth:12}});
+export const SEARCH_POLICIES:Readonly<Record<AILevel,{readonly quietWidth:number;readonly rootWidth:number}>>=freeze({
+  easy:{quietWidth:6,rootWidth:12},standard:{quietWidth:12,rootWidth:24},
+});
 export interface SearchHost {readonly now?:()=>number;readonly isCancelled?:()=>boolean}
 export type SearchStop="max-depth"|"terminal-win"|"time"|"nodes"|"cancelled"|"internal";
 export interface SearchOutcome {
@@ -21,6 +23,9 @@ export interface SearchOutcome {
 class Stopped {constructor(readonly reason:"time"|"nodes"|"cancelled") {}}
 class Control {
   readonly start:number;last:number;nodes=0;maxVisitedDepth=0;
+  // Request-local identity cache: distinct ko histories/claim clocks never share entries.
+  private readonly transitions=new WeakMap<Match,Map<string,Result<Transition>>>();
+  private cachedTransitions=0;
   constructor(readonly budget:SearchBudget,readonly now:()=>number,readonly cancelled:()=>boolean,started:number) {
     this.start=started;this.last=this.start;if(!Number.isFinite(this.start)||this.start<0)throw Error("invalid clock");
   }
@@ -31,7 +36,15 @@ class Control {
   check():void {if(this.cancelled())throw new Stopped("cancelled");if(this.time()>=this.budget.timeMs)throw new Stopped("time");}
   simulate(match:Match,action:AIAction,depth:number):Result<Transition> {
     this.check();if(this.nodes>=this.budget.maxNodes)throw new Stopped("nodes");
-    this.nodes++;this.maxVisitedDepth=Math.max(this.maxVisitedDepth,depth);return applyAction(match,action);
+    // Revisited probes still spend a node; memoization saves computation, not budget checks.
+    this.nodes++;this.maxVisitedDepth=Math.max(this.maxVisitedDepth,depth);
+    const key=actionKey(action),cached=this.transitions.get(match)?.get(key);if(cached)return cached;
+    const result=applyAction(match,action);
+    if(this.cachedTransitions<2048){
+      let entries=this.transitions.get(match);if(!entries){entries=new Map();this.transitions.set(match,entries);}
+      entries.set(key,result);this.cachedTransitions++;
+    }
+    return result;
   }
 }
 interface RootMove {readonly action:AIAction;readonly next:Match;readonly critical:boolean;readonly order:number}
@@ -61,6 +74,20 @@ function isCritical(before:Match,after:Match,action:AIAction,transition:Transiti
   if (transition.events.some(e=>e.kind==="captured"||e.kind==="claim-started"||e.kind==="claim-cancelled")) return true;
   const color=playerColor(before,action.actor);if (!color) return false;
   return rescuedStones(before,after,color)>0 || featuresOf(after)[otherColor(color)].completions.length<featuresOf(before)[otherColor(color)].completions.length;
+}
+/** Only an actually legal, core-confirmed winning reply proves a direct tactical loss. */
+function losingReply(match:Match,justMoved:PlayerId,control:Control,depth:number):boolean {
+  if(match.state.outcome || match.state.phase.kind!=="playing")return false;
+  const actor=activePlayer(match);if(!actor || actor===justMoved)return false;
+  const color=match.state.phase.toMove;
+  const probes:AIAction[]=match.rules.confirmationDelay===0
+    ?featuresOf(match)[color].completions.map(point=>({kind:"place",actor,point})):[];
+  if(match.state.claims.some(c=>c.color===color&&c.dueAt<=match.state.ply+1))probes.push({kind:"pass",actor});
+  for(const action of probes){
+    const result=control.simulate(match,action,depth);
+    if(result.ok && result.value.match.state.outcome?.kind==="win" && result.value.match.state.outcome!.winner===actor)return true;
+  }
+  return false;
 }
 /** Timed local search. It returns a serialized reply, not an authorization token or a live move. */
 export function runSearch(raw:unknown,host:SearchHost={}):AIResult<SearchOutcome> {
@@ -97,9 +124,20 @@ export function runSearch(raw:unknown,host:SearchHost={}):AIResult<SearchOutcome
     const match=restored.value;control.nodes=1;
     control.check();const ordered=orderActions(match,header.seed);control.check();
     const roots:RootMove[]=[];
+    const orders=new WeakMap<Match,ReturnType<typeof orderActions>>();
+    const proposalsFor=(match:Match,preferred:AIAction|null)=>{
+      let proposals=orders.get(match);if(!proposals){proposals=orderActions(match,header.seed);orders.set(match,proposals);}
+      if(!preferred)return proposals;
+      const key=actionKey(preferred);
+      return [...proposals.filter(p=>actionKey(p.action)===key),...proposals.filter(p=>actionKey(p.action)!==key)];
+    };
     let values=new Map<string,number>();
+    let quietRoots=0;
     for(const proposal of ordered){
+      control.check();
+      if(!proposal.critical && quietRoots>=SEARCH_POLICIES[header.level].rootWidth)continue;
       const result=control.simulate(match,proposal.action,1);if(!result.ok)continue;
+      if(!proposal.critical)quietRoots++;
       const next=result.value.match;rootCount++;
       // Retain a known-legal root even if the next clock check interrupts its evaluation.
       if(!best){best=proposal.action;variation=[best];}
@@ -108,7 +146,8 @@ export function runSearch(raw:unknown,host:SearchHost={}):AIResult<SearchOutcome
       }
       control.check();const value=evaluatePosition(next,actor);control.check();
       const critical=isCritical(match,next,proposal.action,result.value,proposal.critical);
-      roots.push({action:proposal.action,next,critical,order:proposal.order});values.set(actionKey(proposal.action),value);
+      roots.push({action:proposal.action,next,critical,order:proposal.order});
+      values.set(actionKey(proposal.action),value);
       if(bestScore===null||value>bestScore||(value===bestScore&&tieRank(proposal.action,header.seed)>tieRank(best,header.seed))){
         best=proposal.action;bestScore=value;variation=[best];
       }
@@ -120,20 +159,35 @@ export function runSearch(raw:unknown,host:SearchHost={}):AIResult<SearchOutcome
       const sorted=roots.slice().sort((a,b)=>(previousValues.get(actionKey(b.action))??-Infinity)-(previousValues.get(actionKey(a.action))??-Infinity)
         || b.order-a.order || tieRank(b.action,header.seed)-tieRank(a.action,header.seed));
       let quiet=0;
-      const selected=sorted.filter(r=>r.critical || quiet++<width);
+      const candidates=sorted.filter(r=>r.critical || quiet++<width),safe:RootMove[]=[];
+      for(const root of candidates){
+        if(losingReply(root.next,actor,control,2))cutoffs++;else safe.push(root);
+      }
+      const selected=safe.length?safe:candidates;
       const tree:TreeAdapter<Node,AIAction>={
         check:()=>control.check(),terminal:n=>!!n.match.state.outcome,player:n=>activePlayer(n.match),
         evaluate:n=>{control.check();return evaluatePosition(n.match,actor);},cutoff:()=>{cutoffs++;},
         children:function*(node){
           control.check();const pref=node.onPV?preferred[node.pathDepth]??null:null;
-          const proposals=orderActions(node.match,header.seed,pref);control.check();let quietLegal=0;
+          const proposals=proposalsFor(node.match,pref);control.check();let quietLegal=0;
+          const quietWidth=header.level==="standard"?Math.max(4,width-node.pathDepth*2):width;
+          const moving=activePlayer(node.match)!;
+          let losingChild:{move:AIAction;node:Node}|null=null,any=false;
           for(const proposal of proposals){
-            control.check();if(!proposal.critical&&quietLegal>=width)continue;
+            control.check();if(!proposal.critical&&quietLegal>=quietWidth)continue;
             const result=control.simulate(node.match,proposal.action,node.pathDepth+1);if(!result.ok)continue;
             if(!proposal.critical)quietLegal++;
-            yield {move:proposal.action,node:{match:result.value.match,pathDepth:node.pathDepth+1,
+            const child={move:proposal.action,node:{match:result.value.match,pathDepth:node.pathDepth+1,
               onPV:node.onPV&&!!pref&&actionKey(proposal.action)===actionKey(pref)}};
+            if(node.pathDepth+2<=depth && losingReply(child.node.match,moving,control,node.pathDepth+2)){
+              losingChild??=child;cutoffs++;continue;
+            }
+            any=true;yield child;
+            const outcome=child.node.match.state.outcome;
+            if(outcome?.kind==="win"&&outcome.winner===moving)return;
           }
+          // If all searched moves lose, retain a legal branch instead of inventing a pass or score.
+          if(!any&&losingChild)yield losingChild;
         },
       };
       let iterationBest:AIAction|null=null,iterationValue=-Infinity,iterationPV:readonly AIAction[]=[];

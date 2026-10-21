@@ -1,0 +1,27 @@
+{
+  "stage": "P5.7",
+  "version": "0.5.7",
+  "verifiedOn": "2026-10-21",
+  "timezone": "Asia/Shanghai",
+  "os": "Windows NT 10.0.26200 x64",
+  "application": "C:/Users/lzx21/Documents/qiline/releases/中文 路径/弈合-0.5.7-win-x64/弈合.exe",
+  "isolatedProfile": "qa-profile-p57 copied from isolated qa-profile-p56",
+  "scope": {
+    "startup": "passed from Chinese and space path",
+    "restore": "previous 0.5.6 test record: 9x9, standard AI A black, human B white, 5 plies/5 stones; held for explicit continue",
+    "response": "continue, human white E6, AI black B5; 7 plies/7 stones; human turn, no failure notice",
+    "closeGuard": "shown; confirm close",
+    "exitCode": 0
+  },
+  "asarSHA256": "19dda9a4c5ba257df5535f3bc88368fd16526b7d692a0a1ad221e7a9ddb7077a",
+  "evidence": "reports/windows-p5-7-ai.jpg",
+  "notRetested": [
+    "full native import/export flows",
+    "all rules/difficulties/roles and full terminal games",
+    "native undo and failure injection",
+    "physical offline",
+    "display scaling/multi-monitor/second instance",
+    "other OS/CPU architectures"
+  ],
+  "userGameModified": false
+}

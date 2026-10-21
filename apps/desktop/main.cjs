@@ -34,7 +34,7 @@ else {
     Menu.setApplicationMenu(Menu.buildFromTemplate([
       {label:'文件',submenu:[{label:'退出',accelerator:'Alt+F4',click:()=>app.quit()}]},
       {label:'显示',submenu:[{label:'放大',role:'zoomIn'},{label:'缩小',role:'zoomOut'},{label:'恢复原始大小',role:'resetZoom'},{type:'separator'},{label:'全屏',role:'togglefullscreen'}]},
-      {label:'帮助',submenu:[{label:'关于弈合',click:()=>dialog.showMessageBox(win,{type:'info',title:'弈合',message:`弈合 · 离线版 v${version}`,detail:'规则 2.1.0-r3\n支持同设备双人与人机练习，AI 提供简单／标准两档。\n完整玩法见游戏右上角“玩法手册”。\nWindows x64 候选版，实际验收范围见随包记录。',buttons:['知道了']})}]}
+      {label:'帮助',submenu:[{label:'关于弈合',click:()=>dialog.showMessageBox(win,{type:'info',title:'弈合',message:`弈合 · 离线版 v${version}`,detail:'规则 2.1.0-r3\n支持同设备双人与人机练习，AI 提供简单／标准／困难三档。\n完整玩法见游戏右上角“玩法手册”。\nWindows x64 候选版，实际验收范围见随包记录。',buttons:['知道了']})}]}
     ]));
     win.once('ready-to-show',()=>win.show());
     await win.loadURL(HOME);

@@ -1,6 +1,6 @@
 import {DEFAULT_RULES, activePlayer, formatPoint, inspectGroup} from './core/src/index.js';
 import {createBrowserAI} from './ui/ai-host.mjs';
-import {SAVE_KEY, SafeStorage, createGameSession, practiceView, undoPracticePair, respondUndoPair, localCalendarDate, makeWebSave, parseWebSave, phaseView, rulesView, claimsView, playerName, colorName, other, errorText} from './ui/model.mjs';
+import {SAVE_KEY, SafeStorage, createGameSession, practiceView, undoPracticePair, respondUndoPair, localCalendarDate, makeWebSave, parseWebSave, phaseView, rulesView, claimsView, playerName, colorName, levelName, other, errorText} from './ui/model.mjs';
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -145,7 +145,7 @@ function render() {
   $('first-start').hidden=!!m&&!s.outcome;$('first-start').textContent=m?'再下一局 →':'开始对局 →';
   $('choice-actions').hidden=s?.phase.kind!=='choose'||!humanTurn();
   for(const id of ['choose-black','choose-white'])$(id).disabled=!!session?.state.paused||!humanTurn()||storage.conflict;
-  $('mode-label').textContent=p?`人机练习 · ${p.level==='easy'?'简单':'标准'}`:'本地双人';
+  $('mode-label').textContent=p?`人机练习 · ${levelName(p.level)}`:'本地双人';
   $('play-context').textContent=p?`本地人机 · 你是 ${p.humanActor} · ${m.rules.swap3?(p.humanActor==='A'?'摆局方':'选色方'):(p.humanActor==='A'?'执黑先行':'执白')}`:'同一设备，双方轮流操作';
   renderAI();
   $('players').innerHTML=['A','B'].map(p=>{
@@ -183,7 +183,7 @@ function renderAI(){
   const status=aiState?.status??'failed',recovering=status==='retrying',paused=!!session.state.paused&&!recovering,failed=status==='failed';
   $('ai-indicator').classList.toggle('thinking',['starting','thinking','retrying'].includes(status));
   $('ai-status').textContent=storage.conflict?'存档冲突，AI 已停止':restoreHold?'存档已恢复，等待继续':failed?'AI 未能完成这一手':aiState?.hold==='undo'?'已悔棋，等待继续 AI 回合':paused?'对局已暂停':status==='starting'?'AI 准备中':status==='thinking'||recovering?'AI 正在思考':humanTurn()?'轮到你了':'AI 即将行动';
-  $('ai-detail').textContent=failed?`${aiState?.retryAttempt?'已自动重试 '+aiState.retryAttempt+' 次。':''}${errorText(aiState?.error??{code:'AI_WORKER_FAILED'})}`:restoreHold?'已恢复角色、难度和完整棋谱；继续后再开始新的思考。':aiState?.hold==='undo'?'已撤回操作，AI 不会立即重下。':paused?'棋盘已锁定，查气和导出仍可使用。':'AI 在本机运行。思考时可查气、暂停或结束对局。';
+  $('ai-detail').textContent=failed?`${aiState?.retryAttempt?'已自动重试 '+aiState.retryAttempt+' 次。':''}${errorText(aiState?.error??{code:'AI_WORKER_FAILED'})}`:restoreHold?'已恢复角色、难度和完整棋谱；继续后再开始新的思考。':aiState?.hold==='undo'?'已撤回操作，AI 不会立即重下。':paused?'棋盘已锁定，查气和导出仍可使用。':p.level==='hard'?'困难 AI 会深入推演，通常需要数秒。思考时可查气、暂停或导出存档。':'AI 在本机运行。思考时可查气、暂停或结束对局。';
   $('ai-pause').hidden=paused||failed;$('ai-resume').hidden=!paused||failed;$('ai-retry').hidden=!failed;
   for(const id of ['ai-pause','ai-resume','ai-retry'])$(id).disabled=storage.conflict||!ai;
 }

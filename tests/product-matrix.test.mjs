@@ -12,14 +12,15 @@ import {value,fingerprint} from './helpers.mjs';
 // clocks are deterministic substitutes; search really runs, capped at 48/96 nodes.
 // This is not a matrix of native threads, complete games, or strength measurements.
 const results=[];
-const phase=process.env.QILINE_MATRIX_PHASE??'P5.6';
-assert.ok(['P5.6','P5.7'].includes(phase));
+const phase=process.env.QILINE_MATRIX_PHASE??'P5.8';
+assert.ok(['P5.6','P5.7','P5.8'].includes(phase));
+const levels=phase==='P5.8'?['easy','standard','hard']:['easy','standard'];
 after(()=>{
   const sum=key=>results.reduce((total,row)=>total+(row[key]??0),0);
   writeFileSync(new URL(`../reports/product-${phase.toLowerCase().replace('.','-')}-matrix.json`,import.meta.url),JSON.stringify({
-    phase,rulesVersion:'2.1.0-r3',configurations:448,aiRoles:2,levels:2,expected:1792,
+    phase,rulesVersion:'2.1.0-r3',configurations:448,aiRoles:2,levels:levels.length,expected:448*2*levels.length,
     coverage:'Product create/restore/save/pair-undo adapters, bounded recovery and original task authority with virtual Worker ports and clock; actual bounded runSearch, not full games or platform execution.',
-    searchBudget:{easy:{maxNodes:48,maxDepth:2},standard:{maxNodes:96,maxDepth:4},clock:'fixed zero inside search; virtual monotonic scheduling outside search'},
+    searchBudget:{easy:{maxNodes:48,maxDepth:2},standard:{maxNodes:96,maxDepth:4},hard:{maxNodes:96,maxDepth:8},clock:'fixed zero inside search; virtual monotonic scheduling outside search'},
     passed:results.filter(row=>row.status==='passed').length,
     failed:results.filter(row=>row.status==='failed').length,
     actualSearchCalls:sum('searchCalls'),acceptedSearchReplies:sum('acceptedReplies'),
@@ -32,7 +33,7 @@ class SearchingPort extends FakeWorker {
   postMessage(request){
     super.postMessage(request);
     if(this.skipSearch)return;
-    const budget={...request.budget,maxNodes:this.level==='easy'?48:96};
+    const budget={...request.budget,maxNodes:this.level==='easy'?48:96,maxDepth:this.level==='easy'?2:this.level==='hard'?8:4};
     this.searched=value(runSearch({...structuredClone(request),budget},{now:()=>0}));
     this.counters.searchCalls++;
     value(validateSearchReply(request,this.searched.reply));
@@ -92,7 +93,7 @@ function cleanup(f){
   assert.ok(f.clock.workers.every(worker=>worker.terminated===1));
 }
 
-for(const cfg of allRuleConfigurations())for(const aiActor of ['A','B'])for(const level of ['easy','standard'])
+for(const cfg of allRuleConfigurations())for(const aiActor of ['A','B'])for(const level of levels)
 test(`product pipeline ${configIdOf(cfg)} AI=${aiActor} ${level}`,()=>{
   const row={configId:configIdOf(cfg),aiActor,level,status:'failed',searchCalls:0,acceptedReplies:0,staleCallbacks:0,failures:0};
   const humanActor=aiActor==='A'?'B':'A',seed=level==='easy'?0:0xffffffff;

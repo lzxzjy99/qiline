@@ -7,6 +7,7 @@ import { actionKey, orderActions, tieRank } from "./ordering.js";
 import { featuresOf, otherColor, playerColor, rescuedStones } from "./features.js";
 export const SEARCH_POLICIES = freeze({
     easy: { quietWidth: 6, rootWidth: 12 }, standard: { quietWidth: 12, rootWidth: 24 },
+    hard: { quietWidth: 12, rootWidth: 24 },
 });
 class Stopped {
     reason;
@@ -185,11 +186,21 @@ export function runSearch(raw, host = {}) {
         control.check();
         const roots = [];
         const orders = new WeakMap();
-        const proposalsFor = (match, preferred) => {
+        const history = new Map(), killers = new Map();
+        const historyKey = (match, action) => `${action.actor}/${match.state.phase.kind}/${playerColor(match, action.actor)}/${actionKey(action)}`;
+        const proposalsFor = (match, preferred, pathDepth, quietWidth) => {
             let proposals = orders.get(match);
             if (!proposals) {
                 proposals = orderActions(match, header.seed);
                 orders.set(match, proposals);
+            }
+            if (header.level === "hard") {
+                const key = preferred ? actionKey(preferred) : null, killer = killers.get(pathDepth) ?? [];
+                const score = (p) => p.order + (history.get(historyKey(match, p.action)) ?? 0) + (killer.includes(historyKey(match, p.action)) ? 8000 : 0);
+                let quiet = 0;
+                const selected = proposals.filter(p => p.critical || actionKey(p.action) === key || quiet++ < quietWidth);
+                return selected.map(p => ({ p, preferred: actionKey(p.action) === key, score: score(p), tie: tieRank(p.action, header.seed) }))
+                    .sort((a, b) => Number(b.preferred) - Number(a.preferred) || Number(b.p.critical) - Number(a.p.critical) || b.score - a.score || b.tie - a.tie).map(x => x.p);
             }
             if (!preferred)
                 return proposals;
@@ -252,17 +263,45 @@ export function runSearch(raw, host = {}) {
             const selected = safe.length ? safe : candidates;
             const tree = {
                 check: () => control.check(), terminal: n => !!n.match.state.outcome, player: n => activePlayer(n.match),
-                evaluate: n => { control.check(); return evaluatePosition(n.match, actor); }, cutoff: () => { cutoffs++; },
+                evaluate: n => { control.check(); return evaluatePosition(n.match, actor); }, cutoff: (node, move, remaining) => {
+                    cutoffs++;
+                    if (header.level === "hard") {
+                        const key = historyKey(node.match, move);
+                        history.set(key, Math.min(4000, (history.get(key) ?? 0) + remaining * remaining * 20));
+                        killers.set(node.pathDepth, [key, ...(killers.get(node.pathDepth) ?? []).filter(k => k !== key)].slice(0, 2));
+                    }
+                },
+                extend: node => {
+                    if (header.level !== "hard" || node.pathDepth >= Math.min(header.budget.maxDepth, depth + 2)
+                        || node.match.state.phase.kind !== "playing")
+                        return false;
+                    control.check();
+                    const f = featuresOf(node.match);
+                    return (node.match.rules.confirmationDelay === 0 && (f.black.completions.length > 0 || f.white.completions.length > 0))
+                        || node.match.state.claims.some(c => c.dueAt <= node.match.state.ply + 2);
+                },
                 children: function* (node) {
                     control.check();
                     const pref = node.onPV ? preferred[node.pathDepth] ?? null : null;
-                    const proposals = proposalsFor(node.match, pref);
+                    const quietWidth = header.level === "easy" ? width : Math.max(4, width - node.pathDepth * 2);
+                    const proposals = proposalsFor(node.match, pref, node.pathDepth, quietWidth);
                     control.check();
                     let quietLegal = 0;
-                    const quietWidth = header.level === "standard" ? Math.max(4, width - node.pathDepth * 2) : width;
                     const moving = activePlayer(node.match);
+                    let forcing = null;
+                    if (header.level === "hard" && node.pathDepth >= depth) {
+                        const f = featuresOf(node.match);
+                        forcing = new Set([...f.black.completions, ...f.white.completions]);
+                        for (const group of f.groups.groups)
+                            if (group.liberties.size === 1
+                                || group.liberties.size === 2 && group.stones.some(p => f[group.color === 1 ? 'black' : 'white'].lineStones.has(p)))
+                                for (const point of group.liberties)
+                                    forcing.add(point);
+                    }
                     let losingChild = null, any = false;
                     for (const proposal of proposals) {
+                        if (forcing && proposal.action.kind === 'place' && !forcing.has(proposal.action.point))
+                            continue;
                         control.check();
                         if (!proposal.critical && quietLegal >= quietWidth)
                             continue;

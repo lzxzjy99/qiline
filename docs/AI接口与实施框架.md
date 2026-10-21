@@ -81,6 +81,8 @@ AI action 仅允许 `place`、`choose-color`、`pass`。禁止 AI 搜索结果�
 
 ## 存档兼容
 
+P5.8 新增困难档 `hard`，详见 [困难 AI](困难AIP5.8.md)。仅扩展控制者难度枚举与验证器，保持 v1 存档和原任务权限；困难存档需要支持该枚举的新版本。P2 历史哈希保持原样，会话的两处扩展由独立构建与 SHA-256 清单核验。
+
 继续使用已有 `SessionSave` v1，不增加控制者字段。AI 设置保存为 `{kind:"ai",level,seed}`，绑定 A 或 B；规则和已走命令以棋谱为准。
 
 `restorePlayableSession(newMatchId, raw)` 接受 SessionSave v1、其 JSON 文本或当前规则版本的原始 MatchRecord。纯棋谱默认恢复为双人局；单 AI 的非竞技会话恢复为练习局；双 AI 或竞技 AI 会话在第一版入口拒绝。网页外壳中的玩家姓名等元数据继续交由 UI 适配器处理。

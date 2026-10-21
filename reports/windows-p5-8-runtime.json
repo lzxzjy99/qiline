@@ -1,0 +1,23 @@
+{
+  "stage": "P5.8",
+  "version": "0.5.8",
+  "verifiedOn": "2026-10-22",
+  "timezone": "Asia/Shanghai",
+  "application": "C:/Users/lzx21/Documents/qiline/releases/中文 路径/弈合-0.5.8-win-x64/弈合.exe",
+  "isolatedProfile": "qa-profile-p58",
+  "scope": {
+    "startup": "Observed from Chinese/space path in an isolated test profile",
+    "hardMode": "Observed live 9x9 hard game, 6 plies/6 stones, hard AI A white and human B black; human turn, no failure visible",
+    "interactionLimit": "This round records startup/live hard-mode observation; no claim of automated Windows move/pause/export/restore acceptance"
+  },
+  "asarSHA256": "ea30c2d380a1c20bd833bb45eefc6115f57e17647a89178c3c06f6f73c1b760c",
+  "evidence": "reports/windows-p5-8-hard.png",
+  "notRetested": [
+    "native pause/restore/export/import/undo/failure injection",
+    "full native game/configuration matrix",
+    "physical offline",
+    "system scaling/multi-monitor/second-instance acceptance",
+    "other OS/CPU architectures"
+  ],
+  "userGameModified": false
+}

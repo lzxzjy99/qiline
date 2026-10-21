@@ -1,5 +1,5 @@
 import type { Match, MatchRecord, PlayerId, RuleConfig } from "../../core/src/types.js";
-export type Controller = { readonly kind:"human" } | { readonly kind:"ai"; readonly level:"easy"|"standard"; readonly seed:number };
+export type Controller = { readonly kind:"human" } | { readonly kind:"ai"; readonly level:"easy"|"standard"|"hard"; readonly seed:number };
 export type Controllers = Readonly<Record<PlayerId,Controller>>;
 export interface TaskToken {
   readonly matchId:string; readonly revision:number; readonly taskId:string;

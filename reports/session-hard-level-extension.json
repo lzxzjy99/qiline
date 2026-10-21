@@ -1,0 +1,45 @@
+{
+  "scope": "Only Controller level enum and its validator add hard; no session authority or game-rule change",
+  "source": {
+    "packages/session/src/types.ts": {
+      "baseline": "4ae3aa26f4085e0ba20b9ae06653b0bfdef1c03480981628b0721933119fac7b",
+      "sha256": "fdd21468c9e754a6144b31d6202b4a972e6c8b627830781201c6e2326a835054"
+    },
+    "packages/session/src/session.ts": {
+      "baseline": "ce2fe875aca55f6e98843835bcffdf7a5ea8c468aaa4e6c82059cadd0c4ed75e",
+      "sha256": "011f9c00802cb22d892d98e3d868a8f8937199bb1eee75a0f19d5a620fb4d42a"
+    }
+  },
+  "compiled": {
+    "compiled/session/src/index.d.ts": {
+      "sha256": "925bebed35869ae69f03e62e58c87f18b6c733071c9e5cb6fca7ef6299fe649b"
+    },
+    "compiled/session/src/index.js": {
+      "baseline": "3aee3f885fab2979c18276359c0113945f1dff09c25550631c7a27a4df56fea8",
+      "sha256": "3aee3f885fab2979c18276359c0113945f1dff09c25550631c7a27a4df56fea8"
+    },
+    "compiled/session/src/index.js.map": {
+      "sha256": "685a1ea63c67d246704873d4c4c61de28943bef16d7ab34eb42c267953b22557"
+    },
+    "compiled/session/src/session.d.ts": {
+      "sha256": "88ca2627997eb58d443d8a042b42db188c673acd8416e073c6c1e6b6011268de"
+    },
+    "compiled/session/src/session.js": {
+      "baseline": "99285be9ecbcbe3c36f3715e4d6ff9345b6d71f0e9e567fa7ecf57409f13ec24",
+      "sha256": "f068468a5211ddee27ddd1c6e583215c5e7e36ee8203456f06c4d0176387992c"
+    },
+    "compiled/session/src/session.js.map": {
+      "sha256": "c9c256381ca8137253e7106dbfa804bf5a6dc46c46bc955e1bafdbb1f6200854"
+    },
+    "compiled/session/src/types.d.ts": {
+      "sha256": "068976c232b6e06c807010cf88a660600cfa4e4ea637547e4ff4e49f2af74421"
+    },
+    "compiled/session/src/types.js": {
+      "baseline": "01ae2a5b120382f9a648ced7ee8507493a134f216d100fc61600c6c9738235d2",
+      "sha256": "01ae2a5b120382f9a648ced7ee8507493a134f216d100fc61600c6c9738235d2"
+    },
+    "compiled/session/src/types.js.map": {
+      "sha256": "3d5508d6da24ac9d649590eb9e0a3099eaca999ee1bb4cec49bd0270b34587f3"
+    }
+  }
+}

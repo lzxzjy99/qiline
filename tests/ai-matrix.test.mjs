@@ -5,8 +5,8 @@ import {beginAITurn,prepareSearch,AI_PROFILES} from '../dist/ai/src/index.js';
 import {value,error,fingerprint} from './helpers.mjs';
 import {practice,point,reply,place,command} from './ai-helpers.mjs';
 
-// 448 rule configurations × 2 true-player roles × 2 levels. These verify contracts, not playing strength.
-for(const cfg of allRuleConfigurations())for(const actor of ['A','B'])for(const level of ['easy','standard'])
+// 448 rule configurations × 2 true-player roles × 3 levels. These verify contracts, not playing strength.
+for(const cfg of allRuleConfigurations())for(const actor of ['A','B'])for(const level of ['easy','standard','hard'])
 test(`AI contract ${configIdOf(cfg)} ${actor} ${level}`,()=>{
  const s=practice(actor,cfg,level,actor==='A'?0:0xffffffff);
  function ai(action){

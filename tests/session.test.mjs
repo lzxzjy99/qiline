@@ -13,7 +13,7 @@ const stateText=s=>JSON.stringify(s.state);
 test('session validation copies controller settings and freezes published views',()=>{
  const input=opts({controllers:{A:{...HUMAN},B:{...AI}}});const s=value(createSession(input));input.controllers.B.seed=999;
  assert.equal(s.state.controllers.B.seed,37);assert.throws(()=>s.state.controllers.B.seed=999,TypeError);
- for(const bad of [null,{},opts({matchId:''}),opts({controllers:{A:HUMAN,B:{kind:'ai',level:'hard',seed:0}}}),
+ for(const bad of [null,{},opts({matchId:''}),opts({controllers:{A:HUMAN,B:{kind:'ai',level:'expert',seed:0}}}),
   opts({competitive:1}),{...opts(),unknown:true}])assert.equal(createSession(bad).ok,false);
 });
 

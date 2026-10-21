@@ -6,14 +6,19 @@ export interface TreeAdapter<N,M> {
   readonly player:(node:N)=>PlayerId|null;
   readonly evaluate:(node:N)=>number;
   readonly children:(node:N)=>Iterable<{readonly move:M;readonly node:N}>;
-  readonly cutoff:()=>void;
+  readonly cutoff:(node:N,move:M,depth:number)=>void;
+  readonly extend?:(node:N)=>boolean;
 }
 export interface TreeValue<M> {readonly value:number;readonly variation:readonly M[]}
 /** No negamax sign flipping: the same real player may act on consecutive commands. */
 export function alphaBeta<N,M>(node:N,depth:number,root:PlayerId,tree:TreeAdapter<N,M>,
   alpha=-Infinity,beta=Infinity):TreeValue<M> {
   tree.check();
-  if (depth===0 || tree.terminal(node)) return {value:tree.evaluate(node),variation:[]};
+  if (tree.terminal(node)) return {value:tree.evaluate(node),variation:[]};
+  if (depth===0) {
+    if(!tree.extend?.(node))return {value:tree.evaluate(node),variation:[]};
+    depth=1;
+  }
   const maximize=tree.player(node)===root;
   let value=maximize?-Infinity:Infinity,variation:readonly M[]=[],any=false;
   for (const child of tree.children(node)) {
@@ -23,7 +28,7 @@ export function alphaBeta<N,M>(node:N,depth:number,root:PlayerId,tree:TreeAdapte
     }
     any=true;
     if (maximize) alpha=Math.max(alpha,value);else beta=Math.min(beta,value);
-    if (alpha>=beta) {tree.cutoff();break;}
+    if (alpha>=beta) {tree.cutoff(node,child.move,depth);break;}
   }
   return any?{value,variation}:{value:tree.evaluate(node),variation:[]};
 }

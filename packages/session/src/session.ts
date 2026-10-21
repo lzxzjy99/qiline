@@ -14,7 +14,7 @@ function controllersOf(input:unknown):Result<Controllers> {
   for (const actor of ["A","B"] as const) {
     const c=input[actor];if (!plain(c)) return fail("INVALID_SESSION");
     if (c.kind==="human" && keysAre(c,["kind"])) result[actor]={kind:"human"};
-    else if (c.kind==="ai" && keysAre(c,["kind","level","seed"]) && (c.level==="easy"||c.level==="standard")
+    else if (c.kind==="ai" && keysAre(c,["kind","level","seed"]) && (c.level==="easy"||c.level==="standard"||c.level==="hard")
       && typeof c.seed==="number" && Number.isInteger(c.seed) && c.seed>=0 && c.seed<=0xffffffff)
       result[actor]={kind:"ai",level:c.level,seed:c.seed};
     else return fail("INVALID_SESSION");

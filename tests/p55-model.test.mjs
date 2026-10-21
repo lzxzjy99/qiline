@@ -112,13 +112,13 @@ test('competitive AI and double-AI saves are rejected in bare and wrapped format
 
 test('practice options and damaged controllers are validated before creating a playable game',()=>{
   const invalid=[null,{}, {matchId:'x',mode:'network'}, {matchId:'x',mode:'practice',humanActor:'black'},
-    {matchId:'x',mode:'practice',level:'hard'}, {matchId:'x',mode:'practice',seed:-1},
+    {matchId:'x',mode:'practice',level:'expert'}, {matchId:'x',mode:'practice',seed:-1},
     {matchId:'x',mode:'practice',seed:0x100000000},{matchId:'x',mode:'practice',competitive:'false'},
     {matchId:'x',mode:'practice',extra:true}];
   for(const input of invalid)assert.equal(createGameSession(input).ok,false,JSON.stringify(input));
   assert.equal(createGameSession({matchId:'x',mode:'practice',competitive:true}).error.code,'AI_MODE_UNSUPPORTED');
   const save=create().exportSave();
-  for(const controllers of [{A:{kind:'human'},B:{kind:'ai',level:'hard',seed:1}},
+  for(const controllers of [{A:{kind:'human'},B:{kind:'ai',level:'expert',seed:1}},
     {A:{kind:'human'},B:{kind:'ai',level:'easy',seed:1,paused:true}}]){
     assert.equal(parseWebSave({...save,controllers},'invalid').ok,false);
   }

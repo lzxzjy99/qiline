@@ -6,7 +6,7 @@ import {value} from './helpers.mjs';
 import {workerFixture} from './worker-fakes.mjs';
 
 // Deterministic Worker-port matrix for scheduler identity/lifecycle; native-thread tests run separately.
-for(const cfg of allRuleConfigurations())for(const actor of ['A','B'])for(const level of ['easy','standard'])
+for(const cfg of allRuleConfigurations())for(const actor of ['A','B'])for(const level of ['easy','standard','hard'])
 test(`worker lifecycle ${configIdOf(cfg)} ${actor} ${level}`,()=>{
  const s=practice(actor,cfg,level);if(actor==='B'){
   if(cfg.swap3)for(const c of ['I2','I4','I6'])value(s.submit('A',{kind:'place',actor:'A',point:point(s,c)}));

@@ -1,0 +1,183 @@
+{
+  "stage": "P5.8",
+  "version": "0.5.8",
+  "rulesVersion": "2.1.0-r3",
+  "verifiedOn": "2026-10-22",
+  "automated": {
+    "tests": 13250,
+    "passed": 13250,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "tap": "reports/p5-8-tests.tap",
+    "productMatrix": {
+      "report": "reports/product-p5-8-matrix.json",
+      "tests": 2688,
+      "passed": 2688,
+      "failed": 0,
+      "actualSearchCalls": 9408,
+      "acceptedSearchReplies": 6720,
+      "scope": "Product create/restore/save/pair-undo adapters, bounded recovery and original task authority with virtual Worker ports and clock; actual bounded runSearch, not full games or platform execution."
+    }
+  },
+  "strength": {
+    "selection": {
+      "report": "reports/ai-p5-8-hard-strength.json",
+      "summary": {
+        "games": 24,
+        "hardWins": 18,
+        "standardWins": 6,
+        "draws": 0,
+        "unfinished": 0
+      },
+      "conditions": {
+        "boardSize": 9,
+        "swap3": true,
+        "seeds": [
+          17,
+          83,
+          941
+        ],
+        "directions": [
+          "diagonal",
+          "four"
+        ],
+        "delays": [
+          0,
+          4
+        ],
+        "budgets": {
+          "standard": {
+            "timeMs": 10000,
+            "maxNodes": 1200,
+            "maxDepth": 6
+          },
+          "hard": {
+            "timeMs": 10000,
+            "maxNodes": 12000,
+            "maxDepth": 12
+          }
+        },
+        "maxCommands": 100,
+        "clock": "fixed zero; scaled node-limited comparison; not production wall-clock games",
+        "roles": "hard alternates A/B for every seed/configuration"
+      }
+    },
+    "holdout": {
+      "report": "reports/ai-p5-8-hard-holdout.json",
+      "summary": {
+        "games": 24,
+        "hardWins": 20,
+        "standardWins": 4,
+        "draws": 0,
+        "unfinished": 0
+      },
+      "conditions": {
+        "boardSize": 9,
+        "swap3": true,
+        "seeds": [
+          101,
+          271,
+          809
+        ],
+        "directions": [
+          "diagonal",
+          "four"
+        ],
+        "delays": [
+          0,
+          4
+        ],
+        "budgets": {
+          "standard": {
+            "timeMs": 10000,
+            "maxNodes": 1200,
+            "maxDepth": 6
+          },
+          "hard": {
+            "timeMs": 10000,
+            "maxNodes": 12000,
+            "maxDepth": 12
+          }
+        },
+        "maxCommands": 100,
+        "clock": "fixed zero; scaled node-limited comparison; not production wall-clock games",
+        "roles": "hard alternates A/B for every seed/configuration"
+      }
+    },
+    "combined": {
+      "games": 48,
+      "hardWins": 38,
+      "standardWins": 10,
+      "draws": 0,
+      "unfinished": 0
+    },
+    "notGeneralWinRate": true,
+    "productionProfiles": {
+      "easy": {
+        "timeMs": 300,
+        "maxNodes": 2500,
+        "maxDepth": 2
+      },
+      "standard": {
+        "timeMs": 1200,
+        "maxNodes": 15000,
+        "maxDepth": 6
+      },
+      "hard": {
+        "timeMs": 8000,
+        "maxNodes": 200000,
+        "maxDepth": 12
+      }
+    }
+  },
+  "changes": [
+    "hard level end-to-end: settings, labels, Worker budgets, save and restore",
+    "8 seconds / 200000 nodes / absolute depth 12; standard and easy profiles unchanged",
+    "focused candidate set; request-local history and two killer moves per path depth",
+    "bounded two-command horizon extension for immediate wins or soon-maturing claims, restricted to relevant tactical replies",
+    "existing two-command undo and bounded implicit recovery retained"
+  ],
+  "sourceAtBuild": {
+    "baseCommit": "eaf6b01438ab699649199767be0d9109d9612acf",
+    "uncommittedChangesAtBuild": true,
+    "aiContractSHA256": "4deabbf6f0ca69c8a319bdee665813d7d1f2db3d4e33032ed35b59d2833d7fe1",
+    "rulesCoreUnchanged": true,
+    "sessionExtension": "reports/session-hard-level-extension.json",
+    "sessionAuthorityUnchanged": true
+  },
+  "browser": {
+    "origin": "http://127.0.0.1:4178/",
+    "scope": [
+      "actual three-tier hard selection",
+      "hard chooses color and places a legal move",
+      "pause during hard thinking; reload preserves difficulty and waits for explicit continue",
+      "inspect during actual thinking without blocking UI",
+      "exported JSON contains hard difficulty/seed/roles/full record",
+      "390px viewport difficulty cards visible",
+      "final search strategy response: 5 to 7 plies/stones, returns human turn; no console errors"
+    ],
+    "evidence": [
+      "reports/ai-p5-8-hard-selector.png",
+      "reports/ai-p5-8-hard-mobile.png",
+      "reports/ai-p5-8-hard-play.png"
+    ],
+    "limits": "Desktop Chromium and simulated narrow viewport; no physical mobile/Safari acceptance"
+  },
+  "desktop": {
+    "version": "0.5.8",
+    "structure": "reports/desktop-p5-8-verification.json",
+    "peFiles": 7,
+    "asarFiles": 70,
+    "asarSHA256": "ea30c2d380a1c20bd833bb45eefc6115f57e17647a89178c3c06f6f73c1b760c",
+    "runtime": "reports/windows-p5-8-runtime.json",
+    "runtimeScope": "limited startup and live hard-mode observation; static runtimeTested remains false"
+  },
+  "limits": [
+    "Strength sample uses scaled deterministic node budgets, not production wall-clock games or a general win-rate guarantee",
+    "Selective search is not exhaustive minimax; depth is a cap, not a completed-depth promise",
+    "Very long records replay under the search clock",
+    "New hard saves require a reader supporting hard level; older easy/standard saves remain readable",
+    "Native controls beyond the observed scope, physical mobile/Safari/scaling combinations remain unaccepted"
+  ]
+}

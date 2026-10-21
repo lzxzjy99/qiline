@@ -5,7 +5,7 @@ import {beginAITurn,runSearch,validateSearchReply} from '../dist/ai/src/index.js
 import {value,fingerprint} from './helpers.mjs';
 import {practice,point} from './ai-helpers.mjs';
 
-for(const cfg of allRuleConfigurations())for(const actor of ['A','B'])for(const level of ['easy','standard'])
+for(const cfg of allRuleConfigurations())for(const actor of ['A','B'])for(const level of ['easy','standard','hard'])
 test(`bounded search ${configIdOf(cfg)} ${actor} ${level}`,()=>{
  const s=practice(actor,cfg,level,level==='easy'?0:0xffffffff);
  if(actor==='B'){

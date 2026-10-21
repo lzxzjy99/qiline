@@ -6,6 +6,7 @@ export const SAVE_KEY = 'qiline.web.r3.current';
 export const BACKUP_KEY = 'qiline.web.r3.previous';
 export const other = p => p === 'A' ? 'B' : 'A';
 export const colorName = c => c === 'black' ? '黑棋' : '白棋';
+export const levelName = level => ({easy:'简单',standard:'标准',hard:'困难'}[level]??'未知难度');
 export function localCalendarDate(date=new Date()) {
   return `${String(date.getFullYear()).padStart(4,'0')}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
 }

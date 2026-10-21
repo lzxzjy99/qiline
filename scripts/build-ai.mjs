@@ -33,4 +33,4 @@ const source=await hashes([...(await filesIn('packages/ai')),'tsconfig.json','ts
 const compiled=await hashes(await filesIn('compiled/ai'));
 await mkdir(path.join(root,'reports'),{recursive:true});
 await writeFile(path.join(root,'reports/ai-contract-sha256.json'),JSON.stringify({source,compiled},null,2)+'\n');
-console.log('AI contract typecheck and compilation passed; P2 core/session preserved.');
+console.log('AI contract typecheck and compilation passed; core/session artifacts are not overwritten by this build.');

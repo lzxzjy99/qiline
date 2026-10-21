@@ -3,7 +3,7 @@ export type Controller = {
     readonly kind: "human";
 } | {
     readonly kind: "ai";
-    readonly level: "easy" | "standard";
+    readonly level: "easy" | "standard" | "hard";
     readonly seed: number;
 };
 export type Controllers = Readonly<Record<PlayerId, Controller>>;

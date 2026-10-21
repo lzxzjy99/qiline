@@ -132,6 +132,30 @@ function savedPractice(aiActor='A',rules={}){
 }
 const answer=(worker,action)=>{worker.ready();worker.emit(worker.result(action));};
 
+test('hard selection uses its long budget and restores paused with difficulty and identity intact',async()=>{
+  let saved;
+  const h=await harness();try{
+    h.start({humanActor:'A',level:'hard',swap3:false});
+    assert.deepEqual([...h.form.elements.level].map(r=>r.value),['easy','standard','hard']);
+    assert.match(h.$('mode-label').textContent,/困难/);
+    h.point(40);h.clock.tick();const worker=h.workers.at(-1);worker.ready();
+    assert.equal(worker.sent[0].level,'hard');assert.equal(worker.sent[0].budget.timeMs,8000);
+    h.clock.tick(3000);assert.match(h.$('ai-status').textContent,/思考/);
+    h.$('ai-pause').click();assert.equal(worker.terminated,1);
+    saved=h.current();assert.equal(saved.session.controllers.B.level,'hard');
+  }finally{h.close();}
+  const restored=await harness(saved);try{
+    restored.clock.tick(30000);assert.equal(restored.workers.length,0);
+    assert.match(restored.$('mode-label').textContent,/困难/);
+    assert.equal(restored.$('ai-resume').hidden,false);
+    restored.$('ai-resume').click();restored.clock.tick();const worker=restored.workers.at(-1);
+    answer(worker,{kind:'place',actor:'B',point:0});
+    assert.equal(worker.sent[0].level,'hard');assert.equal(restored.current().session.record.actions.length,2);
+    assert.equal(restored.current().session.controllers.B.level,'hard');
+    restored.$('undo-btn').click();assert.equal(restored.current().session.record.actions.length,0);
+  }finally{restored.close();}
+});
+
 test('product settings react to radio changes and practice assigns the selected identity/difficulty',async()=>{
   const h=await harness();try{
     h.$('first-start').click();h.change('mode','practice');

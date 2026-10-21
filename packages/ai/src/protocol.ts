@@ -8,6 +8,7 @@ export const AI_PROTOCOL_VERSION = 1;
 export const AI_PROFILES:Readonly<Record<AILevel,SearchBudget>> = freeze({
   easy:{timeMs:300,maxNodes:2500,maxDepth:2},
   standard:{timeMs:1200,maxNodes:15000,maxDepth:6},
+  hard:{timeMs:8000,maxNodes:200000,maxDepth:12},
 });
 export const AI_BUDGET_LIMITS:SearchBudget = freeze({timeMs:10000,maxNodes:1000000,maxDepth:12});
 export const aiOK = <T>(value:T):AIResult<T> => Object.freeze({ok:true,value});
@@ -36,7 +37,7 @@ export function readSearchEnvelope(raw:unknown):AIResult<SearchEnvelope> {
   if (!plain(raw)) return aiFail("INVALID_AI_REQUEST");
   if (raw.protocolVersion!==AI_PROTOCOL_VERSION) return aiFail("UNSUPPORTED_AI_PROTOCOL");
   if (!keysAre(raw,["protocolVersion","kind","context","record","level","seed","budget"])
-    || raw.kind!=="search" || (raw.level!=="easy" && raw.level!=="standard") || !uint(raw.seed,0xffffffff))
+    || raw.kind!=="search" || (raw.level!=="easy" && raw.level!=="standard" && raw.level!=="hard") || !uint(raw.seed,0xffffffff))
     return aiFail("INVALID_AI_REQUEST");
   const context=contextOf(raw.context);if (!context) return aiFail("INVALID_AI_REQUEST","context");
   const budget=validateSearchBudget(raw.budget);if (!budget.ok) return budget;

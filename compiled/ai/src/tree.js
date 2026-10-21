@@ -1,8 +1,13 @@
 /** No negamax sign flipping: the same real player may act on consecutive commands. */
 export function alphaBeta(node, depth, root, tree, alpha = -Infinity, beta = Infinity) {
     tree.check();
-    if (depth === 0 || tree.terminal(node))
+    if (tree.terminal(node))
         return { value: tree.evaluate(node), variation: [] };
+    if (depth === 0) {
+        if (!tree.extend?.(node))
+            return { value: tree.evaluate(node), variation: [] };
+        depth = 1;
+    }
     const maximize = tree.player(node) === root;
     let value = maximize ? -Infinity : Infinity, variation = [], any = false;
     for (const child of tree.children(node)) {
@@ -17,7 +22,7 @@ export function alphaBeta(node, depth, root, tree, alpha = -Infinity, beta = Inf
         else
             beta = Math.min(beta, value);
         if (alpha >= beta) {
-            tree.cutoff();
+            tree.cutoff(node, child.move, depth);
             break;
         }
     }

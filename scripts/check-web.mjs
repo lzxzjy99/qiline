@@ -15,13 +15,27 @@ for(const file of files){
 }
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const sourceHashes=JSON.parse(await readFile('reports/verification.json','utf8')).source_sha256;
-for(const [file,expected] of Object.entries(sourceHashes))assert.equal(hash(await readFile(file)),expected,`P2 source changed: ${file}`);
+const extension=JSON.parse(await readFile('reports/session-hard-level-extension.json','utf8'));
+for(const file of Object.keys(extension.source))assert.ok(['packages/session/src/types.ts','packages/session/src/session.ts'].includes(file));
+for(const [file,expected] of Object.entries(sourceHashes)){
+ const updated=extension.source[file];if(updated)assert.equal(updated.baseline,expected);
+ assert.equal(hash(await readFile(file)),updated?.sha256??expected,`P2 source changed outside the level extension: ${file}`);
+}
 const compiledHashes=JSON.parse(await readFile('reports/p2-compiled-sha256.json','utf8'));
-for(const [file,expected] of Object.entries(compiledHashes))assert.equal(hash(await readFile(file)),expected,`P2 compiled changed: ${file}`);
+for(const file of Object.keys(extension.compiled))assert.ok(file.startsWith('compiled/session/src/'));
+for(const [file,expected] of Object.entries(compiledHashes)){
+ const updated=extension.compiled[file.replace(/^dist\//,'compiled/')];if(updated)assert.equal(updated.baseline,expected);
+ assert.equal(hash(await readFile(file)),updated?.sha256??expected,`P2 compiled changed outside the level extension: ${file}`);
+ if(updated)assert.equal(hash(await readFile(file.replace(/^compiled\//,'dist/'))),updated.sha256,`session dist changed: ${file}`);
+}
+for(const [file,entry]of Object.entries(extension.compiled)){
+ assert.equal(hash(await readFile(file)),entry.sha256,`compiled session artifact changed: ${file}`);
+ assert.equal(hash(await readFile(file.replace(/^compiled\//,'dist/'))),entry.sha256,`session mirror changed: ${file}`);
+}
 const aiHashes=JSON.parse(await readFile('reports/ai-contract-sha256.json','utf8'));
 for(const [file,expected] of Object.entries(aiHashes.source))assert.equal(hash(await readFile(file)),expected,`AI source changed; run build:ai: ${file}`);
 for(const [file,expected] of Object.entries(aiHashes.compiled)){
  assert.equal(hash(await readFile(file)),expected,`AI compiled changed: ${file}`);
  assert.equal(hash(await readFile(file.replace(/^compiled\//,'dist/'))),expected,`AI dist changed: ${file}`);
 }
-console.log(`${files.length} JavaScript modules parsed; local imports resolve; P2 core/session bytes unchanged; AI source/compiled/dist hashes match.`);
+console.log(`${files.length} JavaScript modules parsed; rules core unchanged; session hard-level extension verified; AI source/compiled/dist hashes match.`);

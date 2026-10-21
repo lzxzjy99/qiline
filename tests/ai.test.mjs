@@ -33,7 +33,7 @@ test('budgets reject non-integers, unbounded work, missing fields and unknown op
 test('request schema rejects unsupported versions, malformed identity/seed, board snapshots and corrupt histories',()=>{
  const turn=value(beginAITurn(practice())),valid=clone(turn.request);
  for(const seed of [0,0xffffffff])assert.equal(value(prepareSearch({...valid,seed})).request.seed,seed);
- for(const mutate of [r=>r.protocolVersion=2,r=>r.kind='hint',r=>r.level='hard',r=>r.seed=-1,r=>r.seed=0x100000000,
+ for(const mutate of [r=>r.protocolVersion=2,r=>r.kind='hint',r=>r.level='expert',r=>r.seed=-1,r=>r.seed=0x100000000,
   r=>r.seed=0.5,r=>r.extra=1,r=>delete r.record,r=>r.context.revision=-1,r=>r.context.taskId='',
   r=>r.context.requestId='x'.repeat(257),r=>r.context.actor='C',r=>r.context.extra=1,
   r=>r.record={board:Array(81).fill(0)},r=>r.record.rules.rulesVersion='2.0.0',

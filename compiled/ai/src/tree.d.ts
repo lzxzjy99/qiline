@@ -8,7 +8,8 @@ export interface TreeAdapter<N, M> {
         readonly move: M;
         readonly node: N;
     }>;
-    readonly cutoff: () => void;
+    readonly cutoff: (node: N, move: M, depth: number) => void;
+    readonly extend?: (node: N) => boolean;
 }
 export interface TreeValue<M> {
     readonly value: number;

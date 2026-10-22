@@ -1,0 +1,429 @@
+{
+  "allEntriesMatchSource": true,
+  "runtimeTested": false,
+  "archive": "C:\\Users\\lzx21\\Documents\\qiline\\releases\\弈合-0.5.9-Windows-x64.zip",
+  "stage": "P5.9",
+  "sha256": "2e54d19df1b32d241852d2e05fe049ecaf547b73a68a4c2022112a4f1e0dba91",
+  "version": "0.5.9",
+  "files": 83,
+  "bytes": 163510674,
+  "entries": [
+    {
+      "sha256": "ab7c4b7b6cb8832a31d44b95ec50ce52294f49422a3bdde4e21968eca2930cbe",
+      "bytes": 719654,
+      "file": "弈合-0.5.9-win-x64/chrome_100_percent.pak"
+    },
+    {
+      "sha256": "30fa4a6e27c9ff2fb0f939f01158477e621a67d86e9ecb84cf11b3947db8eb9d",
+      "bytes": 1269017,
+      "file": "弈合-0.5.9-win-x64/chrome_200_percent.pak"
+    },
+    {
+      "sha256": "a05f99734f7c4822fefc12b367af21fd0976ed6608752fb1e1e80b6ece7ecbbb",
+      "bytes": 4741488,
+      "file": "弈合-0.5.9-win-x64/d3dcompiler_47.dll"
+    },
+    {
+      "sha256": "464772bfaa07fdb378e14f8ccf6d6e8b1d053dddcc2b59f57862d6912f39a023",
+      "bytes": 25744384,
+      "file": "弈合-0.5.9-win-x64/dxcompiler.dll"
+    },
+    {
+      "sha256": "77e039c905030a641e53658a008b74e90635a5ea9b6b79eabd0f2003bdfca59a",
+      "bytes": 1509760,
+      "file": "弈合-0.5.9-win-x64/dxil.dll"
+    },
+    {
+      "sha256": "96094bc6b5082e6372a9aa21970fcecfc069abd68caf4b48673b84dc3e8cf99b",
+      "bytes": 3113472,
+      "file": "弈合-0.5.9-win-x64/ffmpeg.dll"
+    },
+    {
+      "sha256": "da53f0b69843aaa43315f0f210a67e4a874b0be338f3dae08ff57b8afe76ab0d",
+      "bytes": 10875024,
+      "file": "弈合-0.5.9-win-x64/icudtl.dat"
+    },
+    {
+      "sha256": "5154e165bd6c2cc0cfbcd8916498c7abab0497923bafcd5cb07673fe8480087d",
+      "bytes": 1096,
+      "file": "弈合-0.5.9-win-x64/LICENSE"
+    },
+    {
+      "sha256": "e6e6b1f9cb0f32235412be113de7716333e88121f9159a0ea0ff3be652021af7",
+      "bytes": 20477229,
+      "file": "弈合-0.5.9-win-x64/LICENSES.chromium.html"
+    },
+    {
+      "sha256": "9611f9a65a37eea7d7f631eba0ed2cc49205f47aaa8a2937694ca2de2d821bd8",
+      "bytes": 12436085,
+      "file": "弈合-0.5.9-win-x64/resources.pak"
+    },
+    {
+      "sha256": "e20e875e78f7eef460fe1a6f7066212be9097bcc84e2dea2d2cc2cada96473a6",
+      "bytes": 369024,
+      "file": "弈合-0.5.9-win-x64/snapshot_blob.bin"
+    },
+    {
+      "sha256": "88d93ed0f028d74b78dc610f2cf60f0838035b2ad3b79a9d2f9f930a4dd7e10a",
+      "bytes": 742456,
+      "file": "弈合-0.5.9-win-x64/v8_context_snapshot.bin"
+    },
+    {
+      "sha256": "9331b8f378c9763a3bdd6870abf39ed41af9e675435294a06ec6f4bd6c82165e",
+      "bytes": 6,
+      "file": "弈合-0.5.9-win-x64/version"
+    },
+    {
+      "sha256": "2ae263d1079d9b1e4a231879cf7048dc517b2806748b38f36547b5b8c649cddd",
+      "bytes": 5519872,
+      "file": "弈合-0.5.9-win-x64/vk_swiftshader.dll"
+    },
+    {
+      "sha256": "32d83ff113fef532a9f97e0d2831f8656628ab1c99e9060f0332b1532839afd9",
+      "bytes": 106,
+      "file": "弈合-0.5.9-win-x64/vk_swiftshader_icd.json"
+    },
+    {
+      "sha256": "03120814ccb06e0fa9141cfa7c2ec906984f32ef56f8caf50e56e97a7a3225fa",
+      "bytes": 939520,
+      "file": "弈合-0.5.9-win-x64/vulkan-1.dll"
+    },
+    {
+      "sha256": "77add48eb0502c2f1def9d47a9edcaa7dfb8145daf5fac01e4afa8bdbe6608c9",
+      "bytes": 5496,
+      "file": "弈合-0.5.9-win-x64/Windows真机验收清单.md"
+    },
+    {
+      "sha256": "a3a8a89ed07592d2700cd2d23d2ee8a81998bb02925c696ed975bfbca456256e",
+      "bytes": 520,
+      "file": "弈合-0.5.9-win-x64/启动说明.txt"
+    },
+    {
+      "sha256": "e390e45759e9b7bf9764935c260b0d8b2730197e041b8ae66459adac38e4acac",
+      "bytes": 247184896,
+      "file": "弈合-0.5.9-win-x64/弈合.exe"
+    },
+    {
+      "sha256": "4e4a7be718d89c261859203c318c01fccb318447f16c53a7ecf4d8209bfb44e6",
+      "bytes": 8890,
+      "file": "弈合-0.5.9-win-x64/弈合_游玩手册.html"
+    },
+    {
+      "sha256": "f91ee215cda3684d74a546760de0d95ed8afd996d18fa8c63712cce92c1a3608",
+      "bytes": 2992,
+      "file": "弈合-0.5.9-win-x64/docs/AI五连攻防P5.9.md"
+    },
+    {
+      "sha256": "2b0c35fea10d747fcf2419c9c13fc2ffbcf5f2a5aa74f09ec57ce77c285e7aae",
+      "bytes": 1208,
+      "file": "弈合-0.5.9-win-x64/docs/Windows0.5.9验收记录.md"
+    },
+    {
+      "sha256": "3017b141bd16e24190d810f0748612f0fd4352ca8553002b9a63a7f77f7154f8",
+      "bytes": 636155,
+      "file": "弈合-0.5.9-win-x64/locales/af.pak"
+    },
+    {
+      "sha256": "67b938d162bc75db067120bb8366b5bafd9a75fa99a0ca9ad4f46b47d1d37634",
+      "bytes": 1029450,
+      "file": "弈合-0.5.9-win-x64/locales/am.pak"
+    },
+    {
+      "sha256": "560244ecff0d522b6fbf97693bdde0a318c5bc516615cb15751ee2527a6eb730",
+      "bytes": 1130928,
+      "file": "弈合-0.5.9-win-x64/locales/ar.pak"
+    },
+    {
+      "sha256": "2eb9c74c67e4b13b45a73061fa978738e335bc245da71bab0ea9b205fe91074e",
+      "bytes": 1178203,
+      "file": "弈合-0.5.9-win-x64/locales/bg.pak"
+    },
+    {
+      "sha256": "415621a5c0b1546e6e447d43b76414425a8703cc7681d637ec1f283ad0c787e7",
+      "bytes": 1513545,
+      "file": "弈合-0.5.9-win-x64/locales/bn.pak"
+    },
+    {
+      "sha256": "6f28297c1ccb628f534d65dade167ae559f83eace359acf47e48ff890b9409d5",
+      "bytes": 716908,
+      "file": "弈合-0.5.9-win-x64/locales/ca.pak"
+    },
+    {
+      "sha256": "799a789ce531991cb975425730db310f9a8fe74091eee568f3e65fcc7ef0cd57",
+      "bytes": 743351,
+      "file": "弈合-0.5.9-win-x64/locales/cs.pak"
+    },
+    {
+      "sha256": "236b73e0bd8cf984609f03612b40d4583525b0293f994ef5bbddecfaa3aa1e7f",
+      "bytes": 666412,
+      "file": "弈合-0.5.9-win-x64/locales/da.pak"
+    },
+    {
+      "sha256": "52b9d92d2d09532a6016ce07a355e7acb385a9ea245436e0db188a76b8b7f622",
+      "bytes": 717898,
+      "file": "弈合-0.5.9-win-x64/locales/de.pak"
+    },
+    {
+      "sha256": "37d2e1ef69fea9bdb1e0902cbc61a458baa9009fc3761029bd1c1882a7a0c9b2",
+      "bytes": 1295538,
+      "file": "弈合-0.5.9-win-x64/locales/el.pak"
+    },
+    {
+      "sha256": "56ea59d5f21fbd25dfc02a6de4504cb134464f388e64509b2ea1657e238aa427",
+      "bytes": 580030,
+      "file": "弈合-0.5.9-win-x64/locales/en-GB.pak"
+    },
+    {
+      "sha256": "23b271e8009bfa14783700cd0712b4ecaa5b8f2ea28a4d81ae1d7e05bc0c96b1",
+      "bytes": 586582,
+      "file": "弈合-0.5.9-win-x64/locales/en-US.pak"
+    },
+    {
+      "sha256": "530e5b8edc93f95a64700178c2a3fbb55f4d4eadec8cabba25fd21bc5835c63e",
+      "bytes": 707621,
+      "file": "弈合-0.5.9-win-x64/locales/es-419.pak"
+    },
+    {
+      "sha256": "f0982c7ebc30101e609225e2011339378c96075e094e082b694a467eca1108cd",
+      "bytes": 703944,
+      "file": "弈合-0.5.9-win-x64/locales/es.pak"
+    },
+    {
+      "sha256": "1e3b4eb21d233e3adaab469310a8c6c61e045379771cbc381c4c000e1716ab28",
+      "bytes": 642216,
+      "file": "弈合-0.5.9-win-x64/locales/et.pak"
+    },
+    {
+      "sha256": "0e57a54b3be643b9f5e3c46d40a26d40e00915828b0ab9dfd39991cff1283240",
+      "bytes": 1063104,
+      "file": "弈合-0.5.9-win-x64/locales/fa.pak"
+    },
+    {
+      "sha256": "1f3123d7fb5c22a95b5250ea17450b665c3c6cd6a6dfd28bbdde15e1bf684a0e",
+      "bytes": 655113,
+      "file": "弈合-0.5.9-win-x64/locales/fi.pak"
+    },
+    {
+      "sha256": "02e2c70d3d85b0deb677a9ae576ae3cf89e80774532cb3315c14f1e8ce64b310",
+      "bytes": 741385,
+      "file": "弈合-0.5.9-win-x64/locales/fil.pak"
+    },
+    {
+      "sha256": "8bad7fd88072ac66649dd9307da9163962f8ab00313e627bf1c5ca4450a48b4a",
+      "bytes": 763461,
+      "file": "弈合-0.5.9-win-x64/locales/fr.pak"
+    },
+    {
+      "sha256": "e86e8c240d4b6283abb03c49df9e8899607ef9def6d4933c7a541d63b5835271",
+      "bytes": 1495625,
+      "file": "弈合-0.5.9-win-x64/locales/gu.pak"
+    },
+    {
+      "sha256": "ddc1f304ab1f4489d19ae2b31e7f8e3ffb47dae439520159e8975422c65e4115",
+      "bytes": 928748,
+      "file": "弈合-0.5.9-win-x64/locales/he.pak"
+    },
+    {
+      "sha256": "015b3856dc05e8635a48e749e6970fe43f5d620b8dbd04e5abff586178213f6e",
+      "bytes": 1586602,
+      "file": "弈合-0.5.9-win-x64/locales/hi.pak"
+    },
+    {
+      "sha256": "d46c64ae8af3562e37eb80438aa2bee228fafda251d58ba4d0991291f1c72aab",
+      "bytes": 715279,
+      "file": "弈合-0.5.9-win-x64/locales/hr.pak"
+    },
+    {
+      "sha256": "0a46fc8d50f74effd1cfe1979e677df3de6fc47e6b551267303d93d57bd83f50",
+      "bytes": 765640,
+      "file": "弈合-0.5.9-win-x64/locales/hu.pak"
+    },
+    {
+      "sha256": "f567569c42a25bb2dfc5c33e13aac558c0e2a1d5d4b969592bbd0841b36438db",
+      "bytes": 635080,
+      "file": "弈合-0.5.9-win-x64/locales/id.pak"
+    },
+    {
+      "sha256": "0a4090fd79acda3b75ea4cbf59c299b7fbb2c8ed69696158c6f3620bf1901955",
+      "bytes": 693987,
+      "file": "弈合-0.5.9-win-x64/locales/it.pak"
+    },
+    {
+      "sha256": "65a19121dfdd2163072d104cfe71970d132e76847d6ead6a2c103212314e83b0",
+      "bytes": 842014,
+      "file": "弈合-0.5.9-win-x64/locales/ja.pak"
+    },
+    {
+      "sha256": "af5fed2130102ecc0c878059c88faed9d6db2e8b147fb5ae9e15e3fe69706c8a",
+      "bytes": 1720240,
+      "file": "弈合-0.5.9-win-x64/locales/kn.pak"
+    },
+    {
+      "sha256": "56449cc28bc41af4ccbf35b98dd30019839e8cc193f7ecf4ccd8dacc26302303",
+      "bytes": 718706,
+      "file": "弈合-0.5.9-win-x64/locales/ko.pak"
+    },
+    {
+      "sha256": "af969f4407c190dd01a426fa1244cb1ec7cdf2909d1c3ba5b87ff662ba567303",
+      "bytes": 777281,
+      "file": "弈合-0.5.9-win-x64/locales/lt.pak"
+    },
+    {
+      "sha256": "4455ab7c06172c2c80796a99558e41f452cc3b33be76654d70440cf4ac7a2d34",
+      "bytes": 774733,
+      "file": "弈合-0.5.9-win-x64/locales/lv.pak"
+    },
+    {
+      "sha256": "b5606265910e45098a88e989202a550531f6d00333c6b112ed4c5cbc07b2ff6a",
+      "bytes": 1767850,
+      "file": "弈合-0.5.9-win-x64/locales/ml.pak"
+    },
+    {
+      "sha256": "8465d4077ed5414cbcb7d9bdb00d85e515a1a069703cdc1d4d67c9d6e5623fb0",
+      "bytes": 1467313,
+      "file": "弈合-0.5.9-win-x64/locales/mr.pak"
+    },
+    {
+      "sha256": "af7021a00befa586aa067ae3ccb339079e6f13ee0cab1621836f6abb608b6f2a",
+      "bytes": 668356,
+      "file": "弈合-0.5.9-win-x64/locales/ms.pak"
+    },
+    {
+      "sha256": "d97a2b0cbe6adc99add2ed3ce0d15d0bb124b778086c466c126634d60ea72608",
+      "bytes": 638121,
+      "file": "弈合-0.5.9-win-x64/locales/nb.pak"
+    },
+    {
+      "sha256": "b642c8ab5ce11438e9a8fd4639244fa8f1d55cfd70269565490bc55ee907b048",
+      "bytes": 664759,
+      "file": "弈合-0.5.9-win-x64/locales/nl.pak"
+    },
+    {
+      "sha256": "8a0969fc743d3e2f5111387d53c0d79e8c1d9f68256ad6553b87fca2bcaa7e6e",
+      "bytes": 742064,
+      "file": "弈合-0.5.9-win-x64/locales/pl.pak"
+    },
+    {
+      "sha256": "8d893475afae1f579c7199f245aad184650b0224e697e80cfe700b4061f6c16d",
+      "bytes": 696993,
+      "file": "弈合-0.5.9-win-x64/locales/pt-BR.pak"
+    },
+    {
+      "sha256": "bdfa7264dddf70f936f1785737969559a577b51d1952c820a468c611d18b17ca",
+      "bytes": 701056,
+      "file": "弈合-0.5.9-win-x64/locales/pt-PT.pak"
+    },
+    {
+      "sha256": "1e6b5b0dac63a9e951daf523de310f6bd9e5c53e281f37706d41bd35d2a08bb5",
+      "bytes": 728144,
+      "file": "弈合-0.5.9-win-x64/locales/ro.pak"
+    },
+    {
+      "sha256": "a9e76536472c45b39e7ae2af5f3ae1bc0e50a11646efdb6fb3ca373b5f2e2c70",
+      "bytes": 1200985,
+      "file": "弈合-0.5.9-win-x64/locales/ru.pak"
+    },
+    {
+      "sha256": "8eff7365eff78623cd26e40d40540f52b511df96c2824f62531da65f0d3a8087",
+      "bytes": 755529,
+      "file": "弈合-0.5.9-win-x64/locales/sk.pak"
+    },
+    {
+      "sha256": "0e1c50e529821f318e4200e024d863daccd78e15de1a5658fa3fb1ebf6312bd1",
+      "bytes": 722714,
+      "file": "弈合-0.5.9-win-x64/locales/sl.pak"
+    },
+    {
+      "sha256": "c42a674e3f43aa70cef005931915c8b7ceb34b29566fba3309f8da931dc7861f",
+      "bytes": 1112909,
+      "file": "弈合-0.5.9-win-x64/locales/sr.pak"
+    },
+    {
+      "sha256": "7b0399a206bfbebe77d1a4fc598c8a6636a1bd940d3ab56519cf4af0134b6edb",
+      "bytes": 646543,
+      "file": "弈合-0.5.9-win-x64/locales/sv.pak"
+    },
+    {
+      "sha256": "bd41ea707a0d90d683ec8d5d0f0c79f3e925747bc4ea1982562dfb75080199b9",
+      "bytes": 685127,
+      "file": "弈合-0.5.9-win-x64/locales/sw.pak"
+    },
+    {
+      "sha256": "91fb1460711df108d8d435a378c8be1d1e80b0886c0158d8c6ae92f35812681b",
+      "bytes": 1758067,
+      "file": "弈合-0.5.9-win-x64/locales/ta.pak"
+    },
+    {
+      "sha256": "fc8c2706c5dfd36e7af8e380a240e0f697cc5fe969b512092a2185896512c4af",
+      "bytes": 1629379,
+      "file": "弈合-0.5.9-win-x64/locales/te.pak"
+    },
+    {
+      "sha256": "c1f4235c31bc05153230b0e55b7aabc9020d7460d5b0a025c386885e1e4bda3c",
+      "bytes": 1368866,
+      "file": "弈合-0.5.9-win-x64/locales/th.pak"
+    },
+    {
+      "sha256": "3a3bc4efffaf53859a9b2d8488f2ea4862a6a082c2af68a125923cc01f69a79c",
+      "bytes": 697398,
+      "file": "弈合-0.5.9-win-x64/locales/tr.pak"
+    },
+    {
+      "sha256": "ec5d0b426e289c064e8f2d63636ae2a544ff30fc1e99dde04fe1920971e4d060",
+      "bytes": 1211563,
+      "file": "弈合-0.5.9-win-x64/locales/uk.pak"
+    },
+    {
+      "sha256": "c218e21744df2ff0669a87d497d65d76333073577360d4c662c592de146bf82a",
+      "bytes": 1047994,
+      "file": "弈合-0.5.9-win-x64/locales/ur.pak"
+    },
+    {
+      "sha256": "b3171c4c3c1b7803c606eee280456b380d57984745f6719afeb8d95591071c25",
+      "bytes": 830014,
+      "file": "弈合-0.5.9-win-x64/locales/vi.pak"
+    },
+    {
+      "sha256": "66c3984c1345b5aba722005458b9cc0af54496260ad06f2509c7afa011d4981f",
+      "bytes": 592069,
+      "file": "弈合-0.5.9-win-x64/locales/zh-CN.pak"
+    },
+    {
+      "sha256": "45f34b57f5b54ba521561d4f818e650430114a713de36b72603b880db939ad37",
+      "bytes": 583867,
+      "file": "弈合-0.5.9-win-x64/locales/zh-TW.pak"
+    },
+    {
+      "sha256": "8e4b070924fa53270782f411ad1d94aee6babd2b620a80bb0ffb1a8d97a88bda",
+      "bytes": 2890,
+      "file": "弈合-0.5.9-win-x64/reports/ai-p5-9-claim-comparison.json"
+    },
+    {
+      "sha256": "2e06a72bc29cd37262b05082b15671350f307489275d64ead8c9a8d32b1b84b0",
+      "bytes": 3011,
+      "file": "弈合-0.5.9-win-x64/reports/ai-p5-9-verification.json"
+    },
+    {
+      "sha256": "3fe901dc8bf371408e4ee27d6bd790596b0030ba2be5f27f1d3e9f8f9e743716",
+      "bytes": 22868,
+      "file": "弈合-0.5.9-win-x64/reports/desktop-p5-9-verification.json"
+    },
+    {
+      "sha256": "03bc7d231e9add6e51dcd025ec2c9a7f075808fdc923316b062ebed5b06d872d",
+      "bytes": 2705387,
+      "file": "弈合-0.5.9-win-x64/reports/p5-9-tests.tap"
+    },
+    {
+      "sha256": "8d8071310cd161ef2d11f841dc05c5d59ba13411e3106054ae2cbb812ea9803d",
+      "bytes": 669779,
+      "file": "弈合-0.5.9-win-x64/reports/product-p5-9-matrix.json"
+    },
+    {
+      "sha256": "c68f1b64ff8c0e1fd25b3c4a5da14885ef2b1adcaa26d7570142a7f52e6c1049",
+      "bytes": 315685,
+      "file": "弈合-0.5.9-win-x64/resources/app.asar"
+    }
+  ],
+  "candidateMatchesDistribution": true,
+  "qaProfileOrSaveIncluded": false
+}

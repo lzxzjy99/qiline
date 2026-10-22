@@ -1,0 +1,133 @@
+{
+  "baselineCommit": "79e3924ed8e9dbadb31f087e4977e508c4a6c0af",
+  "candidateVersion": "0.5.9",
+  "clock": "fixed zero; node/depth controlled, not wall-clock strength rating",
+  "rows": [
+    {
+      "scenario": "earlier-fixed-five-rescue",
+      "level": "easy",
+      "budget": {
+        "timeMs": 10000,
+        "maxNodes": 2500,
+        "maxDepth": 2
+      },
+      "before": {
+        "action": "E3",
+        "nodes": 113,
+        "completedDepth": 2,
+        "score": 2627.040740740742
+      },
+      "after": {
+        "action": "A2",
+        "nodes": 99,
+        "completedDepth": 2,
+        "score": 16000.793333333333
+      }
+    },
+    {
+      "scenario": "earlier-fixed-five-rescue",
+      "level": "standard",
+      "budget": {
+        "timeMs": 10000,
+        "maxNodes": 2500,
+        "maxDepth": 2
+      },
+      "before": {
+        "action": "E3",
+        "nodes": 143,
+        "completedDepth": 2,
+        "score": 2627.040740740742
+      },
+      "after": {
+        "action": "A2",
+        "nodes": 121,
+        "completedDepth": 2,
+        "score": 16000.793333333333
+      }
+    },
+    {
+      "scenario": "earlier-fixed-five-rescue",
+      "level": "hard",
+      "budget": {
+        "timeMs": 10000,
+        "maxNodes": 2500,
+        "maxDepth": 2
+      },
+      "before": {
+        "action": "E3",
+        "nodes": 143,
+        "completedDepth": 2,
+        "score": 2627.040740740742
+      },
+      "after": {
+        "action": "A2",
+        "nodes": 97,
+        "completedDepth": 2,
+        "score": 16000.793333333333
+      }
+    },
+    {
+      "scenario": "lost-position-pressure",
+      "level": "easy",
+      "budget": {
+        "timeMs": 10000,
+        "maxNodes": 2000,
+        "maxDepth": 2
+      },
+      "before": {
+        "action": "F6",
+        "nodes": 48,
+        "completedDepth": 2,
+        "score": -21031.46875
+      },
+      "after": {
+        "action": "A2",
+        "nodes": 42,
+        "completedDepth": 2,
+        "score": -48882.465
+      }
+    },
+    {
+      "scenario": "lost-position-pressure",
+      "level": "standard",
+      "budget": {
+        "timeMs": 10000,
+        "maxNodes": 2000,
+        "maxDepth": 8
+      },
+      "before": {
+        "action": "F5",
+        "nodes": 2000,
+        "completedDepth": 4,
+        "score": -1000000000
+      },
+      "after": {
+        "action": "A2",
+        "nodes": 2000,
+        "completedDepth": 4,
+        "score": -1000000000
+      }
+    },
+    {
+      "scenario": "lost-position-pressure",
+      "level": "hard",
+      "budget": {
+        "timeMs": 10000,
+        "maxNodes": 2000,
+        "maxDepth": 8
+      },
+      "before": {
+        "action": "F6",
+        "nodes": 2000,
+        "completedDepth": 4,
+        "score": -1000000000
+      },
+      "after": {
+        "action": "A2",
+        "nodes": 2000,
+        "completedDepth": 4,
+        "score": -1000000000
+      }
+    }
+  ]
+}

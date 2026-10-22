@@ -1,6 +1,7 @@
 import { cellOf, collectGroups, neighborsFor } from "../../core/src/geometry.js";
 const windowsCache = new Map();
 const featureCache = new WeakMap();
+const liveLineCache = new WeakMap();
 function windows(rules) {
     const n = rules.boardSize, key = `${n}/${rules.directions}`;
     let result = windowsCache.get(key);
@@ -26,7 +27,8 @@ function lines(board, rules, color, groups) {
     const threatWeights = [0, 2, 18, 150, 1800, 6000], moveWeights = [0, 2, 18, 180, 2200, 16000];
     const moves = Array(board.length).fill(0), replies = new Map();
     const lineStones = new Set();
-    let pressure = 0, claimSafety = 0;
+    let pressure = 0;
+    const completed = [];
     for (const points of windows(rules)) {
         let count = 0, empty = -1, blocked = false, liberties = Infinity;
         const empties = [];
@@ -54,7 +56,7 @@ function lines(board, rules, color, groups) {
             for (const point of empties)
                 moves[point] += moveWeights[count + 1] * safety;
             if (count === 5)
-                claimSafety = Math.max(claimSafety, safety);
+                completed.push(points);
             if (count >= 3)
                 for (const point of points)
                     if (board[point] === own)
@@ -77,7 +79,7 @@ function lines(board, rules, color, groups) {
     pressure += forks.length * 1200;
     for (const point of forks)
         moves[point] += 8000;
-    return { potential, completions: [...completions].sort((a, b) => a - b), pressure, moves, forcing, forks, claimSafety, lineStones };
+    return { potential, completions: [...completions].sort((a, b) => a - b), pressure, moves, forcing, forks, completed, lineStones };
 }
 export function featuresOf(match) {
     let found = featureCache.get(match);
@@ -87,6 +89,52 @@ export function featuresOf(match) {
         featureCache.set(match, found);
     }
     return found;
+}
+/** Actual surviving fives only. Color-pressure can inherit its clock on any surviving line. */
+export function liveLinesOf(match) {
+    let found = liveLineCache.get(match);
+    if (!found) {
+        const f = featuresOf(match), lines = [];
+        for (const claim of match.state.claims) {
+            const windows = claim.points.length ? [claim.points] : f[claim.color].completed;
+            for (const points of windows)
+                lines.push({ color: claim.color, dueAt: claim.dueAt, id: claim.id,
+                    groups: [...new Set(points.map(p => f.groups.at[p]))] });
+        }
+        found = lines;
+        liveLineCache.set(match, found);
+    }
+    return found;
+}
+/** Preserve remote liberties and countercaptures during live-five attack/defence. Hints, never legality. */
+export function claimTacticalPoints(match) {
+    const priorities = new Map();
+    if (match.state.phase.kind !== "playing")
+        return priorities;
+    const color = match.state.phase.toMove, f = featuresOf(match), adj = neighborsFor(match.rules.boardSize);
+    const mark = (point, priority) => priorities.set(point, Math.max(priority, priorities.get(point) ?? 0));
+    for (const line of liveLinesOf(match)) {
+        // A group with more liberties than possible attacks before confirmation is already relatively safe.
+        const remaining = Math.max(1, line.dueAt - match.state.ply), limit = Math.min(6, Math.ceil(remaining / 2) + 1);
+        for (const group of line.groups) {
+            const liberties = group.liberties.size;
+            if (liberties > limit)
+                continue;
+            const priority = liberties === 1 ? 4000000 : liberties === 2 ? 2200000 : 1600000 - liberties * 50000;
+            for (const point of group.liberties)
+                mark(point, priority);
+            // Saving a line may require taking its surrounding stones rather than extending its last liberty.
+            if (line.color === color && liberties <= 2)
+                for (const stone of group.stones)
+                    for (const point of adj[stone]) {
+                        const enemy = f.groups.at[point];
+                        if (enemy && enemy.color !== group.color && enemy.liberties.size <= 2)
+                            for (const liberty of enemy.liberties)
+                                mark(liberty, priority);
+                    }
+        }
+    }
+    return priorities;
 }
 export const otherColor = (color) => color === "black" ? "white" : "black";
 export function playerColor(match, actor) {
@@ -124,14 +172,17 @@ export function strategicValue(match, color) {
             : group.liberties.size === 2 ? -35 * group.stones.length : Math.min(6, group.liberties.size) * 3;
         score += group.color === own ? value : -value;
     }
-    for (const claim of match.state.claims) {
-        const safety = claim.points.length ? Math.min(...claim.points.map(p => {
-            const liberties = f.groups.at[p]?.liberties.size ?? 0;
-            return liberties <= 1 ? 0.08 : liberties === 2 ? 0.65 : 1;
-        })) : f[claim.color].claimSafety;
-        const value = 30000 * safety / Math.max(1, claim.dueAt - match.state.ply);
-        score += claim.color === color ? value : -value;
+    const claims = { black: 0, white: 0 };
+    for (const line of liveLinesOf(match)) {
+        const liberties = Math.min(...line.groups.map(g => g.liberties.size));
+        const ownTurn = match.state.phase.kind === "playing" && match.state.phase.toMove === line.color;
+        // Atari is a threat that still needs answering. It is not an already captured five.
+        const safety = liberties === 1 ? (ownTurn ? 0.6 : 0.15) : liberties === 2 ? 0.8 : liberties === 3 ? 0.9 : liberties === 4 ? 0.96 : 1;
+        const value = 90000 * safety / Math.max(1, line.dueAt - match.state.ply);
+        // One surviving five suffices. Overlapping windows must not outweigh saving the earlier clock.
+        claims[line.color] = Math.max(claims[line.color], value);
     }
+    score += claims[color] - claims[opponent];
     if (match.state.phase.kind === "playing") {
         const toMove = match.state.phase.toMove, waiting = otherColor(toMove);
         // A horizon after the opponent creates an open four is not a quiet position.

@@ -1,7 +1,7 @@
 import type { Color, Match } from "../../core/src/types.js";
 import { activePlayer } from "../../core/src/engine.js";
 import { cellOf } from "../../core/src/geometry.js";
-import { capturePoints, centerDistance, featuresOf, otherColor } from "./features.js";
+import { capturePoints, centerDistance, claimTacticalPoints, featuresOf, liveLinesOf, otherColor } from "./features.js";
 import type { AIAction } from "./types.js";
 
 export interface OrderedAction {readonly action:AIAction;readonly critical:boolean;readonly order:number}
@@ -25,11 +25,12 @@ export function orderActions(match:Match,seed:number,preferred:AIAction|null=nul
     for (const p of f[opponent].forcing) mark(p,18000);
     for (const p of f[color].forks) mark(p,60000);
     for (const p of f[opponent].forks) mark(p,55000);
+    const enemyLineGroups=new Set(liveLinesOf(match).filter(l=>l.color===opponent).flatMap(l=>l.groups));
     for (const group of f.groups.groups) if (group.liberties.size===1) {
       const point=group.liberties.values().next().value!;
       if (group.color===cellOf(color)) mark(point,300000+group.stones.length*1000);
       else {
-        const breaks=match.state.claims.some(c=>c.color===opponent && (c.points.length===0 || c.points.some(p=>group.stones.includes(p))));
+        const breaks=enemyLineGroups.has(group);
         mark(point,(breaks?3000000:200000)+group.stones.length*20000);
       }
     }
@@ -40,6 +41,7 @@ export function orderActions(match:Match,seed:number,preferred:AIAction|null=nul
         for(const point of group.liberties)mark(point,groupColor===opponent?90000:80000);
     }
     for (const p of capturePoints(match,color)) important.add(p);
+    for(const [point,priority] of claimTacticalPoints(match))mark(point,priority);
   }
   const list:OrderedAction[]=[];
   for (let point=0;point<match.state.board.length;point++) if (match.state.board[point]===0) {

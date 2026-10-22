@@ -4,7 +4,7 @@ import { AI_PROTOCOL_VERSION, aiFail, aiOK, readSearchEnvelope } from "./protoco
 import { alphaBeta } from "./tree.js";
 import { evaluatePosition, WIN_VALUE } from "./evaluation.js";
 import { actionKey, orderActions, tieRank } from "./ordering.js";
-import { featuresOf, otherColor, playerColor, rescuedStones } from "./features.js";
+import { claimTacticalPoints, featuresOf, liveLinesOf, otherColor, playerColor, rescuedStones } from "./features.js";
 export const SEARCH_POLICIES = freeze({
     easy: { quietWidth: 6, rootWidth: 12 }, standard: { quietWidth: 12, rootWidth: 24 },
     hard: { quietWidth: 12, rootWidth: 24 },
@@ -278,7 +278,8 @@ export function runSearch(raw, host = {}) {
                     control.check();
                     const f = featuresOf(node.match);
                     return (node.match.rules.confirmationDelay === 0 && (f.black.completions.length > 0 || f.white.completions.length > 0))
-                        || node.match.state.claims.some(c => c.dueAt <= node.match.state.ply + 2);
+                        || node.match.state.claims.some(c => c.dueAt <= node.match.state.ply + 2)
+                        || liveLinesOf(node.match).some(l => l.groups.some(g => g.liberties.size <= 2));
                 },
                 children: function* (node) {
                     control.check();
@@ -292,6 +293,8 @@ export function runSearch(raw, host = {}) {
                     if (header.level === "hard" && node.pathDepth >= depth) {
                         const f = featuresOf(node.match);
                         forcing = new Set([...f.black.completions, ...f.white.completions]);
+                        for (const point of claimTacticalPoints(node.match).keys())
+                            forcing.add(point);
                         for (const group of f.groups.groups)
                             if (group.liberties.size === 1
                                 || group.liberties.size === 2 && group.stones.some(p => f[group.color === 1 ? 'black' : 'white'].lineStones.has(p)))
@@ -328,16 +331,20 @@ export function runSearch(raw, host = {}) {
                         yield losingChild;
                 },
             };
-            let iterationBest = null, iterationValue = -Infinity, iterationPV = [];
+            let iterationBest = null, iterationValue = -Infinity, iterationOrder = -Infinity, iterationPV = [];
             const nextValues = new Map();
             for (const root of selected) {
                 control.check();
                 const result = alphaBeta({ match: root.next, pathDepth: 1, onPV: !!preferred[0] && actionKey(root.action) === actionKey(preferred[0]) }, depth - 1, actor, tree, iterationValue, Infinity);
                 nextValues.set(actionKey(root.action), result.value);
                 // Fail-low values are bounds, so equal bounds never replace the exact first best.
-                if (iterationBest === null || result.value > iterationValue) {
+                // At the absolute losing floor an equal bound is exact. Still prefer attacking/saving the live five.
+                // Other fail-low ties remain bounds and must not replace the exact first best.
+                if (iterationBest === null || result.value > iterationValue
+                    || result.value === -WIN_VALUE && iterationValue === -WIN_VALUE && root.order > iterationOrder) {
                     iterationBest = root.action;
                     iterationValue = result.value;
+                    iterationOrder = root.order;
                     iterationPV = [root.action, ...result.variation];
                 }
                 if (iterationValue === WIN_VALUE)

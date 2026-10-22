@@ -1,17 +1,23 @@
 import type { Cell, Color, Match, PlayerId, RuleConfig } from "../../core/src/types.js";
 import { cellOf, collectGroups, neighborsFor } from "../../core/src/geometry.js";
-import type { GroupTable } from "../../core/src/geometry.js";
+import type { GeometricGroup, GroupTable } from "../../core/src/geometry.js";
 
 interface Lines {
   readonly potential:number; readonly completions:readonly number[];
   readonly pressure:number; readonly moves:readonly number[];
   /** Geometric four-making moves; forks have two distinct follow-up completion points. */
-  readonly forcing:readonly number[]; readonly forks:readonly number[]; readonly claimSafety:number;
+  readonly forcing:readonly number[]; readonly forks:readonly number[];
+  readonly completed:readonly (readonly number[])[];
   readonly lineStones:ReadonlySet<number>;
 }
 interface Features { readonly groups:GroupTable; readonly black:Lines; readonly white:Lines }
 const windowsCache=new Map<string,readonly (readonly number[])[]>();
 const featureCache=new WeakMap<Match,Features>();
+export interface LiveLine {
+  readonly color:Color; readonly dueAt:number; readonly id:string;
+  readonly groups:readonly GeometricGroup[];
+}
+const liveLineCache=new WeakMap<Match,readonly LiveLine[]>();
 function windows(rules:RuleConfig):readonly (readonly number[])[] {
   const n=rules.boardSize,key=`${n}/${rules.directions}`;
   let result=windowsCache.get(key);
@@ -32,7 +38,7 @@ function lines(board:readonly Cell[],rules:RuleConfig,color:Color,groups:GroupTa
   const threatWeights=[0,2,18,150,1800,6000],moveWeights=[0,2,18,180,2200,16000];
   const moves=Array<number>(board.length).fill(0),replies=new Map<number,Set<number>>();
   const lineStones=new Set<number>();
-  let pressure=0,claimSafety=0;
+  let pressure=0;const completed:(readonly number[])[]=[];
   for (const points of windows(rules)) {
     let count=0,empty=-1,blocked=false,liberties=Infinity;const empties:number[]=[];
     for (const p of points) {
@@ -47,7 +53,7 @@ function lines(board:readonly Cell[],rules:RuleConfig,color:Color,groups:GroupTa
       const safety=liberties===1?0.08:liberties===2?0.65:1;
       pressure+=threatWeights[count]!*safety;
       for(const point of empties)moves[point]!+=moveWeights[count+1]!*safety;
-      if(count===5)claimSafety=Math.max(claimSafety,safety);
+      if(count===5)completed.push(points);
       if(count>=3)for(const point of points)if(board[point]===own)lineStones.add(point);
       if(count===3 && liberties>1)for(const point of empties){
         let followups=replies.get(point);if(!followups){followups=new Set();replies.set(point,followups);}
@@ -59,7 +65,7 @@ function lines(board:readonly Cell[],rules:RuleConfig,color:Color,groups:GroupTa
   // Count distinct reply points, not overlapping windows sharing the same gap.
   pressure+=forks.length*1200;
   for(const point of forks)moves[point]!+=8000;
-  return {potential,completions:[...completions].sort((a,b)=>a-b),pressure,moves,forcing,forks,claimSafety,lineStones};
+  return {potential,completions:[...completions].sort((a,b)=>a-b),pressure,moves,forcing,forks,completed,lineStones};
 }
 export function featuresOf(match:Match):Features {
   let found=featureCache.get(match);
@@ -69,6 +75,43 @@ export function featuresOf(match:Match):Features {
     featureCache.set(match,found);
   }
   return found;
+}
+/** Actual surviving fives only. Color-pressure can inherit its clock on any surviving line. */
+export function liveLinesOf(match:Match):readonly LiveLine[] {
+  let found=liveLineCache.get(match);
+  if(!found){
+    const f=featuresOf(match),lines:LiveLine[]=[];
+    for(const claim of match.state.claims){
+      const windows=claim.points.length?[claim.points]:f[claim.color].completed;
+      for(const points of windows)lines.push({color:claim.color,dueAt:claim.dueAt,id:claim.id,
+        groups:[...new Set(points.map(p=>f.groups.at[p]!))]});
+    }
+    found=lines;liveLineCache.set(match,found);
+  }
+  return found;
+}
+/** Preserve remote liberties and countercaptures during live-five attack/defence. Hints, never legality. */
+export function claimTacticalPoints(match:Match):ReadonlyMap<number,number> {
+  const priorities=new Map<number,number>();
+  if(match.state.phase.kind!=="playing")return priorities;
+  const color=match.state.phase.toMove,f=featuresOf(match),adj=neighborsFor(match.rules.boardSize);
+  const mark=(point:number,priority:number)=>priorities.set(point,Math.max(priority,priorities.get(point)??0));
+  for(const line of liveLinesOf(match)){
+    // A group with more liberties than possible attacks before confirmation is already relatively safe.
+    const remaining=Math.max(1,line.dueAt-match.state.ply),limit=Math.min(6,Math.ceil(remaining/2)+1);
+    for(const group of line.groups){
+      const liberties=group.liberties.size;if(liberties>limit)continue;
+      const priority=liberties===1?4000000:liberties===2?2200000:1600000-liberties*50000;
+      for(const point of group.liberties)mark(point,priority);
+      // Saving a line may require taking its surrounding stones rather than extending its last liberty.
+      if(line.color===color&&liberties<=2)for(const stone of group.stones)for(const point of adj[stone]!){
+        const enemy=f.groups.at[point];
+        if(enemy&&enemy.color!==group.color&&enemy.liberties.size<=2)
+          for(const liberty of enemy.liberties)mark(liberty,priority);
+      }
+    }
+  }
+  return priorities;
 }
 export const otherColor=(color:Color):Color=>color==="black"?"white":"black";
 export function playerColor(match:Match,actor:PlayerId):Color|null {
@@ -103,13 +146,17 @@ export function strategicValue(match:Match,color:Color):number {
       :group.liberties.size===2?-35*group.stones.length:Math.min(6,group.liberties.size)*3;
     score+=group.color===own?value:-value;
   }
-  for(const claim of match.state.claims){
-    const safety=claim.points.length?Math.min(...claim.points.map(p=>{
-      const liberties=f.groups.at[p]?.liberties.size??0;return liberties<=1?0.08:liberties===2?0.65:1;
-    })):f[claim.color].claimSafety;
-    const value=30000*safety/Math.max(1,claim.dueAt-match.state.ply);
-    score+=claim.color===color?value:-value;
+  const claims={black:0,white:0};
+  for(const line of liveLinesOf(match)){
+    const liberties=Math.min(...line.groups.map(g=>g.liberties.size));
+    const ownTurn=match.state.phase.kind==="playing"&&match.state.phase.toMove===line.color;
+    // Atari is a threat that still needs answering. It is not an already captured five.
+    const safety=liberties===1?(ownTurn?0.6:0.15):liberties===2?0.8:liberties===3?0.9:liberties===4?0.96:1;
+    const value=90000*safety/Math.max(1,line.dueAt-match.state.ply);
+    // One surviving five suffices. Overlapping windows must not outweigh saving the earlier clock.
+    claims[line.color]=Math.max(claims[line.color],value);
   }
+  score+=claims[color]-claims[opponent];
   if(match.state.phase.kind==="playing"){
     const toMove=match.state.phase.toMove,waiting=otherColor(toMove);
     // A horizon after the opponent creates an open four is not a quiet position.

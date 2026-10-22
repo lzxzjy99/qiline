@@ -1,0 +1,98 @@
+{
+  "stage": "P5.9",
+  "version": "0.5.9",
+  "rulesVersion": "2.1.0-r3",
+  "verifiedOn": "2026-10-22",
+  "automated": {
+    "tests": 13257,
+    "passed": 13257,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "tap": "reports/p5-9-tests.tap",
+    "newClaimTests": 7,
+    "productMatrix": {
+      "report": "reports/product-p5-9-matrix.json",
+      "tests": 2688,
+      "passed": 2688,
+      "failed": 0,
+      "actualSearchCalls": 9408,
+      "acceptedSearchReplies": 6720,
+      "scope": "Product create/restore/save/pair-undo adapters, bounded recovery and original task authority with virtual Worker ports and clock; actual bounded runSearch, not full games or platform execution."
+    }
+  },
+  "beforeAfter": {
+    "report": "reports/ai-p5-9-claim-comparison.json",
+    "baselineCommit": "79e3924ed8e9dbadb31f087e4977e508c4a6c0af",
+    "scope": "Deterministic limited-resource regression examples, not full-game strength ratings"
+  },
+  "realClock": {
+    "scope": "One reproducible 19-board fixed-five rescue scenario per actual production difficulty profile, monotonic real clock",
+    "results": [
+      {
+        "level": "easy",
+        "budget": {
+          "timeMs": 300,
+          "maxNodes": 2500,
+          "maxDepth": 2
+        },
+        "stats": {
+          "elapsedMs": 30.043299999999995,
+          "nodes": 99,
+          "completedDepth": 2
+        },
+        "action": "A2",
+        "stop": "max-depth"
+      },
+      {
+        "level": "standard",
+        "budget": {
+          "timeMs": 1200,
+          "maxNodes": 15000,
+          "maxDepth": 6
+        },
+        "stats": {
+          "elapsedMs": 30.953199999999995,
+          "nodes": 341,
+          "completedDepth": 6
+        },
+        "action": "A2",
+        "stop": "max-depth"
+      },
+      {
+        "level": "hard",
+        "budget": {
+          "timeMs": 8000,
+          "maxNodes": 200000,
+          "maxDepth": 12
+        },
+        "stats": {
+          "elapsedMs": 17.560699999999997,
+          "nodes": 646,
+          "completedDepth": 12
+        },
+        "action": "A2",
+        "stop": "max-depth"
+      }
+    ]
+  },
+  "desktop": {
+    "report": "reports/desktop-p5-9-verification.json",
+    "verified": true,
+    "runtimeTested": false,
+    "scope": "Version resources, PE integrity, complete packaged asset hashes, same AI Worker/core/session as web. This version was not manually played in a native window."
+  },
+  "compatibility": {
+    "coreUnchanged": true,
+    "sessionUnchanged": true,
+    "saveFormatUnchanged": true,
+    "undoExplicitCommands": 2,
+    "automaticRetries": 2,
+    "difficultyBudgetsUnchanged": true
+  },
+  "limitations": [
+    "Finite heuristic search cannot guarantee that every five is breakable or every defence is found.",
+    "No new browser/native interactive UI session was required for the AI-only change; actual native Worker execution remains included in automated tests.",
+    "Existing P5.8 game win rates are historical and are not a P5.9 strength measurement."
+  ]
+}

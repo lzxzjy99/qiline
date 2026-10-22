@@ -1,5 +1,5 @@
 import type { Color, Match, PlayerId } from "../../core/src/types.js";
-import type { GroupTable } from "../../core/src/geometry.js";
+import type { GeometricGroup, GroupTable } from "../../core/src/geometry.js";
 interface Lines {
     readonly potential: number;
     readonly completions: readonly number[];
@@ -8,7 +8,7 @@ interface Lines {
     /** Geometric four-making moves; forks have two distinct follow-up completion points. */
     readonly forcing: readonly number[];
     readonly forks: readonly number[];
-    readonly claimSafety: number;
+    readonly completed: readonly (readonly number[])[];
     readonly lineStones: ReadonlySet<number>;
 }
 interface Features {
@@ -16,7 +16,17 @@ interface Features {
     readonly black: Lines;
     readonly white: Lines;
 }
+export interface LiveLine {
+    readonly color: Color;
+    readonly dueAt: number;
+    readonly id: string;
+    readonly groups: readonly GeometricGroup[];
+}
 export declare function featuresOf(match: Match): Features;
+/** Actual surviving fives only. Color-pressure can inherit its clock on any surviving line. */
+export declare function liveLinesOf(match: Match): readonly LiveLine[];
+/** Preserve remote liberties and countercaptures during live-five attack/defence. Hints, never legality. */
+export declare function claimTacticalPoints(match: Match): ReadonlyMap<number, number>;
 export declare const otherColor: (color: Color) => Color;
 export declare function playerColor(match: Match, actor: PlayerId): Color | null;
 export declare function claimPressure(match: Match, color: Color): number;

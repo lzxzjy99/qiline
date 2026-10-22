@@ -1,6 +1,6 @@
 import { activePlayer } from "../../core/src/engine.js";
 import { cellOf } from "../../core/src/geometry.js";
-import { capturePoints, centerDistance, featuresOf, otherColor } from "./features.js";
+import { capturePoints, centerDistance, claimTacticalPoints, featuresOf, liveLinesOf, otherColor } from "./features.js";
 export const actionKey = (a) => a.kind === "place" ? `p${a.point}` : a.kind === "pass" ? "pass" : a.color;
 export function tieRank(a, seed) {
     let x = (seed ^ (a.kind === "place" ? a.point + 1 : a.kind === "pass" ? 1000 : a.color === "black" ? 1001 : 1002)) >>> 0;
@@ -32,13 +32,14 @@ export function orderActions(match, seed, preferred = null) {
             mark(p, 60000);
         for (const p of f[opponent].forks)
             mark(p, 55000);
+        const enemyLineGroups = new Set(liveLinesOf(match).filter(l => l.color === opponent).flatMap(l => l.groups));
         for (const group of f.groups.groups)
             if (group.liberties.size === 1) {
                 const point = group.liberties.values().next().value;
                 if (group.color === cellOf(color))
                     mark(point, 300000 + group.stones.length * 1000);
                 else {
-                    const breaks = match.state.claims.some(c => c.color === opponent && (c.points.length === 0 || c.points.some(p => group.stones.includes(p))));
+                    const breaks = enemyLineGroups.has(group);
                     mark(point, (breaks ? 3000000 : 200000) + group.stones.length * 20000);
                 }
             }
@@ -52,6 +53,8 @@ export function orderActions(match, seed, preferred = null) {
             }
         for (const p of capturePoints(match, color))
             important.add(p);
+        for (const [point, priority] of claimTacticalPoints(match))
+            mark(point, priority);
     }
     const list = [];
     for (let point = 0; point < match.state.board.length; point++)

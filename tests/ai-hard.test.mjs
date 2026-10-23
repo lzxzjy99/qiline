@@ -12,7 +12,7 @@ import {closedFourThreat,remoteCapture} from './tactical-fixtures.mjs';
 test('hard is a separate profile with more time, nodes and depth than standard',()=>{
  assert.equal(levelName('hard'),'困难');
  for(const field of ['timeMs','maxNodes','maxDepth'])assert.ok(AI_PROFILES.hard[field]>AI_PROFILES.standard[field]);
- assert.deepEqual(AI_PROFILES.hard,{timeMs:8000,maxNodes:200000,maxDepth:12});
+ assert.deepEqual(AI_PROFILES.hard,{timeMs:120000,maxNodes:4000000,maxDepth:16});
 });
 
 test('hard sessions preserve A/B, difficulty, seed and full record through export and restoration',()=>{
@@ -44,7 +44,7 @@ test('hard critical search blocks immediate wins and keeps remote captures in bo
 
 test('hard threat extensions remain inside every requested node and absolute depth cap',()=>{
  const m=sequence(create({swap3:false,confirmationDelay:0}),['B2','I1','C3','I3','D4','I5']);
- for(const maxDepth of [1,2,3,4,6,8,12])for(const maxNodes of [1,2,48,200]){
+ for(const maxDepth of [1,2,3,4,6,8,12,16])for(const maxNodes of [1,2,48,200]){
   const request=searchRequest(m,{maxDepth,maxNodes},'hard'),r=value(runSearch(request,frozenClock));
   value(validateSearchReply(request,r.reply));assert.ok(r.details.maxVisitedDepth<=maxDepth);
   assert.ok(r.reply.stats.completedDepth<=maxDepth);assert.ok(r.reply.stats.nodes<=maxNodes);
@@ -57,7 +57,7 @@ test('hard jobs remain cancellable during long thinking and old replies cannot c
  const session=value(createGameSession({matchId:'hard-pause',mode:'practice',humanActor:'B',level:'hard',rules:{...DEFAULT_RULES,swap3:false}}));
  const clock=new VirtualHost(),driver=value(createRecoveringAI(session,clock.host));
  value(driver.start());clock.tick();const worker=clock.workers.at(-1);worker.ready();
- assert.equal(worker.sent[0].budget.timeMs,8000);assert.equal(worker.sent[0].level,'hard');
+ assert.equal(worker.sent[0].budget.timeMs,120000);assert.equal(worker.sent[0].level,'hard');
  const old=worker.onmessage,reply=worker.result({kind:'place',actor:'A',point:40}),before=session.state.match;
  clock.tick(3000);assert.equal(driver.state.status,'thinking');
  value(driver.pause());assert.equal(worker.terminated,1);old({data:reply});clock.tick(30000);

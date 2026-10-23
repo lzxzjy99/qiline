@@ -7,7 +7,7 @@ export interface SearchHost {
     readonly now?: () => number;
     readonly isCancelled?: () => boolean;
 }
-export type SearchStop = "max-depth" | "terminal-win" | "time" | "nodes" | "cancelled" | "internal";
+export type SearchStop = "max-depth" | "terminal-win" | "secured-line" | "time" | "nodes" | "cancelled" | "internal";
 export interface SearchOutcome {
     readonly reply: SearchReply;
     readonly details: {

@@ -1,6 +1,17 @@
 import { activePlayer } from "../../core/src/engine.js";
 import { cellOf } from "../../core/src/geometry.js";
 import { capturePoints, centerDistance, claimTacticalPoints, featuresOf, liveLinesOf, otherColor } from "./features.js";
+/** Keep a fixed quiet set before applying learned ordering. The preferred move uses one quiet slot. */
+export function retainActions(proposals, preferred, width) {
+    const key = preferred ? actionKey(preferred) : null;
+    const quiet = proposals.filter(p => !p.critical), chosen = quiet.slice(0, width);
+    const hinted = quiet.find(p => actionKey(p.action) === key);
+    if (hinted && !chosen.includes(hinted) && chosen.length) {
+        chosen[chosen.length - 1] = hinted;
+    }
+    const kept = new Set(chosen);
+    return proposals.filter(p => p.critical || kept.has(p));
+}
 export const actionKey = (a) => a.kind === "place" ? `p${a.point}` : a.kind === "pass" ? "pass" : a.color;
 export function tieRank(a, seed) {
     let x = (seed ^ (a.kind === "place" ? a.point + 1 : a.kind === "pass" ? 1000 : a.color === "black" ? 1001 : 1002)) >>> 0;

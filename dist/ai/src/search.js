@@ -2,9 +2,10 @@ import { activePlayer, applyAction, validateRecord } from "../../core/src/engine
 import { freeze, keysAre, plain } from "../../core/src/result.js";
 import { AI_PROTOCOL_VERSION, aiFail, aiOK, readSearchEnvelope } from "./protocol.js";
 import { alphaBeta } from "./tree.js";
-import { evaluatePosition, WIN_VALUE } from "./evaluation.js";
-import { actionKey, orderActions, tieRank } from "./ordering.js";
-import { claimTacticalPoints, featuresOf, liveLinesOf, otherColor, playerColor, rescuedStones } from "./features.js";
+import { evaluatePosition, evaluateHardPosition, SECURED_LINE_VALUE, WIN_VALUE } from "./evaluation.js";
+import { securedClaim } from "./claim-proof.js";
+import { actionKey, orderActions, retainActions, tieRank } from "./ordering.js";
+import { claimTacticalPoints, featuresOf, liveLinesOf, otherColor, playerColor, rescuedStones, shareFeaturePool } from "./features.js";
 export const SEARCH_POLICIES = freeze({
     easy: { quietWidth: 6, rootWidth: 12 }, standard: { quietWidth: 12, rootWidth: 24 },
     hard: { quietWidth: 12, rootWidth: 24 },
@@ -26,7 +27,8 @@ class Control {
     // Request-local identity cache: distinct ko histories/claim clocks never share entries.
     transitions = new WeakMap();
     cachedTransitions = 0;
-    constructor(budget, now, cancelled, started) {
+    featurePool;
+    constructor(budget, now, cancelled, started, hard) {
         this.budget = budget;
         this.now = now;
         this.cancelled = cancelled;
@@ -34,6 +36,7 @@ class Control {
         this.last = this.start;
         if (!Number.isFinite(this.start) || this.start < 0)
             throw Error("invalid clock");
+        this.featurePool = hard ? new Map() : null;
     }
     time() {
         const now = this.now();
@@ -56,6 +59,8 @@ class Control {
         if (cached)
             return cached;
         const result = applyAction(match, action);
+        if (result.ok && this.featurePool)
+            shareFeaturePool(result.value.match, this.featurePool);
         if (this.cachedTransitions < 2048) {
             let entries = this.transitions.get(match);
             if (!entries) {
@@ -104,20 +109,24 @@ function isCritical(before, after, action, transition, hinted) {
     return rescuedStones(before, after, color) > 0 || featuresOf(after)[otherColor(color)].completions.length < featuresOf(before)[otherColor(color)].completions.length;
 }
 /** Only an actually legal, core-confirmed winning reply proves a direct tactical loss. */
-function losingReply(match, justMoved, control, depth) {
+function losingReply(match, justMoved, control, depth, proveDelayed = false) {
     if (match.state.outcome || match.state.phase.kind !== "playing")
         return false;
     const actor = activePlayer(match);
     if (!actor || actor === justMoved)
         return false;
     const color = match.state.phase.toMove;
-    const probes = match.rules.confirmationDelay === 0
+    if (proveDelayed && securedClaim(match)?.color === color)
+        return true;
+    const probes = match.rules.confirmationDelay === 0 || proveDelayed
         ? featuresOf(match)[color].completions.map(point => ({ kind: "place", actor, point })) : [];
     if (match.state.claims.some(c => c.color === color && c.dueAt <= match.state.ply + 1))
         probes.push({ kind: "pass", actor });
     for (const action of probes) {
         const result = control.simulate(match, action, depth);
         if (result.ok && result.value.match.state.outcome?.kind === "win" && result.value.match.state.outcome.winner === actor)
+            return true;
+        if (proveDelayed && result.ok && securedClaim(result.value.match)?.color === color)
             return true;
     }
     return false;
@@ -142,13 +151,13 @@ export function runSearch(raw, host = {}) {
     const header = parsed.value;
     let control;
     try {
-        control = new Control(header.budget, now, cancelled, started);
+        control = new Control(header.budget, now, cancelled, started, header.level === "hard");
     }
     catch {
         return aiFail("AI_WORKER_FAILED");
     }
     const width = SEARCH_POLICIES[header.level].quietWidth, actor = header.context.actor;
-    let best = null, bestScore = null, variation = [], completedDepth = 0, cutoffs = 0, rootCount = 0;
+    let best = null, bestScore = null, variation = [], completedDepth = 0, cutoffs = 0, rootCount = 0, bestOrder = -Infinity, bestProofTie = -Infinity;
     function finish(stop) {
         let elapsed = Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, control.last - control.start));
         try {
@@ -181,11 +190,38 @@ export function runSearch(raw, host = {}) {
             return restored;
         const match = restored.value;
         control.nodes = 1;
+        if (control.featurePool)
+            shareFeaturePool(match, control.featurePool);
+        if (header.level === "hard" && securedClaim(match)?.color === playerColor(match, actor)) {
+            const action = { kind: "pass", actor }, result = control.simulate(match, action, 1);
+            if (result.ok) {
+                best = action;
+                variation = [action];
+                rootCount = 1;
+                completedDepth = 1;
+                const won = result.value.match.state.outcome?.kind === "win" && result.value.match.state.outcome.winner === actor;
+                bestScore = won ? WIN_VALUE : SECURED_LINE_VALUE;
+                return finish(won ? "terminal-win" : "secured-line");
+            }
+        }
         control.check();
         const ordered = orderActions(match, header.seed);
         control.check();
         const roots = [];
         const orders = new WeakMap();
+        // Full command paths preserve different PSK histories; these hints are ordering only, not cached scores.
+        const localBest = new Map(), evaluations = new WeakMap();
+        const evaluate = (match) => {
+            let value = evaluations.get(match);
+            if (value === undefined) {
+                value = header.level === "hard" ? evaluateHardPosition(match, actor) : evaluatePosition(match, actor);
+                // Future actual and certified wins have the same game value. Immediate root wins still use WIN_VALUE.
+                if (header.level === "hard")
+                    value = Math.max(-SECURED_LINE_VALUE, Math.min(SECURED_LINE_VALUE, value));
+                evaluations.set(match, value);
+            }
+            return value;
+        };
         const history = new Map(), killers = new Map();
         const historyKey = (match, action) => `${action.actor}/${match.state.phase.kind}/${playerColor(match, action.actor)}/${actionKey(action)}`;
         const proposalsFor = (match, preferred, pathDepth, quietWidth) => {
@@ -197,8 +233,7 @@ export function runSearch(raw, host = {}) {
             if (header.level === "hard") {
                 const key = preferred ? actionKey(preferred) : null, killer = killers.get(pathDepth) ?? [];
                 const score = (p) => p.order + (history.get(historyKey(match, p.action)) ?? 0) + (killer.includes(historyKey(match, p.action)) ? 8000 : 0);
-                let quiet = 0;
-                const selected = proposals.filter(p => p.critical || actionKey(p.action) === key || quiet++ < quietWidth);
+                const selected = retainActions(proposals, preferred, quietWidth);
                 return selected.map(p => ({ p, preferred: actionKey(p.action) === key, score: score(p), tie: tieRank(p.action, header.seed) }))
                     .sort((a, b) => Number(b.preferred) - Number(a.preferred) || Number(b.p.critical) - Number(a.p.critical) || b.score - a.score || b.tie - a.tie).map(x => x.p);
             }
@@ -208,10 +243,12 @@ export function runSearch(raw, host = {}) {
             return [...proposals.filter(p => actionKey(p.action) === key), ...proposals.filter(p => actionKey(p.action) !== key)];
         };
         let values = new Map();
+        const rootAllowance = header.level === "hard" && match.state.phase.kind === "opening" && match.state.phase.placed === 2
+            ? match.state.board.length : SEARCH_POLICIES[header.level].rootWidth;
         let quietRoots = 0;
         for (const proposal of ordered) {
             control.check();
-            if (!proposal.critical && quietRoots >= SEARCH_POLICIES[header.level].rootWidth)
+            if (!proposal.critical && quietRoots >= rootAllowance)
                 continue;
             const result = control.simulate(match, proposal.action, 1);
             if (!result.ok)
@@ -233,37 +270,60 @@ export function runSearch(raw, host = {}) {
                 return finish("terminal-win");
             }
             control.check();
-            const value = evaluatePosition(next, actor);
+            const value = evaluate(next);
             control.check();
             const critical = isCritical(match, next, proposal.action, result.value, proposal.critical);
             roots.push({ action: proposal.action, next, critical, order: proposal.order });
             values.set(actionKey(proposal.action), value);
-            if (bestScore === null || value > bestScore || (value === bestScore && tieRank(proposal.action, header.seed) > tieRank(best, header.seed))) {
+            const solvedLoss = header.level === "hard" && value === -SECURED_LINE_VALUE && bestScore === value;
+            const proofTie = header.level === "hard" && value === SECURED_LINE_VALUE ? evaluatePosition(next, actor) : -Infinity;
+            if (bestScore === null || value > bestScore || (value === bestScore && (solvedLoss ? proposal.order > bestOrder
+                : value === SECURED_LINE_VALUE && header.level === "hard" ? proofTie > bestProofTie : tieRank(proposal.action, header.seed) > tieRank(best, header.seed)))) {
                 best = proposal.action;
                 bestScore = value;
+                bestOrder = proposal.order;
+                bestProofTie = proofTie;
                 variation = [best];
             }
         }
         if (!roots.length)
             return finish("nodes");
         completedDepth = 1;
+        if (header.level === "hard" && bestScore === SECURED_LINE_VALUE)
+            return finish("secured-line");
         for (let depth = 2; depth <= header.budget.maxDepth; depth++) {
             control.check();
             const preferred = variation, previousValues = values;
             const sorted = roots.slice().sort((a, b) => (previousValues.get(actionKey(b.action)) ?? -Infinity) - (previousValues.get(actionKey(a.action)) ?? -Infinity)
                 || b.order - a.order || tieRank(b.action, header.seed) - tieRank(a.action, header.seed));
             let quiet = 0;
-            const candidates = sorted.filter(r => r.critical || quiet++ < width), safe = [];
+            const candidates = sorted.filter(r => r.critical || quiet++ < (header.level === "hard" ? SEARCH_POLICIES.hard.rootWidth : width)), safe = [];
             for (const root of candidates) {
-                if (losingReply(root.next, actor, control, 2))
+                if (losingReply(root.next, actor, control, 2, header.level === "hard"))
                     cutoffs++;
                 else
                     safe.push(root);
             }
             const selected = safe.length ? safe : candidates;
+            // A scout and re-search get the same preferred move even when transition memoization is full.
+            const previousHints = new Map(localBest);
+            // Cache only this iteration's exact command paths/depths and fixed candidate membership.
+            const bounds = new Map();
             const tree = {
-                check: () => control.check(), terminal: n => !!n.match.state.outcome, player: n => activePlayer(n.match),
-                evaluate: n => { control.check(); return evaluatePosition(n.match, actor); }, cutoff: (node, move, remaining) => {
+                check: () => control.check(), terminal: n => !!n.match.state.outcome || header.level === "hard" && !!securedClaim(n.match), player: n => activePlayer(n.match),
+                evaluate: n => { control.check(); return evaluate(n.match); },
+                principalVariation: header.level === "hard",
+                lookup: header.level === "hard" ? (node, remaining) => bounds.get(`${remaining}:${node.path}`) : undefined,
+                store: header.level === "hard" ? (node, remaining, entry) => {
+                    const key = `${remaining}:${node.path}`;
+                    if (bounds.size < 16384 || bounds.has(key))
+                        bounds.set(key, entry);
+                } : undefined,
+                remember: header.level === "hard" ? (node, move) => {
+                    if (localBest.size < 16384 || localBest.has(node.path))
+                        localBest.set(node.path, move);
+                } : undefined,
+                cutoff: (node, move, remaining) => {
                     cutoffs++;
                     if (header.level === "hard") {
                         const key = historyKey(node.match, move);
@@ -283,8 +343,10 @@ export function runSearch(raw, host = {}) {
                 },
                 children: function* (node) {
                     control.check();
-                    const pref = node.onPV ? preferred[node.pathDepth] ?? null : null;
-                    const quietWidth = header.level === "easy" ? width : Math.max(4, width - node.pathDepth * 2);
+                    const pref = (node.onPV ? preferred[node.pathDepth] : null) ?? (header.level === "hard" ? previousHints.get(node.path) : null) ?? null;
+                    const quietWidth = header.level === "hard" && node.match.state.phase.kind === "opening" && node.match.state.phase.placed === 2
+                        ? node.match.state.board.length : header.level === "hard" && activePlayer(node.match) !== actor ? width
+                        : header.level === "easy" ? width : Math.max(4, width - node.pathDepth * 2);
                     const proposals = proposalsFor(node.match, pref, node.pathDepth, quietWidth);
                     control.check();
                     let quietLegal = 0;
@@ -301,7 +363,7 @@ export function runSearch(raw, host = {}) {
                                 for (const point of group.liberties)
                                     forcing.add(point);
                     }
-                    let losingChild = null, any = false;
+                    let losingChild = null, losingOrder = -Infinity, losingTie = -Infinity, any = false;
                     for (const proposal of proposals) {
                         if (forcing && proposal.action.kind === 'place' && !forcing.has(proposal.action.point))
                             continue;
@@ -314,9 +376,14 @@ export function runSearch(raw, host = {}) {
                         if (!proposal.critical)
                             quietLegal++;
                         const child = { move: proposal.action, node: { match: result.value.match, pathDepth: node.pathDepth + 1,
-                                onPV: node.onPV && !!pref && actionKey(proposal.action) === actionKey(pref) } };
-                        if (node.pathDepth + 2 <= depth && losingReply(child.node.match, moving, control, node.pathDepth + 2)) {
-                            losingChild ??= child;
+                                onPV: node.onPV && !!pref && actionKey(proposal.action) === actionKey(pref), path: node.path + '/' + actionKey(proposal.action) } };
+                        if (node.pathDepth + 2 <= depth && losingReply(child.node.match, moving, control, node.pathDepth + 2, header.level === "hard")) {
+                            const tie = tieRank(proposal.action, header.seed);
+                            if (!losingChild || proposal.order > losingOrder || proposal.order === losingOrder && tie > losingTie) {
+                                losingChild = child;
+                                losingOrder = proposal.order;
+                                losingTie = tie;
+                            }
                             cutoffs++;
                             continue;
                         }
@@ -331,23 +398,25 @@ export function runSearch(raw, host = {}) {
                         yield losingChild;
                 },
             };
-            let iterationBest = null, iterationValue = -Infinity, iterationOrder = -Infinity, iterationPV = [];
+            let iterationBest = null, iterationValue = -Infinity, iterationRank = -Infinity, iterationOrder = -Infinity, iterationPV = [];
             const nextValues = new Map();
             for (const root of selected) {
                 control.check();
-                const result = alphaBeta({ match: root.next, pathDepth: 1, onPV: !!preferred[0] && actionKey(root.action) === actionKey(preferred[0]) }, depth - 1, actor, tree, iterationValue, Infinity);
+                const result = alphaBeta({ match: root.next, pathDepth: 1, onPV: !!preferred[0] && actionKey(root.action) === actionKey(preferred[0]), path: actionKey(root.action) }, depth - 1, actor, tree, iterationRank, Infinity);
                 nextValues.set(actionKey(root.action), result.value);
+                const rank = result.value;
                 // Fail-low values are bounds, so equal bounds never replace the exact first best.
                 // At the absolute losing floor an equal bound is exact. Still prefer attacking/saving the live five.
                 // Other fail-low ties remain bounds and must not replace the exact first best.
-                if (iterationBest === null || result.value > iterationValue
-                    || result.value === -WIN_VALUE && iterationValue === -WIN_VALUE && root.order > iterationOrder) {
+                if (iterationBest === null || rank > iterationRank
+                    || (rank === -WIN_VALUE || header.level === "hard" && rank === -SECURED_LINE_VALUE) && rank === iterationRank && root.order > iterationOrder) {
                     iterationBest = root.action;
                     iterationValue = result.value;
+                    iterationRank = rank;
                     iterationOrder = root.order;
                     iterationPV = [root.action, ...result.variation];
                 }
-                if (iterationValue === WIN_VALUE)
+                if (iterationValue === WIN_VALUE || header.level === "hard" && iterationValue === SECURED_LINE_VALUE)
                     break;
             }
             if (iterationBest) {

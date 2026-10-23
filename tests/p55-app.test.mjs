@@ -139,7 +139,7 @@ test('hard selection uses its long budget and restores paused with difficulty an
     assert.deepEqual([...h.form.elements.level].map(r=>r.value),['easy','standard','hard']);
     assert.match(h.$('mode-label').textContent,/困难/);
     h.point(40);h.clock.tick();const worker=h.workers.at(-1);worker.ready();
-    assert.equal(worker.sent[0].level,'hard');assert.equal(worker.sent[0].budget.timeMs,8000);
+    assert.equal(worker.sent[0].level,'hard');assert.equal(worker.sent[0].budget.timeMs,120000);
     h.clock.tick(3000);assert.match(h.$('ai-status').textContent,/思考/);
     h.$('ai-pause').click();assert.equal(worker.terminated,1);
     saved=h.current();assert.equal(saved.session.controllers.B.level,'hard');

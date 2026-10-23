@@ -5,6 +5,8 @@ export interface OrderedAction {
     readonly critical: boolean;
     readonly order: number;
 }
+/** Keep a fixed quiet set before applying learned ordering. The preferred move uses one quiet slot. */
+export declare function retainActions(proposals: readonly OrderedAction[], preferred: AIAction | null, width: number): readonly OrderedAction[];
 export declare const actionKey: (a: AIAction) => string;
 export declare function tieRank(a: AIAction, seed: number): number;
 /** Whole-board hints only. Every returned proposal is still checked by the core before use. */

@@ -1,0 +1,50 @@
+{
+  "predecessorVersion": "0.5.9",
+  "predecessorCommit": "bf1fb00355295ae6b8d1cb8fd200c17148508e83",
+  "metric": "candidate outright wins / all scheduled games; draws and unfinished games count as non-wins",
+  "target": 0.8,
+  "selectionSeeds": [
+    37,
+    83
+  ],
+  "attempt": 3,
+  "previousAttempt": "reports/ai-p5-10-generation-attempt-2-rejected.json",
+  "holdoutSeeds": [
+    38011,
+    42013,
+    46021,
+    50023,
+    54037
+  ],
+  "holdoutBoards": [
+    9,
+    9,
+    9,
+    13,
+    13
+  ],
+  "holdoutClaimModes": [
+    "fixed-five",
+    "color-pressure",
+    "fixed-five",
+    "color-pressure",
+    "fixed-five"
+  ],
+  "directions": [
+    "diagonal",
+    "four"
+  ],
+  "confirmationDelays": [
+    0,
+    4
+  ],
+  "swap3": true,
+  "candidateActors": [
+    "A",
+    "B"
+  ],
+  "holdoutGames": 40,
+  "maxCommands": 160,
+  "acceptanceClock": "production monotonic clock and unscaled profiles; predecessor remains 8000ms/200000 nodes/depth12",
+  "policy": "Freeze the candidate before holdout. Preserve all failed attempts; never tune against held-out records, drop losses or accept before all 40 games finish. Rejecting early is allowed only when completed nonwins exceed 8, making 32/40 impossible. Shortened-clock or scaled-node training never satisfies acceptance."
+}

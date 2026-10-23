@@ -1,0 +1,157 @@
+{
+  "stage": "P5.10",
+  "version": "0.5.10",
+  "rulesVersion": "2.1.0-r3",
+  "verifiedOn": "2026-10-23T01:35:31.594Z",
+  "automated": {
+    "tests": 13271,
+    "pass": 13271,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "tap": "reports/p5-10-tests.tap",
+    "focused": {
+      "tests": 80,
+      "pass": 80,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "tap": "reports/p5-10-final-search-tests.tap"
+    },
+    "productMatrix": {
+      "report": "reports/product-p5-10-matrix.json",
+      "passed": 2688,
+      "failed": 0,
+      "expected": 2688,
+      "actualSearchCalls": 9408,
+      "acceptedSearchReplies": 6720,
+      "scope": "Product create/restore/save/pair-undo adapters, bounded recovery and original task authority with virtual Worker ports and clock; actual bounded runSearch, not full games or platform execution."
+    }
+  },
+  "strength": {
+    "scheduled": 40,
+    "completed": 40,
+    "wins": 32,
+    "losses": 8,
+    "draws": 0,
+    "unfinished": 0,
+    "winRate": 0.8,
+    "accepted": true,
+    "report": "reports/ai-p5-10-generation-holdout.json",
+    "audit": "reports/ai-p5-10-generation-audit.json",
+    "predecessorVersion": "0.5.9",
+    "predecessorCommit": "bf1fb00355295ae6b8d1cb8fd200c17148508e83",
+    "previousProfile": {
+      "timeMs": 8000,
+      "maxNodes": 200000,
+      "maxDepth": 12
+    },
+    "candidateProfile": {
+      "timeMs": 120000,
+      "maxNodes": 4000000,
+      "maxDepth": 16
+    },
+    "jobs": 8,
+    "buckets": {
+      "board/9": {
+        "games": 24,
+        "wins": 21,
+        "winRate": 0.875
+      },
+      "actor/A": {
+        "games": 20,
+        "wins": 14,
+        "winRate": 0.7
+      },
+      "direction/diagonal": {
+        "games": 20,
+        "wins": 16,
+        "winRate": 0.8
+      },
+      "delay/0": {
+        "games": 20,
+        "wins": 17,
+        "winRate": 0.85
+      },
+      "claims/fixed-five": {
+        "games": 24,
+        "wins": 17,
+        "winRate": 0.7083333333333334
+      },
+      "actor/B": {
+        "games": 20,
+        "wins": 18,
+        "winRate": 0.9
+      },
+      "delay/4": {
+        "games": 20,
+        "wins": 15,
+        "winRate": 0.75
+      },
+      "direction/four": {
+        "games": 20,
+        "wins": 16,
+        "winRate": 0.8
+      },
+      "claims/color-pressure": {
+        "games": 16,
+        "wins": 15,
+        "winRate": 0.9375
+      },
+      "board/13": {
+        "games": 16,
+        "wins": 11,
+        "winRate": 0.6875
+      }
+    },
+    "scope": "Forty preregistered held-out 9/13-board games; actual product search clocks and unequal production budgets. All scheduled games in denominator."
+  },
+  "selection": {
+    "report": "reports/ai-p5-10-selection.json",
+    "selected": "proof-wide-120s-realtime-16",
+    "scope": "Training only: historical scaled-node zero-clock trials and later real-clock trials with both product clocks shortened to 10%. None replaces formal unscaled held-out acceptance."
+  },
+  "priorAbortedAttempt": {
+    "report": "reports/ai-p5-10-generation-attempt-1-aborted.json",
+    "completed": 2,
+    "wins": 1,
+    "losses": 1,
+    "notCompleted": 38,
+    "reason": "PVS scout/research candidate-set consistency defect found by code review, independent of held-out game records"
+  },
+  "priorRejectedAttempt": {
+    "report": "reports/ai-p5-10-generation-attempt-2-rejected.json",
+    "completed": 22,
+    "wins": 13,
+    "losses": 9,
+    "notCompleted": 18,
+    "reason": "Completed nonwins (9) exceed the maximum allowed to reach 32/40. No early acceptance or favorable-result selection."
+  },
+  "desktop": {
+    "report": "reports/desktop-p5-10-verification.json",
+    "checks": {
+      "peFiles": 7,
+      "asarFiles": 72,
+      "versionResource": true,
+      "allAssetsMatchSource": true,
+      "sharedCoreMatchesWeb": true,
+      "sharedWebMatchesSource": true,
+      "aiWorkerPackaged": true,
+      "externalManualMatchesSource": true
+    },
+    "runtimeTested": false,
+    "scope": "Packaged PE, ASAR, version, shared AI Worker/core/session assets verified. No manual native-window game for this release."
+  },
+  "compatibility": {
+    "coreUnchanged": true,
+    "sessionUnchanged": true,
+    "saveFormatUnchanged": true,
+    "undoExplicitCommands": 2,
+    "automaticRetries": 2,
+    "easyStandardUnchanged": true
+  },
+  "limits": [
+    "Measured win rate applies to the documented sample and product thinking budgets, not every rule configuration or device.",
+    "Virtual-port product matrix is not a set of complete games or platform acceptance."
+  ]
+}

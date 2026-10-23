@@ -43,7 +43,7 @@ for(const directory of paths){
   for(const [source,name]of [['apps/desktop/manual.html','弈合_游玩手册.html'],['docs/Windows真机验收清单.md','Windows真机验收清单.md']]){
     await cp(join(root,source),join(directory,name));extras.push({source,file:name});
   }
-  await writeFile(join(directory,'启动说明.txt'),`弈合 v${version} · Windows x64\n\n请保留整个文件夹，双击“弈合.exe”启动。\n支持离线双人与人机练习（简单／标准／困难）。困难 AI 每手最多思考约 8 秒，可随时暂停。\n游玩手册见“弈合_游玩手册.html”。自动保存默认在 %APPDATA%\\QiLine。\n实际运行验证范围见随包验收记录，不能仅凭构建成功认定所有 Windows 环境均通过。\n`,'utf8');
+  await writeFile(join(directory,'启动说明.txt'),`弈合 v${version} · Windows x64\n\n请保留整个文件夹，双击“弈合.exe”启动。\n支持离线双人与人机练习（简单／标准／困难）。困难 AI 每手最多思考 2 分钟，可随时暂停。\n游玩手册见“弈合_游玩手册.html”。自动保存默认在 %APPDATA%\\QiLine。\n实际运行验证范围见随包验收记录，不能仅凭构建成功认定所有 Windows 环境均通过。\n`,'utf8');
 }
 const revision=spawnSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'});
 const result={version,rulesVersion:RULES_VERSION,electronVersion,packagerVersion:packagerManifest.version,target:'win32-x64',paths,extras,

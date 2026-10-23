@@ -1,0 +1,490 @@
+TAP version 13
+# Subtest: fixed-five protects the earlier pending five before making a later five, even at the shallow fallback
+ok 1 - fixed-five protects the earlier pending five before making a later five, even at the shallow fallback
+  ---
+  duration_ms: 532.5468
+  type: 'test'
+  ...
+# Subtest: color-pressure may preserve the earlier clock with a safe replacement five
+ok 2 - color-pressure may preserve the earlier clock with a safe replacement five
+  ---
+  duration_ms: 68.6686
+  type: 'test'
+  ...
+# Subtest: even a proven losing reply keeps pressure on the surviving five instead of playing elsewhere
+ok 3 - even a proven losing reply keeps pressure on the surviving five instead of playing elsewhere
+  ---
+  duration_ms: 641.9723
+  type: 'test'
+  ...
+# Subtest: only captures of real five groups get claim-breaking priority in either claim mode
+ok 4 - only captures of real five groups get claim-breaking priority in either claim mode
+  ---
+  duration_ms: 31.8305
+  type: 'test'
+  ...
+# Subtest: all remote liberties of a vulnerable completed five survive quiet pruning
+ok 5 - all remote liberties of a vulnerable completed five survive quiet pruning
+  ---
+  duration_ms: 2.1205
+  type: 'test'
+  ...
+# Subtest: claim evaluation remains finite, zero-sum and respects who can answer an atari next
+ok 6 - claim evaluation remains finite, zero-sum and respects who can answer an atari next
+  ---
+  duration_ms: 5.681
+  type: 'test'
+  ...
+# Subtest: extra claim candidates and hard extensions still honour interruption, node and absolute depth limits
+ok 7 - extra claim candidates and hard extensions still honour interruption, node and absolute depth limits
+  ---
+  duration_ms: 274.4107
+  type: 'test'
+  ...
+# Subtest: secured line certificates cover both colors and every supported board, delayed clock and claim mode
+ok 8 - secured line certificates cover both colors and every supported board, delayed clock and claim mode
+  ---
+  duration_ms: 338.4349
+  type: 'test'
+  ...
+# Subtest: all legal enemy responses to representative certificates are replayed to actual core wins
+ok 9 - all legal enemy responses to representative certificates are replayed to actual core wins
+  ---
+  duration_ms: 1343.0917
+  type: 'test'
+  ...
+# Subtest: equal liberty and attack counts never certify a vulnerable corner, but a spent enemy turn can secure it
+ok 10 - equal liberty and attack counts never certify a vulnerable corner, but a spent enemy turn can secure it
+  ---
+  duration_ms: 0.8231
+  type: 'test'
+  ...
+# Subtest: an older enemy clock blocks a later safe-line certificate in both claim modes
+ok 11 - an older enemy clock blocks a later safe-line certificate in both claim modes
+  ---
+  duration_ms: 2.1385
+  type: 'test'
+  ...
+# Subtest: hard prevents a next-turn secured enemy five and passes only under its own surviving proof
+ok 12 - hard prevents a next-turn secured enemy five and passes only under its own surviving proof
+  ---
+  duration_ms: 12.9428
+  type: 'test'
+  ...
+# Subtest: secured shortcuts obey cancellation and tiny budgets without committing or fabricating outcomes
+ok 13 - secured shortcuts obey cancellation and tiny budgets without committing or fabricating outcomes
+  ---
+  duration_ms: 3.1032
+  type: 'test'
+  ...
+# Subtest: PVS agrees with exhaustive minimax on mixed A/B turns and fractional scores
+ok 14 - PVS agrees with exhaustive minimax on mixed A/B turns and fractional scores
+  ---
+  duration_ms: 10.5448
+  type: 'test'
+  ...
+# Subtest: a failed PVS scout is searched again before a better root branch replaces the principal variation
+ok 15 - a failed PVS scout is searched again before a better root branch replaces the principal variation
+  ---
+  duration_ms: 0.7271
+  type: 'test'
+  ...
+# Subtest: same-path bound entries preserve exhaustive values across narrow probes and full re-searches
+ok 16 - same-path bound entries preserve exhaustive values across narrow probes and full re-searches
+  ---
+  duration_ms: 38.4679
+  type: 'test'
+  ...
+# Subtest: a preferred quiet move uses its quota slot before learned ordering and cannot change scout/re-search membership
+ok 17 - a preferred quiet move uses its quota slot before learned ordering and cannot change scout/re-search membership
+  ---
+  duration_ms: 3.0481
+  type: 'test'
+  ...
+# Subtest: geometry reuse shares identical boards without sharing claim clocks, histories or search values
+ok 18 - geometry reuse shares identical boards without sharing claim clocks, histories or search values
+  ---
+  duration_ms: 4.8509
+  type: 'test'
+  ...
+# Subtest: hard examines every legal third opening placement before narrowing its completed search
+ok 19 - hard examines every legal third opening placement before narrowing its completed search
+  ---
+  duration_ms: 21.5969
+  type: 'test'
+  ...
+# Subtest: more thinking stays interruptible, never exceeds absolute budgets and leaves the live board untouched
+ok 20 - more thinking stays interruptible, never exceeds absolute budgets and leaves the live board untouched
+  ---
+  duration_ms: 193.5768
+  type: 'test'
+  ...
+# Subtest: the generation benchmark fixes the actual v0.5.9 hard opponent and counts every scheduled game
+ok 21 - the generation benchmark fixes the actual v0.5.9 hard opponent and counts every scheduled game
+  ---
+  duration_ms: 1.0567
+  type: 'test'
+  ...
+# Subtest: hard is a separate profile with more time, nodes and depth than standard
+ok 22 - hard is a separate profile with more time, nodes and depth than standard
+  ---
+  duration_ms: 1.3454
+  type: 'test'
+  ...
+# Subtest: hard sessions preserve A/B, difficulty, seed and full record through export and restoration
+ok 23 - hard sessions preserve A/B, difficulty, seed and full record through export and restoration
+  ---
+  duration_ms: 3.5869
+  type: 'test'
+  ...
+# Subtest: hard critical search blocks immediate wins and keeps remote captures in both claim modes
+ok 24 - hard critical search blocks immediate wins and keeps remote captures in both claim modes
+  ---
+  duration_ms: 547.8543
+  type: 'test'
+  ...
+# Subtest: hard threat extensions remain inside every requested node and absolute depth cap
+ok 25 - hard threat extensions remain inside every requested node and absolute depth cap
+  ---
+  duration_ms: 69.2357
+  type: 'test'
+  ...
+# Subtest: hard jobs remain cancellable during long thinking and old replies cannot commit
+ok 26 - hard jobs remain cancellable during long thinking and old replies cannot commit
+  ---
+  duration_ms: 1.196
+  type: 'test'
+  ...
+# Subtest: hard search is deterministic at fixed resources, including its killer/history ordering
+ok 27 - hard search is deterministic at fixed resources, including its killer/history ordering
+  ---
+  duration_ms: 324.248
+  type: 'test'
+  ...
+# Subtest: an actual immediate win is returned with a legal command and bounded depth/nodes
+ok 28 - an actual immediate win is returned with a legal command and bounded depth/nodes
+  ---
+  duration_ms: 35.8586
+  type: 'test'
+  ...
+# Subtest: both difficulty policies block a direct winning reply
+ok 29 - both difficulty policies block a direct winning reply
+  ---
+  duration_ms: 288.2558
+  type: 'test'
+  ...
+# Subtest: standard looks deeply enough to confirm a three-command fork that easy has not reached
+ok 30 - standard looks deeply enough to confirm a three-command fork that easy has not reached
+  ---
+  duration_ms: 14.0526
+  type: 'test'
+  ...
+# Subtest: far captures of the entire pending line remain in both levels and both claim modes
+ok 31 - far captures of the entire pending line remain in both levels and both claim modes
+  ---
+  duration_ms: 1045.7103
+  type: 'test'
+  ...
+# Subtest: critical ordering contains global capture, atari rescue, four completion/block points and pass despite any quiet width
+ok 32 - critical ordering contains global capture, atari rescue, four completion/block points and pass despite any quiet width
+  ---
+  duration_ms: 2.2652
+  type: 'test'
+  ...
+# Subtest: a one-node budget yields no invented action; its failure pauses the Session
+ok 33 - a one-node budget yields no invented action; its failure pauses the Session
+  ---
+  duration_ms: 0.7332
+  type: 'test'
+  ...
+# Subtest: a two-node budget retains the first verified legal candidate and never exceeds its allowance
+ok 34 - a two-node budget retains the first verified legal candidate and never exceeds its allowance
+  ---
+  duration_ms: 0.3711
+  type: 'test'
+  ...
+# Subtest: all tested small node budgets are hard limits, including incomplete first iterations
+ok 35 - all tested small node budgets are hard limits, including incomplete first iterations
+  ---
+  duration_ms: 28.966
+  type: 'test'
+  ...
+# Subtest: an interrupted deeper iteration returns the last fully completed iteration and its principal variation
+ok 36 - an interrupted deeper iteration returns the last fully completed iteration and its principal variation
+  ---
+  duration_ms: 3.6491
+  type: 'test'
+  ...
+# Subtest: all configured depth caps count explicit commands, never automatic passes as additional search depth
+ok 37 - all configured depth caps count explicit commands, never automatic passes as additional search depth
+  ---
+  duration_ms: 26.6668
+  type: 'test'
+  ...
+# Subtest: replay consumes the time budget and stops before any trustworthy action can be produced
+ok 38 - replay consumes the time budget and stops before any trustworthy action can be produced
+  ---
+  duration_ms: 0.7361
+  type: 'test'
+  ...
+# Subtest: a deadline after the first root returns its verified candidate instead of inventing a pass
+ok 39 - a deadline after the first root returns its verified candidate instead of inventing a pass
+  ---
+  duration_ms: 0.32
+  type: 'test'
+  ...
+# Subtest: cancellation during replay emits no action and never restores or modifies a live task
+ok 40 - cancellation during replay emits no action and never restores or modifies a live task
+  ---
+  duration_ms: 0.5077
+  type: 'test'
+  ...
+# Subtest: cancellation after candidates exist still emits no move
+ok 41 - cancellation after candidates exist still emits no move
+  ---
+  duration_ms: 0.2929
+  type: 'test'
+  ...
+# Subtest: a cancellation already observed remains latched even if the deadline is reached while reporting
+ok 42 - a cancellation already observed remains latched even if the deadline is reached while reporting
+  ---
+  duration_ms: 0.2895
+  type: 'test'
+  ...
+# Subtest: bad clocks and host faults cannot produce a move
+ok 43 - bad clocks and host faults cannot produce a move
+  ---
+  duration_ms: 0.2408
+  type: 'test'
+  ...
+# Subtest: full positional-superko history excludes illegal recaptures, and rejected attempts consume allowance
+ok 44 - full positional-superko history excludes illegal recaptures, and rejected attempts consume allowance
+  ---
+  duration_ms: 19.9342
+  type: 'test'
+  ...
+# Subtest: each fixed-five clock and the color-pressure inherited clock survive every search branch
+ok 45 - each fixed-five clock and the color-pressure inherited clock survive every search branch
+  ---
+  duration_ms: 9.0166
+  type: 'test'
+  ...
+# Subtest: actual color choice binds B correctly and white choice permits B to move again
+ok 46 - actual color choice binds B correctly and white choice permits B to move again
+  ---
+  duration_ms: 1.1246
+  type: 'test'
+  ...
+# Subtest: A may maximize across three consecutive opening commands without changing ownership or advancing the live board
+ok 47 - A may maximize across three consecutive opening commands without changing ownership or advancing the live board
+  ---
+  duration_ms: 50.3232
+  type: 'test'
+  ...
+# Subtest: terminal values dominate heuristics and remain zero-sum for actual player identity
+ok 48 - terminal values dominate heuristics and remain zero-sum for actual player identity
+  ---
+  duration_ms: 0.757
+  type: 'test'
+  ...
+# Subtest: pass wins an already due claim and draws when every placement loses immediately
+ok 49 - pass wins an already due claim and draws when every placement loses immediately
+  ---
+  duration_ms: 2.7406
+  type: 'test'
+  ...
+# Subtest: automatic passes stay inside one explicit search command and one live commit
+ok 50 - automatic passes stay inside one explicit search command and one live commit
+  ---
+  duration_ms: 38.7078
+  type: 'test'
+  ...
+# Subtest: real search replies commit at most once and become stale after pause/new game
+ok 51 - real search replies commit at most once and become stale after pause/new game
+  ---
+  duration_ms: 390.8102
+  type: 'test'
+  ...
+# Subtest: corrupt records, unknown versions and wrong actors are rejected before producing any action
+ok 52 - corrupt records, unknown versions and wrong actors are rejected before producing any action
+  ---
+  duration_ms: 1.2867
+  type: 'test'
+  ...
+# Subtest: same request, seed and deterministic resource clock reproduce the selected move and statistics
+ok 53 - same request, seed and deterministic resource clock reproduce the selected move and statistics
+  ---
+  duration_ms: 22.0304
+  type: 'test'
+  ...
+# Subtest: the actual monotonic clock can stop search before any entire large-board layer completes
+ok 54 - the actual monotonic clock can stop search before any entire large-board layer completes
+  ---
+  duration_ms: 1.7158
+  type: 'test'
+  ...
+# Subtest: real-clock searches obey each default level profile on small and large boards
+ok 55 - real-clock searches obey each default level profile on small and large boards
+  ---
+  duration_ms: 1326.8793
+  type: 'test'
+  ...
+# Subtest: the same A player maximizes on consecutive commands instead of flipping signs every ply
+ok 56 - the same A player maximizes on consecutive commands instead of flipping signs every ply
+  ---
+  duration_ms: 1.2209
+  type: 'test'
+  ...
+# Subtest: B choosing white and moving again is still a maximizing B turn; choosing black gives A the minimizing turn
+ok 57 - B choosing white and moving again is still a maximizing B turn; choosing black gives A the minimizing turn
+  ---
+  duration_ms: 0.1895
+  type: 'test'
+  ...
+# Subtest: alpha-beta cuts a reply that cannot improve the root result without changing its value
+ok 58 - alpha-beta cuts a reply that cannot improve the root result without changing its value
+  ---
+  duration_ms: 1.2236
+  type: 'test'
+  ...
+# Subtest: seeded mixed-turn trees agree with an independent exhaustive minimax oracle
+ok 59 - seeded mixed-turn trees agree with an independent exhaustive minimax oracle
+  ---
+  duration_ms: 11.3643
+  type: 'test'
+  ...
+# Subtest: budget/cancellation interrupts propagate out of the tree without an invented score
+ok 60 - budget/cancellation interrupts propagate out of the tree without an invented score
+  ---
+  duration_ms: 0.8085
+  type: 'test'
+  ...
+# Subtest: hard selection uses its long budget and restores paused with difficulty and identity intact
+ok 61 - hard selection uses its long budget and restores paused with difficulty and identity intact
+  ---
+  duration_ms: 28.9351
+  type: 'test'
+  ...
+# Subtest: product settings react to radio changes and practice assigns the selected identity/difficulty
+ok 62 - product settings react to radio changes and practice assigns the selected identity/difficulty
+  ---
+  duration_ms: 6.3515
+  type: 'test'
+  ...
+# Subtest: AI A places three opening stones with fresh workers, saves each once and cannot be impersonated
+ok 63 - AI A places three opening stones with fresh workers, saves each once and cannot be impersonated
+  ---
+  duration_ms: 10.532
+  type: 'test'
+  ...
+# Subtest: AI B choosing white continues with B; pair undo removes the choice and preceding opening stone
+ok 64 - AI B choosing white continues with B; pair undo removes the choice and preceding opening stone
+  ---
+  duration_ms: 16.422
+  type: 'test'
+  ...
+# Subtest: pause stops AI while bounded automatic recovery retries twice before a visible final failure
+ok 65 - pause stops AI while bounded automatic recovery retries twice before a visible final failure
+  ---
+  duration_ms: 11.7145
+  type: 'test'
+  ...
+# Subtest: thinking status updates preserve the board DOM and a successful move resets recovery allowance
+ok 66 - thinking status updates preserve the board DOM and a successful move resets recovery allowance
+  ---
+  duration_ms: 7.4526
+  type: 'test'
+  ...
+# Subtest: one practice undo removes a complete human/AI pair and restores the human turn
+ok 67 - one practice undo removes a complete human/AI pair and restores the human turn
+  ---
+  duration_ms: 11.6494
+  type: 'test'
+  ...
+# Subtest: undoing two AI opening stones stops the next worker and holds until explicit continue
+ok 68 - undoing two AI opening stones stops the next worker and holds until explicit continue
+  ---
+  duration_ms: 9.1611
+  type: 'test'
+  ...
+# Subtest: pending automatic recovery is cancelled by pause, replacement, load, conflict, undo and page close
+ok 69 - pending automatic recovery is cancelled by pause, replacement, load, conflict, undo and page close
+  ---
+  duration_ms: 46.0628
+  type: 'test'
+  ...
+# Subtest: a final AI failure can be escaped with a one-command fallback undo without restarting AI
+ok 70 - a final AI failure can be escaped with a one-command fallback undo without restarting AI
+  ---
+  duration_ms: 7.0644
+  type: 'test'
+  ...
+# Subtest: startup AI restore waits for continue for either real-player identity
+ok 71 - startup AI restore waits for continue for either real-player identity
+  ---
+  duration_ms: 7.9066
+  type: 'test'
+  ...
+# Subtest: new game replacement closes old work and ignores old results; live PvP remains protected
+ok 72 - new game replacement closes old work and ignores old results; live PvP remains protected
+  ---
+  duration_ms: 7.442
+  type: 'test'
+  ...
+# Subtest: import replacement terminates old work and restored AI waits before creating a fresh task
+ok 73 - import replacement terminates old work and restored AI waits before creating a fresh task
+  ---
+  duration_ms: 7.1027
+  type: 'test'
+  ...
+# Subtest: storage events stop current AI work, preserve newer bytes and leave export available
+ok 74 - storage events stop current AI work, preserve newer bytes and leave export available
+  ---
+  duration_ms: 9.7813
+  type: 'test'
+  ...
+# Subtest: a missed storage event is detected at readiness and stops work before sending a request
+ok 75 - a missed storage event is detected at readiness and stops work before sending a request
+  ---
+  duration_ms: 6.0081
+  type: 'test'
+  ...
+# Subtest: a missed storage update after readiness rejects replies and failures before the active position changes
+ok 76 - a missed storage update after readiness rejects replies and failures before the active position changes
+  ---
+  duration_ms: 29.8646
+  type: 'test'
+  ...
+# Subtest: invalid imports preserve active work and paused opening cancellation never briefly resumes AI
+ok 77 - invalid imports preserve active work and paused opening cancellation never briefly resumes AI
+  ---
+  duration_ms: 7.2403
+  type: 'test'
+  ...
+# Subtest: practice resignation on an AI turn closes work using the human identity
+ok 78 - practice resignation on an AI turn closes work using the human identity
+  ---
+  duration_ms: 5.8949
+  type: 'test'
+  ...
+# Subtest: one local two-player consent removes two commands and never creates AI work
+ok 79 - one local two-player consent removes two commands and never creates AI work
+  ---
+  duration_ms: 8.8587
+  type: 'test'
+  ...
+# Subtest: pagehide closes active work and a cached pageshow requests a fresh document
+ok 80 - pagehide closes active work and a cached pageshow requests a fresh document
+  ---
+  duration_ms: 7.2631
+  type: 'test'
+  ...
+1..80
+# tests 80
+# suites 0
+# pass 80
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3589.255

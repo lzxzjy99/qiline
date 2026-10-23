@@ -1,6 +1,6 @@
 {
   "name": "qiline-web",
-  "version": "0.5.9",
+  "version": "0.5.10",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,7 +13,8 @@
     "test:worker": "node --test tests/ai-worker.test.mjs tests/ai-worker-native.test.mjs tests/ai-worker-matrix.test.mjs",
     "build:desktop": "node scripts/build-desktop.mjs",
     "test:desktop": "node --test tests/desktop.test.mjs",
-    "verify:desktop": "node scripts/verify-desktop.mjs"
+    "verify:desktop": "node scripts/verify-desktop.mjs",
+    "benchmark:generation": "node scripts/benchmark-generation-ai.mjs --holdout"
   },
   "engines": {
     "node": ">=22.12"

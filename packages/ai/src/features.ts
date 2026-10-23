@@ -11,6 +11,10 @@ interface Lines {
   readonly lineStones:ReadonlySet<number>;
 }
 interface Features { readonly groups:GroupTable; readonly black:Lines; readonly white:Lines }
+export type FeaturePool=Map<string,Features>;
+const featurePools=new WeakMap<Match,FeaturePool>();
+/** Hard request-local geometry only: no scores, ko legality or claim clocks enter this pool. */
+export function shareFeaturePool(match:Match,pool:FeaturePool):void {featurePools.set(match,pool);}
 const windowsCache=new Map<string,readonly (readonly number[])[]>();
 const featureCache=new WeakMap<Match,Features>();
 export interface LiveLine {
@@ -70,9 +74,16 @@ function lines(board:readonly Cell[],rules:RuleConfig,color:Color,groups:GroupTa
 export function featuresOf(match:Match):Features {
   let found=featureCache.get(match);
   if (!found) {
+    const pool=featurePools.get(match),key=pool?`${match.rules.boardSize}/${match.rules.directions}/${match.state.board.join(',')}`:null;
+    if(key!==null)found=pool!.get(key);
+    if(found){featureCache.set(match,found);return found;}
     const groups=collectGroups(match.state.board,match.rules.boardSize);
     found={groups,black:lines(match.state.board,match.rules,"black",groups),white:lines(match.state.board,match.rules,"white",groups)};
     featureCache.set(match,found);
+    if(pool&&key!==null){
+      if(pool.size>=2048)pool.delete(pool.keys().next().value!);
+      pool.set(key,found);
+    }
   }
   return found;
 }

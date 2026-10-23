@@ -16,6 +16,9 @@ interface Features {
     readonly black: Lines;
     readonly white: Lines;
 }
+export type FeaturePool = Map<string, Features>;
+/** Hard request-local geometry only: no scores, ko legality or claim clocks enter this pool. */
+export declare function shareFeaturePool(match: Match, pool: FeaturePool): void;
 export interface LiveLine {
     readonly color: Color;
     readonly dueAt: number;

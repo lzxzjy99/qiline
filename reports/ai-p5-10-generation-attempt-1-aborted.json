@@ -1,0 +1,1156 @@
+{
+  "stage": "P5.10",
+  "predecessorCommit": "bf1fb00355295ae6b8d1cb8fd200c17148508e83",
+  "plan": {
+    "predecessorVersion": "0.5.9",
+    "predecessorCommit": "bf1fb00355295ae6b8d1cb8fd200c17148508e83",
+    "metric": "candidate outright wins / all scheduled games; draws and unfinished games count as non-wins",
+    "target": 0.8,
+    "selectionSeeds": [
+      37,
+      83
+    ],
+    "holdoutSeeds": [
+      1201,
+      2029,
+      4099,
+      6521,
+      9013
+    ],
+    "holdoutBoards": [
+      9,
+      9,
+      9,
+      13,
+      13
+    ],
+    "holdoutClaimModes": [
+      "fixed-five",
+      "color-pressure",
+      "fixed-five",
+      "color-pressure",
+      "fixed-five"
+    ],
+    "directions": [
+      "diagonal",
+      "four"
+    ],
+    "confirmationDelays": [
+      0,
+      4
+    ],
+    "swap3": true,
+    "candidateActors": [
+      "A",
+      "B"
+    ],
+    "holdoutGames": 40,
+    "maxCommands": 160,
+    "acceptanceClock": "production monotonic clock and unscaled profiles; predecessor remains 8000ms/200000 nodes/depth12",
+    "policy": "Freeze the candidate before holdout. Preserve all failed holdout attempts; do not tune against held-out records or drop losses. A scaled selection result alone does not satisfy this acceptance gate."
+  },
+  "conditions": {
+    "holdout": true,
+    "realClock": true,
+    "scale": 1,
+    "jobs": 8,
+    "candidateHashes": {
+      "ai/src/search.js": "6034dc5b3fb249f963361d50947c1f4cf22a3432a141842f02bc4b2a196625ad",
+      "ai/src/tree.js": "0e706c3032f87df5c47fd793f5d34d5dc2676b79f8be3d6b31e4b607bf74f1b5",
+      "ai/src/evaluation.js": "2a6b6c947d3f526a70c62261a2f87d511753bdaf6dcb8aff9bf2773254b1b1b2",
+      "ai/src/features.js": "b49a38864447ee61f18c27f93ffd65be6247f7868dc176ca493b5aaadfd4240b",
+      "ai/src/ordering.js": "0741ace3c2fc357b0bd8175cbc5fadff2544b8cdfd1b93f47f72ccf740a5eca7",
+      "ai/src/protocol.js": "84740bfd654c8f3082ba2d8c17422ceba40dd905820c50175eb0ecbbd497a411"
+    },
+    "predecessor": {
+      "version": "0.5.9",
+      "commit": "bf1fb00355295ae6b8d1cb8fd200c17148508e83",
+      "hashes": {
+        "compiled/ai/src/basic.d.ts": "e7c4c5e53fefa0a9ede2bfa9cf171a3e16597ad9d3906826ec81430418807fad",
+        "compiled/ai/src/basic.js": "039795e7302fa9d2be5dbebcd983c46e50246578e1f768a68ea28723f67c66b2",
+        "compiled/ai/src/evaluation.d.ts": "c562742eb220e19573b7a3767892ac88f9f53ce0d6d74dfbb5ef5fb31e79076e",
+        "compiled/ai/src/evaluation.js": "2a6b6c947d3f526a70c62261a2f87d511753bdaf6dcb8aff9bf2773254b1b1b2",
+        "compiled/ai/src/features.d.ts": "d803999d862f5570db5e4c486b97244745fcde5a9766a1d1890be35b0ca63c3f",
+        "compiled/ai/src/features.js": "b49a38864447ee61f18c27f93ffd65be6247f7868dc176ca493b5aaadfd4240b",
+        "compiled/ai/src/index.d.ts": "38707827b23964c013ac11637b883a10f226ce306b2375eaffe6d6fb8b01090e",
+        "compiled/ai/src/index.js": "2fe71a1d5953739a5b9fb4fcc7f0f1eafb0a765ad1eb3418baa16bc1db010456",
+        "compiled/ai/src/ordering.d.ts": "ba5f76b8b0a1002c425982d3f441129d2eabaa3b90cf6c89065431ec723c13dd",
+        "compiled/ai/src/ordering.js": "0741ace3c2fc357b0bd8175cbc5fadff2544b8cdfd1b93f47f72ccf740a5eca7",
+        "compiled/ai/src/protocol.d.ts": "89b20e186ca4a8335a41ce7530401fc5f4f79c734573270b29a7d28b50159509",
+        "compiled/ai/src/protocol.js": "d0e8ae60b39fdd906b7d25db9c7f10a92f93b48a30495cd5e5e0c0e6a4e1b5e7",
+        "compiled/ai/src/save.d.ts": "b97df8a1044aa4cd3552da11bc988575df2278fe209c87bac7b2cd3037f4605e",
+        "compiled/ai/src/save.js": "62a12e249c03421b005e0c6488e8187d7821da78b35201e8d5a72ab67556d978",
+        "compiled/ai/src/search.d.ts": "e2e9a652574606ec13afd94d922947bed8ba2d4793d0ec0615fc18054043dc57",
+        "compiled/ai/src/search.js": "3fe545711a98c3ebde4eb1523d2a9b673113bcd645a19719613cb6c5c15501af",
+        "compiled/ai/src/tactics.d.ts": "56462c32d536ff6348552daebab0f6d3ed49cb98a5a9fca3ed33294e020f7f6c",
+        "compiled/ai/src/tactics.js": "e9c37c3d7790521e75d6cb5e2a94455849a23ae4de2b351aaf2ad3f8e169440d",
+        "compiled/ai/src/tree.d.ts": "7f94e155a70cdaf39c07cd650a94774a957fc3b1d8445b484179c9ce415a5e5a",
+        "compiled/ai/src/tree.js": "2865ce82bd6ca14d7ca6ab0e370f12b1d75915a0368f463baa39646e6ac27c8c",
+        "compiled/ai/src/turn.d.ts": "fe54c942eb404076ff8b7325823ce6e0e0570f05dfc8f9b5049cabfa9425d227",
+        "compiled/ai/src/turn.js": "7c758e97a9a27fe80c4b8aba1f38dd833f9b88565b25f2c68bd5f91cba034ebc",
+        "compiled/ai/src/types.d.ts": "032b8006fcd87b106f359b9d1cdfdbe1a66886c016c0d1f5665057c360cdf137",
+        "compiled/ai/src/types.js": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+        "compiled/ai/src/worker-controller.d.ts": "388f730e6af4249f37b6329e6b5eb5af7c75bdb9151edd65dbe02d46e41b7a4e",
+        "compiled/ai/src/worker-controller.js": "8218f705374beede3643278e97bdd1416fe163b8c64b6ac7561256d3039e3982",
+        "compiled/ai/src/worker-entry.d.ts": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+        "compiled/ai/src/worker-entry.js": "3d7fb09a0959e1313b11856686b48893593085e8039237d6e6842209ea9ec07f",
+        "compiled/core/src/claims.d.ts": "28fde761a4aae1e4cb1a937f82257bf9d51d7fba332ca045d49b97d458151138",
+        "compiled/core/src/claims.js": "abf1117269c49068c42865ab641e27b2fa98e39ae445a89e697f0787e591112b",
+        "compiled/core/src/claims.js.map": "0ad5c47babcb3b16c7cc9cb768107f980490561110ece05f88cae67d33558c59",
+        "compiled/core/src/engine.d.ts": "7c50f57bb38bb2c13a919ae3813262a2ee5177f7fd17811fd16fac11ad3d233b",
+        "compiled/core/src/engine.js": "e6971da50c80157a393003f735670c0a07c7b44c9d6e0550a61bbf0d8c16602d",
+        "compiled/core/src/engine.js.map": "0570d26b8252769b3bcdf84dbf408ae655c3e795f24e357060e36e12330c5328",
+        "compiled/core/src/geometry.d.ts": "f1b8275fddd9ac3736e8d1bf79f0081fcbfac4017bc15b2ccfc5482bb0f60112",
+        "compiled/core/src/geometry.js": "4e4f4a9231631045654f2d79af8dd84f0c5611d6cd888a4ef08867e1928ee8a3",
+        "compiled/core/src/geometry.js.map": "9504d1e87556809634223ed3ca01388b89d0179ecb9b0943534069bdbeae8ee8",
+        "compiled/core/src/index.d.ts": "15f434c2b5acd63a80efcb30f2b7a4285611db6a24dfab18513f64737c996ef4",
+        "compiled/core/src/index.js": "2c44dffe8b2a3c124a89b3cbc7374630ff51c59a08065f4069f0d9f352a214c7",
+        "compiled/core/src/index.js.map": "bc3e7f9fa36a2afb0556fe5c372da068d8967a8f67b0860a8ca3593f9b7d544f",
+        "compiled/core/src/result.d.ts": "a2831fd559c01d72aa752c712a67b866c4226d9f37d78416af4031381086cf6c",
+        "compiled/core/src/result.js": "6c43738756f937abee5af928d7a6c4bed283ec98de239147530945f75015fa7a",
+        "compiled/core/src/result.js.map": "bcb8317c278ca41c89abc55d49909cfc4cfe0aa71da5180c6c414a241cf6a890",
+        "compiled/core/src/rules.d.ts": "eeb63efbef94e847cbb0e8149648f362e1027143487f60cbe0dc954e64e2cbe8",
+        "compiled/core/src/rules.js": "070ae153e1db6a4f29d8ed4e1ba0328941ed188c956144816f47c905796d8fa9",
+        "compiled/core/src/rules.js.map": "0fab4a90a1a64fd74094df63bd02ff4875688cb523aafa83693e63d1bcfb8c7d",
+        "compiled/core/src/types.d.ts": "d780ee53f728f2729b0cbcdd08dd9f3e46f2deec41afc5c13c6c926d4f857853",
+        "compiled/core/src/types.js": "01ae2a5b120382f9a648ced7ee8507493a134f216d100fc61600c6c9738235d2",
+        "compiled/core/src/types.js.map": "1a5a1b992455346189207cb1a431e8d14b88fc4756b9f6d2df03badd916e6dab",
+        "compiled/session/src/index.d.ts": "925bebed35869ae69f03e62e58c87f18b6c733071c9e5cb6fca7ef6299fe649b",
+        "compiled/session/src/index.js": "3aee3f885fab2979c18276359c0113945f1dff09c25550631c7a27a4df56fea8",
+        "compiled/session/src/index.js.map": "685a1ea63c67d246704873d4c4c61de28943bef16d7ab34eb42c267953b22557",
+        "compiled/session/src/session.d.ts": "88ca2627997eb58d443d8a042b42db188c673acd8416e073c6c1e6b6011268de",
+        "compiled/session/src/session.js": "f068468a5211ddee27ddd1c6e583215c5e7e36ee8203456f06c4d0176387992c",
+        "compiled/session/src/session.js.map": "c9c256381ca8137253e7106dbfa804bf5a6dc46c46bc955e1bafdbb1f6200854",
+        "compiled/session/src/types.d.ts": "068976c232b6e06c807010cf88a660600cfa4e4ea637547e4ff4e49f2af74421",
+        "compiled/session/src/types.js": "01ae2a5b120382f9a648ced7ee8507493a134f216d100fc61600c6c9738235d2",
+        "compiled/session/src/types.js.map": "3d5508d6da24ac9d649590eb9e0a3099eaca999ee1bb4cec49bd0270b34587f3"
+      }
+    },
+    "previousProfile": {
+      "timeMs": 8000,
+      "maxNodes": 200000,
+      "maxDepth": 12
+    },
+    "candidateProfile": {
+      "timeMs": 60000,
+      "maxNodes": 4000000,
+      "maxDepth": 16
+    }
+  },
+  "summary": {
+    "scheduled": 40,
+    "completed": 2,
+    "wins": 1,
+    "losses": 1,
+    "draws": 0,
+    "unfinished": 0,
+    "winRate": 0.025,
+    "accepted": false
+  },
+  "games": [
+    {
+      "id": 5,
+      "seed": 1201,
+      "boardSize": 9,
+      "claimMode": "fixed-five",
+      "directions": "four",
+      "confirmationDelay": 0,
+      "candidateActor": "B",
+      "outcome": {
+        "kind": "win",
+        "color": "black",
+        "winner": "B",
+        "reason": "line"
+      },
+      "plies": 27,
+      "commands": 28,
+      "moves": [
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 59
+          },
+          "stats": {
+            "elapsedMs": 8000.5794000000005,
+            "nodes": 53962,
+            "completedDepth": 6
+          },
+          "maxVisitedDepth": 7
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 32
+          },
+          "stats": {
+            "elapsedMs": 8000.195200000002,
+            "nodes": 52644,
+            "completedDepth": 6
+          },
+          "maxVisitedDepth": 9
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 33
+          },
+          "stats": {
+            "elapsedMs": 8000.1120999999985,
+            "nodes": 52617,
+            "completedDepth": 6
+          },
+          "maxVisitedDepth": 9
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "choose-color",
+            "actor": "B",
+            "color": "black"
+          },
+          "stats": {
+            "elapsedMs": 60000.8295,
+            "nodes": 378884,
+            "completedDepth": 9
+          },
+          "maxVisitedDepth": 12
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 24
+          },
+          "stats": {
+            "elapsedMs": 8000.733500000002,
+            "nodes": 47193,
+            "completedDepth": 6
+          },
+          "maxVisitedDepth": 9
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 58
+          },
+          "stats": {
+            "elapsedMs": 60000.4682,
+            "nodes": 386873,
+            "completedDepth": 8
+          },
+          "maxVisitedDepth": 11
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 42
+          },
+          "stats": {
+            "elapsedMs": 8000.503700000001,
+            "nodes": 55497,
+            "completedDepth": 6
+          },
+          "maxVisitedDepth": 9
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 60
+          },
+          "stats": {
+            "elapsedMs": 60000.462300000014,
+            "nodes": 385908,
+            "completedDepth": 8
+          },
+          "maxVisitedDepth": 11
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 57
+          },
+          "stats": {
+            "elapsedMs": 8004.365900000004,
+            "nodes": 52462,
+            "completedDepth": 6
+          },
+          "maxVisitedDepth": 9
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 62
+          },
+          "stats": {
+            "elapsedMs": 60000.32089999999,
+            "nodes": 360728,
+            "completedDepth": 8
+          },
+          "maxVisitedDepth": 11
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 61
+          },
+          "stats": {
+            "elapsedMs": 8000.323100000038,
+            "nodes": 50878,
+            "completedDepth": 7
+          },
+          "maxVisitedDepth": 10
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 52
+          },
+          "stats": {
+            "elapsedMs": 60021.11849999998,
+            "nodes": 362607,
+            "completedDepth": 8
+          },
+          "maxVisitedDepth": 11
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 70
+          },
+          "stats": {
+            "elapsedMs": 8000.3829999999725,
+            "nodes": 54724,
+            "completedDepth": 7
+          },
+          "maxVisitedDepth": 10
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 49
+          },
+          "stats": {
+            "elapsedMs": 60000.3284,
+            "nodes": 350186,
+            "completedDepth": 8
+          },
+          "maxVisitedDepth": 11
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 40
+          },
+          "stats": {
+            "elapsedMs": 8000.377700000012,
+            "nodes": 51223,
+            "completedDepth": 5
+          },
+          "maxVisitedDepth": 8
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 48
+          },
+          "stats": {
+            "elapsedMs": 60000.50699999998,
+            "nodes": 360909,
+            "completedDepth": 9
+          },
+          "maxVisitedDepth": 12
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 41
+          },
+          "stats": {
+            "elapsedMs": 8007.205900000001,
+            "nodes": 45653,
+            "completedDepth": 5
+          },
+          "maxVisitedDepth": 8
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 39
+          },
+          "stats": {
+            "elapsedMs": 60000.87049999996,
+            "nodes": 335902,
+            "completedDepth": 8
+          },
+          "maxVisitedDepth": 11
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 69
+          },
+          "stats": {
+            "elapsedMs": 8007.472900000052,
+            "nodes": 49359,
+            "completedDepth": 5
+          },
+          "maxVisitedDepth": 8
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 68
+          },
+          "stats": {
+            "elapsedMs": 60000.36770000006,
+            "nodes": 363416,
+            "completedDepth": 8
+          },
+          "maxVisitedDepth": 11
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 16
+          },
+          "stats": {
+            "elapsedMs": 8000.454000000027,
+            "nodes": 55866,
+            "completedDepth": 5
+          },
+          "maxVisitedDepth": 8
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 8
+          },
+          "stats": {
+            "elapsedMs": 60000.70479999995,
+            "nodes": 341544,
+            "completedDepth": 10
+          },
+          "maxVisitedDepth": 13
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 44
+          },
+          "stats": {
+            "elapsedMs": 8001.4473,
+            "nodes": 52393,
+            "completedDepth": 5
+          },
+          "maxVisitedDepth": 8
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 43
+          },
+          "stats": {
+            "elapsedMs": 60000.60979999998,
+            "nodes": 348515,
+            "completedDepth": 10
+          },
+          "maxVisitedDepth": 13
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 34
+          },
+          "stats": {
+            "elapsedMs": 8007.261499999906,
+            "nodes": 54508,
+            "completedDepth": 6
+          },
+          "maxVisitedDepth": 9
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 38
+          },
+          "stats": {
+            "elapsedMs": 18.739799999981187,
+            "nodes": 712,
+            "completedDepth": 16
+          },
+          "maxVisitedDepth": 3
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 28
+          },
+          "stats": {
+            "elapsedMs": 15.254100000020117,
+            "nodes": 565,
+            "completedDepth": 12
+          },
+          "maxVisitedDepth": 2
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 78
+          },
+          "stats": {
+            "elapsedMs": 2.9226999999955297,
+            "nodes": 2,
+            "completedDepth": 1
+          },
+          "maxVisitedDepth": 1
+        }
+      ],
+      "record": {
+        "schemaVersion": 1,
+        "rulesVersion": "2.1.0-r3",
+        "rules": {
+          "rulesVersion": "2.1.0-r3",
+          "boardSize": 9,
+          "swap3": true,
+          "confirmationDelay": 0,
+          "superko": "positional",
+          "directions": "four",
+          "claimMode": "fixed-five"
+        },
+        "actions": [
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 59
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 32
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 33
+          },
+          {
+            "kind": "choose-color",
+            "actor": "B",
+            "color": "black"
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 24
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 58
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 42
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 60
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 57
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 62
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 61
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 52
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 70
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 49
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 40
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 48
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 41
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 39
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 69
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 68
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 16
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 8
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 44
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 43
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 34
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 38
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 28
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 78
+          }
+        ]
+      },
+      "wallMs": 772136.0084
+    },
+    {
+      "id": 7,
+      "seed": 1201,
+      "boardSize": 9,
+      "claimMode": "fixed-five",
+      "directions": "four",
+      "confirmationDelay": 4,
+      "candidateActor": "B",
+      "outcome": {
+        "kind": "win",
+        "color": "white",
+        "winner": "A",
+        "reason": "line"
+      },
+      "plies": 20,
+      "commands": 21,
+      "moves": [
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 59
+          },
+          "stats": {
+            "elapsedMs": 8000.3926,
+            "nodes": 53994,
+            "completedDepth": 6
+          },
+          "maxVisitedDepth": 7
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 32
+          },
+          "stats": {
+            "elapsedMs": 8000.3261999999995,
+            "nodes": 51669,
+            "completedDepth": 6
+          },
+          "maxVisitedDepth": 7
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 47
+          },
+          "stats": {
+            "elapsedMs": 8000.447100000001,
+            "nodes": 51442,
+            "completedDepth": 7
+          },
+          "maxVisitedDepth": 8
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "choose-color",
+            "actor": "B",
+            "color": "black"
+          },
+          "stats": {
+            "elapsedMs": 60002.350999999995,
+            "nodes": 323636,
+            "completedDepth": 9
+          },
+          "maxVisitedDepth": 12
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 42
+          },
+          "stats": {
+            "elapsedMs": 8000.377900000007,
+            "nodes": 38866,
+            "completedDepth": 6
+          },
+          "maxVisitedDepth": 9
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 57
+          },
+          "stats": {
+            "elapsedMs": 60000.47799999999,
+            "nodes": 333199,
+            "completedDepth": 8
+          },
+          "maxVisitedDepth": 11
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 60
+          },
+          "stats": {
+            "elapsedMs": 8000.505800000014,
+            "nodes": 44695,
+            "completedDepth": 6
+          },
+          "maxVisitedDepth": 9
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 69
+          },
+          "stats": {
+            "elapsedMs": 60000.45910000001,
+            "nodes": 342335,
+            "completedDepth": 8
+          },
+          "maxVisitedDepth": 11
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 24
+          },
+          "stats": {
+            "elapsedMs": 8009.36129999999,
+            "nodes": 42770,
+            "completedDepth": 6
+          },
+          "maxVisitedDepth": 9
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 51
+          },
+          "stats": {
+            "elapsedMs": 60000.69559999998,
+            "nodes": 356567,
+            "completedDepth": 8
+          },
+          "maxVisitedDepth": 11
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 52
+          },
+          "stats": {
+            "elapsedMs": 8001.206699999981,
+            "nodes": 39814,
+            "completedDepth": 5
+          },
+          "maxVisitedDepth": 8
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 61
+          },
+          "stats": {
+            "elapsedMs": 60011.44709999999,
+            "nodes": 346419,
+            "completedDepth": 7
+          },
+          "maxVisitedDepth": 10
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 22
+          },
+          "stats": {
+            "elapsedMs": 8000.4370000000345,
+            "nodes": 44546,
+            "completedDepth": 5
+          },
+          "maxVisitedDepth": 8
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 43
+          },
+          "stats": {
+            "elapsedMs": 60000.57679999998,
+            "nodes": 367802,
+            "completedDepth": 7
+          },
+          "maxVisitedDepth": 10
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 12
+          },
+          "stats": {
+            "elapsedMs": 8000.3666000000085,
+            "nodes": 42367,
+            "completedDepth": 5
+          },
+          "maxVisitedDepth": 8
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 53
+          },
+          "stats": {
+            "elapsedMs": 60000.29149999999,
+            "nodes": 322509,
+            "completedDepth": 8
+          },
+          "maxVisitedDepth": 11
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 2
+          },
+          "stats": {
+            "elapsedMs": 291.570699999982,
+            "nodes": 14177,
+            "completedDepth": 12
+          },
+          "maxVisitedDepth": 5
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 41
+          },
+          "stats": {
+            "elapsedMs": 60000.55349999998,
+            "nodes": 259935,
+            "completedDepth": 7
+          },
+          "maxVisitedDepth": 10
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "place",
+            "actor": "A",
+            "point": 33
+          },
+          "stats": {
+            "elapsedMs": 25.74099999992177,
+            "nodes": 602,
+            "completedDepth": 12
+          },
+          "maxVisitedDepth": 3
+        },
+        {
+          "generation": "candidate",
+          "action": {
+            "kind": "place",
+            "actor": "B",
+            "point": 52
+          },
+          "stats": {
+            "elapsedMs": 21.59659999993164,
+            "nodes": 850,
+            "completedDepth": 16
+          },
+          "maxVisitedDepth": 2
+        },
+        {
+          "generation": "predecessor",
+          "action": {
+            "kind": "pass",
+            "actor": "A"
+          },
+          "stats": {
+            "elapsedMs": 1.0696000000461936,
+            "nodes": 2,
+            "completedDepth": 1
+          },
+          "maxVisitedDepth": 1
+        }
+      ],
+      "record": {
+        "schemaVersion": 1,
+        "rulesVersion": "2.1.0-r3",
+        "rules": {
+          "rulesVersion": "2.1.0-r3",
+          "boardSize": 9,
+          "swap3": true,
+          "confirmationDelay": 4,
+          "superko": "positional",
+          "directions": "four",
+          "claimMode": "fixed-five"
+        },
+        "actions": [
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 59
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 32
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 47
+          },
+          {
+            "kind": "choose-color",
+            "actor": "B",
+            "color": "black"
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 42
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 57
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 60
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 69
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 24
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 51
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 52
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 61
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 22
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 43
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 12
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 53
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 2
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 41
+          },
+          {
+            "kind": "place",
+            "actor": "A",
+            "point": 33
+          },
+          {
+            "kind": "place",
+            "actor": "B",
+            "point": 52
+          },
+          {
+            "kind": "pass",
+            "actor": "A"
+          }
+        ]
+      },
+      "wallMs": 552403.2955
+    }
+  ],
+  "aborted": {
+    "reason": "PVS scout/research candidate-set consistency defect found by code review, independent of held-out game records",
+    "at": "2026-10-22T16:00:08.663Z",
+    "notCompleted": 38
+  }
+}

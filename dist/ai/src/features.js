@@ -1,4 +1,7 @@
 import { cellOf, collectGroups, neighborsFor } from "../../core/src/geometry.js";
+const featurePools = new WeakMap();
+/** Hard request-local geometry only: no scores, ko legality or claim clocks enter this pool. */
+export function shareFeaturePool(match, pool) { featurePools.set(match, pool); }
 const windowsCache = new Map();
 const featureCache = new WeakMap();
 const liveLineCache = new WeakMap();
@@ -84,9 +87,21 @@ function lines(board, rules, color, groups) {
 export function featuresOf(match) {
     let found = featureCache.get(match);
     if (!found) {
+        const pool = featurePools.get(match), key = pool ? `${match.rules.boardSize}/${match.rules.directions}/${match.state.board.join(',')}` : null;
+        if (key !== null)
+            found = pool.get(key);
+        if (found) {
+            featureCache.set(match, found);
+            return found;
+        }
         const groups = collectGroups(match.state.board, match.rules.boardSize);
         found = { groups, black: lines(match.state.board, match.rules, "black", groups), white: lines(match.state.board, match.rules, "white", groups) };
         featureCache.set(match, found);
+        if (pool && key !== null) {
+            if (pool.size >= 2048)
+                pool.delete(pool.keys().next().value);
+            pool.set(key, found);
+        }
     }
     return found;
 }

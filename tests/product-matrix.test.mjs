@@ -12,9 +12,9 @@ import {value,fingerprint} from './helpers.mjs';
 // clocks are deterministic substitutes; search really runs, capped at 48/96 nodes.
 // This is not a matrix of native threads, complete games, or strength measurements.
 const results=[];
-const phase=process.env.QILINE_MATRIX_PHASE??'P5.9';
-assert.ok(['P5.6','P5.7','P5.8','P5.9'].includes(phase));
-const levels=['P5.8','P5.9'].includes(phase)?['easy','standard','hard']:['easy','standard'];
+const phase=process.env.QILINE_MATRIX_PHASE??'P5.10';
+assert.ok(['P5.6','P5.7','P5.8','P5.9','P5.10'].includes(phase));
+const levels=['P5.8','P5.9','P5.10'].includes(phase)?['easy','standard','hard']:['easy','standard'];
 after(()=>{
   const sum=key=>results.reduce((total,row)=>total+(row[key]??0),0);
   writeFileSync(new URL(`../reports/product-${phase.toLowerCase().replace('.','-')}-matrix.json`,import.meta.url),JSON.stringify({

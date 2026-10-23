@@ -1,0 +1,25 @@
+{
+  "version": "0.5.11",
+  "feature": "AI thinking time",
+  "automated": {
+    "command": "node --test tests/p55-app.test.mjs tests/web.test.mjs tests/desktop.test.mjs tests/ai-recovery.test.mjs",
+    "tests": 72,
+    "pass": 72,
+    "fail": 0,
+    "newApplicationTests": 6
+  },
+  "build": true,
+  "check": {
+    "modules": 30,
+    "aiAndCoreHashesUnchanged": true
+  },
+  "browser": {
+    "url": "http://127.0.0.1:4178/",
+    "realModuleWorker": true,
+    "hardLiveTimeObserved": "25.5 seconds",
+    "pausedTimeObserved": "25.9 seconds, unchanged in the next observation",
+    "standardCompletedTimeObserved": "0.4 seconds",
+    "mobilePhysicalDeviceTested": false
+  },
+  "desktopArchiveRebuilt": false
+}

@@ -1,5 +1,6 @@
 import {DEFAULT_RULES, activePlayer, formatPoint, inspectGroup} from './core/src/index.js';
 import {createBrowserAI} from './ui/ai-host.mjs';
+import {createAIThinkingClock, formatThinkingTime} from './ui/ai-timing.mjs';
 import {SAVE_KEY, SafeStorage, createGameSession, practiceView, undoPracticePair, respondUndoPair, localCalendarDate, makeWebSave, parseWebSave, phaseView, rulesView, claimsView, playerName, colorName, levelName, other, errorText} from './ui/model.mjs';
 
 const $=id=>document.getElementById(id);
@@ -8,6 +9,8 @@ const uid=()=>typeof crypto.randomUUID==='function'?crypto.randomUUID():Array.fr
 let session=null, meta={names:['玩家一','玩家二'],aIndex:0,round:1};
 let ai=null, aiState=null, restoreHold=false, observedMatch=null, replaceAction=null;
 let inspect=false, labels=false, selected=null, focusPoint=40, flash=[], noticeTimer;
+const thinkingClock=createAIThinkingClock();
+let thinkingTick=null;
 let storageObject;
 try {storageObject=window.localStorage;} catch {storageObject={getItem(){throw Error('storage unavailable');},setItem(){throw Error('storage unavailable');}};}
 const storage=new SafeStorage(storageObject);
@@ -29,12 +32,14 @@ const practice=()=>session?practiceView(session):null;
 const humanTurn=()=>!!match()&&session.state.controllers[activePlayer(match())]?.kind==='human';
 const replaceable=()=>!live()||!!practice();
 function attachAI(restored=false) {
+  clearTimeout(thinkingTick);thinkingTick=null;thinkingClock.reset();
   aiState=null;observedMatch=match();restoreHold=restored&&!!practice()&&!!live();
   if(!practice())return;
   const owned=session;let announcedError=null;
   const result=createBrowserAI(owned,state=>{
     if(session!==owned||state.status==='closed')return;
     aiState=state;
+    thinkingClock.sync({match:owned.state.match,matchId:owned.state.matchId,aiActor:practice().aiActor,status:state.status});
     if(!storage.check()&&!owned.state.paused){ai?.pause();render();return;}
     const current=match();
     if(state.status==='failed'&&!storage.conflict&&state.error!==announcedError){
@@ -54,7 +59,7 @@ function attachAI(restored=false) {
   if(restoreHold||storage.conflict)ai.pause();else ai.start();
   aiState=ai.state;
 }
-function releaseSession(){const oldAI=ai;ai=null;aiState=null;if(oldAI)oldAI.close();else session?.close();}
+function releaseSession(){clearTimeout(thinkingTick);thinkingTick=null;thinkingClock.reset();const oldAI=ai;ai=null;aiState=null;if(oldAI)oldAI.close();else session?.close();}
 function installSession(next,players,restored=false){
   releaseSession();session=next;meta=players;inspect=false;selected=null;flash=[];
   focusPoint=Math.floor(match().rules.boardSize**2/2);attachAI(restored);save();render();
@@ -166,7 +171,7 @@ function render() {
   const cs=m?claimsView(m):[];
   $('mobile-status').hidden=ended;
   const nearest=['black','white'].flatMap(color=>{const group=cs.filter(c=>c.color===color);return group.length?[`${colorName(color)} ${group.length}组 · 最近 ${Math.min(...group.map(c=>c.remaining))} 手`]:[];});
-  $('mobile-status').textContent=`${p&&aiState?.status==='failed'?'AI 未能行棋，请点击“重试 AI”':p&&aiState?.status==='retrying'?'AI 正在思考':paused?(p?'人机对局已暂停':'等待对方同意'):p&&!humanTurn()?'AI 正在思考 · '+v.title:inspect?'查气模式 · '+v.title:v.title}${nearest.length?' ｜ '+nearest.join(' / '):''}`;
+  $('mobile-status-text').textContent=`${p&&aiState?.status==='failed'?'AI 未能行棋，请点击“重试 AI”':p&&aiState?.status==='retrying'?'AI 正在思考':paused?(p?'人机对局已暂停':'等待对方同意'):p&&!humanTurn()?'AI 正在思考 · '+v.title:inspect?'查气模式 · '+v.title:v.title}${nearest.length?' ｜ '+nearest.join(' / '):''}`;
   $('claim-count').textContent=cs.length?`${cs.length} 组候选`:'暂无候选';
   $('claims').innerHTML=cs.length?cs.map(c=>`<details class="claim-item"><summary><i class="stone-dot ${c.color}"></i><span>${colorName(c.color)}${m.rules.claimMode==='fixed-five'?'五子组':'持续成五'}</span><strong>${c.remaining} <small>手</small></strong></summary><p>${esc(c.coordinates||'只要同色五连持续存在，允许换线接替。')}<br>形成于第 ${c.formedAt} 手 · 确认点 ${c.dueAt} 手</p></details>`).join(''):`<p class="empty-claims">${s?.outcome?'本局已结束，可查看棋盘或开始新局。':`成五只是开始。<br>${m?.rules.confirmationDelay===0?'本局成五即胜。':`保持连线满 ${m?.rules.confirmationDelay??4} 手，才确认胜利。`}`}</p>`;
   const c=session?.state.consent;
@@ -177,13 +182,23 @@ function render() {
   }
   renderRecords();renderWarning();
 }
+function renderThinkingTime(){
+  clearTimeout(thinkingTick);thinkingTick=null;
+  const t=thinkingClock.snapshot,p=practice();
+  const text=t.elapsedMs!==null?`本手已思考 ${formatThinkingTime(t.elapsedMs)}`:t.lastElapsedMs!==null?`上一手用时 ${formatThinkingTime(t.lastElapsedMs)}`:'';
+  $('ai-elapsed').hidden=!p||!text;$('ai-elapsed').textContent=text;
+  $('mobile-ai-elapsed').hidden=!p||!text;$('mobile-ai-elapsed').textContent=text?` ｜ ${text}`:'';
+  if(p&&live()&&t.running)thinkingTick=setTimeout(renderThinkingTime,100);
+}
 function renderAI(){
-  const p=practice(),ended=!live();$('ai-panel').hidden=!p||ended;
-  if(!p||ended)return;
+  renderThinkingTime();
+  const p=practice(),ended=!live();$('ai-panel').hidden=!p||(ended&&thinkingClock.snapshot.lastElapsedMs===null);
+  if(!p||$('ai-panel').hidden)return;
   const status=aiState?.status??'failed',recovering=status==='retrying',paused=!!session.state.paused&&!recovering,failed=status==='failed';
-  $('ai-indicator').classList.toggle('thinking',['starting','thinking','retrying'].includes(status));
-  $('ai-status').textContent=storage.conflict?'存档冲突，AI 已停止':restoreHold?'存档已恢复，等待继续':failed?'AI 未能完成这一手':aiState?.hold==='undo'?'已悔棋，等待继续 AI 回合':paused?'对局已暂停':status==='starting'?'AI 准备中':status==='thinking'||recovering?'AI 正在思考':humanTurn()?'轮到你了':'AI 即将行动';
-  $('ai-detail').textContent=failed?`${aiState?.retryAttempt?'已自动重试 '+aiState.retryAttempt+' 次。':''}${errorText(aiState?.error??{code:'AI_WORKER_FAILED'})}`:restoreHold?'已恢复角色、难度和完整棋谱；继续后再开始新的思考。':aiState?.hold==='undo'?'已撤回操作，AI 不会立即重下。':paused?'棋盘已锁定，查气和导出仍可使用。':p.level==='hard'?'困难 AI 会深入推演，通常需要数秒。思考时可查气、暂停或导出存档。':'AI 在本机运行。思考时可查气、暂停或结束对局。';
+  $('ai-indicator').classList.toggle('thinking',!ended&&['starting','thinking','retrying'].includes(status));
+  $('ai-status').textContent=ended?'本局已结束':storage.conflict?'存档冲突，AI 已停止':restoreHold?'存档已恢复，等待继续':failed?'AI 未能完成这一手':aiState?.hold==='undo'?'已悔棋，等待继续 AI 回合':paused?'对局已暂停':status==='starting'?'AI 准备中':status==='thinking'||recovering?'AI 正在思考':humanTurn()?'轮到你了':'AI 即将行动';
+  $('ai-detail').textContent=ended?'已保留本局最后一次 AI 思考用时。':failed?`${aiState?.retryAttempt?'已自动重试 '+aiState.retryAttempt+' 次。':''}${errorText(aiState?.error??{code:'AI_WORKER_FAILED'})}`:restoreHold?'已恢复角色、难度和完整棋谱；继续后再开始新的思考。':aiState?.hold==='undo'?'已撤回操作，AI 不会立即重下。':paused?'棋盘已锁定，查气和导出仍可使用。':p.level==='hard'?'困难 AI 每手最多思考 2 分钟。思考时可查气、暂停或导出存档。':'AI 在本机运行。思考时可查气、暂停或结束对局。';
+  $('ai-controls').hidden=ended;
   $('ai-pause').hidden=paused||failed;$('ai-resume').hidden=!paused||failed;$('ai-retry').hidden=!failed;
   for(const id of ['ai-pause','ai-resume','ai-retry'])$(id).disabled=storage.conflict||!ai;
 }

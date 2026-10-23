@@ -132,6 +132,93 @@ function savedPractice(aiActor='A',rules={}){
 }
 const answer=(worker,action)=>{worker.ready();worker.emit(worker.result(action));};
 
+test('thinking time updates live without board renders or saves, excludes preparation and retains the completed move',async()=>{
+  const h=await harness();try{
+    h.start({humanActor:'A',swap3:false,level:'hard'});h.point(40);h.clock.tick();
+    const worker=h.workers.at(-1);h.clock.tick(500);
+    assert.equal(h.$('ai-elapsed').textContent,'本手已思考 0.0 秒');
+    worker.ready();const writes=h.commits(),renders=h.$('board').htmlWrites;
+    h.clock.tick(61100);
+    assert.equal(h.$('ai-elapsed').textContent,'本手已思考 1 分 1.1 秒');
+    assert.match(h.$('mobile-ai-elapsed').textContent,/1 分 1.1 秒/);
+    assert.equal(h.commits(),writes);assert.equal(h.$('board').htmlWrites,renders);
+    worker.emit(worker.result({kind:'place',actor:'B',point:0}));
+    assert.equal(h.$('ai-elapsed').textContent,'上一手用时 1 分 1.1 秒');
+    h.clock.tick(5000);assert.equal(h.$('ai-elapsed').textContent,'上一手用时 1 分 1.1 秒');
+    assert.equal(h.workers.length,1);
+  }finally{h.close();}
+});
+
+test('thinking time freezes during pause and resumes cumulative actual work on the same move',async()=>{
+  const h=await harness();try{
+    h.start({humanActor:'A',swap3:false});h.point(40);h.clock.tick();
+    h.workers.at(-1).ready();h.clock.tick(650);h.$('ai-pause').click();
+    assert.equal(h.$('ai-elapsed').textContent,'本手已思考 0.6 秒');
+    h.clock.tick(5000);assert.equal(h.$('ai-elapsed').textContent,'本手已思考 0.6 秒');
+    h.$('ai-resume').click();h.clock.tick();const worker=h.workers.at(-1);
+    h.clock.tick(300);assert.equal(h.$('ai-elapsed').textContent,'本手已思考 0.6 秒');
+    worker.ready();h.clock.tick(450);worker.emit(worker.result({kind:'place',actor:'B',point:0}));
+    assert.equal(h.$('ai-elapsed').textContent,'上一手用时 1.1 秒');
+  }finally{h.close();}
+});
+
+test('thinking time sums automatic attempts but excludes retry and worker startup waits',async()=>{
+  const h=await harness();try{
+    h.start({humanActor:'A',swap3:false});h.point(40);h.clock.tick();
+    const old=h.workers.at(-1);old.ready();h.clock.tick(100);
+    const obsolete=old.onmessage,reply=old.result({kind:'place',actor:'B',point:0});old.onerror({});
+    h.clock.tick(250);const worker=h.workers.at(-1);h.clock.tick(400);
+    assert.equal(h.$('ai-elapsed').textContent,'本手已思考 0.1 秒');
+    worker.ready();h.clock.tick(200);worker.emit(worker.result({kind:'place',actor:'B',point:0}));
+    assert.equal(h.$('ai-elapsed').textContent,'上一手用时 0.3 秒');
+    obsolete({data:reply});assert.equal(h.$('ai-elapsed').textContent,'上一手用时 0.3 秒');
+  }finally{h.close();}
+});
+
+test('rewinding a completed move clears its time and the next AI move starts fresh',async()=>{
+  const h=await harness();try{
+    h.start({humanActor:'A',swap3:false});h.point(40);h.clock.tick();
+    const first=h.workers.at(-1);first.ready();h.clock.tick(200);first.emit(first.result({kind:'place',actor:'B',point:0}));
+    h.$('undo-btn').click();assert.equal(h.$('ai-elapsed').hidden,true);
+    h.point(40);h.clock.tick();const worker=h.workers.at(-1);worker.ready();
+    assert.equal(h.$('ai-elapsed').textContent,'本手已思考 0.0 秒');
+    h.clock.tick(100);worker.emit(worker.result({kind:'place',actor:'B',point:0}));
+    assert.equal(h.$('ai-elapsed').textContent,'上一手用时 0.1 秒');
+  }finally{h.close();}
+});
+
+test('restored saves start new timing only after continue and do not add timing fields to saves',async()=>{
+  let saved;
+  const h=await harness();try{
+    h.start({humanActor:'A',swap3:false});h.point(40);h.clock.tick();
+    h.workers.at(-1).ready();h.clock.tick(200);h.$('ai-pause').click();saved=h.current();
+    assert.equal(JSON.stringify(saved).includes('elapsedMs'),false);
+  }finally{h.close();}
+  const restored=await harness(saved);try{
+    restored.clock.tick(10000);assert.equal(restored.$('ai-elapsed').hidden,true);
+    restored.$('ai-resume').click();restored.clock.tick();const worker=restored.workers.at(-1);worker.ready();
+    assert.equal(restored.$('ai-elapsed').textContent,'本手已思考 0.0 秒');
+    restored.clock.tick(100);worker.emit(worker.result({kind:'place',actor:'B',point:0}));
+    assert.equal(restored.$('ai-elapsed').textContent,'上一手用时 0.1 秒');
+  }finally{restored.close();}
+});
+
+test('consecutive AI opening commands get separate times and ended games retain the last completed time',async()=>{
+  const h=await harness();try{
+    h.start();h.clock.tick();const first=h.workers.at(-1);first.ready();h.clock.tick(200);
+    first.emit(first.result({kind:'place',actor:'A',point:40}));
+    assert.equal(h.$('ai-elapsed').textContent,'上一手用时 0.2 秒');
+    h.clock.tick();const second=h.workers.at(-1);second.ready();
+    assert.equal(h.$('ai-elapsed').textContent,'本手已思考 0.0 秒');
+    h.clock.tick(100);second.emit(second.result({kind:'place',actor:'A',point:42}));
+    h.clock.tick();answer(h.workers.at(-1),{kind:'place',actor:'A',point:44});
+    h.$('choose-white').click();h.$('end-btn').click();h.$('practice-end').click();
+    assert.equal(h.$('ai-panel').hidden,false);assert.equal(h.$('ai-controls').hidden,true);
+    assert.equal(h.$('ai-status').textContent,'本局已结束');
+    assert.equal(h.$('ai-elapsed').textContent,'上一手用时 0.0 秒');
+  }finally{h.close();}
+});
+
 test('hard selection uses its long budget and restores paused with difficulty and identity intact',async()=>{
   let saved;
   const h=await harness();try{

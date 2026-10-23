@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "qiline-9x9-delay4-v1",
+  "decidedOn": "2026-10-23",
+  "reviewedOn": "2026-10-23",
+  "selectionBasis": "当前本机搜索预算下集中提升棋力的规则取舍；未证明为玩法最优或先后手最平衡组合",
+  "purpose": "后续 AI 棋力优化与版本对照的唯一规则配置",
+  "configId": "2.1.0-r3/9/4/1/diagonal/positional/fixed-five",
+  "rules": {
+    "rulesVersion": "2.1.0-r3",
+    "boardSize": 9,
+    "swap3": true,
+    "confirmationDelay": 4,
+    "superko": "positional",
+    "directions": "diagonal",
+    "claimMode": "fixed-five"
+  },
+  "baseline": {
+    "version": "0.5.10",
+    "commit": "a30600e61a4af6edbd7e2061190e28032387b237"
+  },
+  "scope": {
+    "futureStrengthOptimization": "this-profile-only",
+    "futureStrengthBenchmarks": "this-profile-only-with-both-actors",
+    "otherConfigurations": "compatibility-and-legality-regression-only",
+    "historicalMixedBenchmarkPlans": "preserve-without-rewriting"
+  },
+  "decisionDocument": "docs/AI固定规则基准.md",
+  "reviewReport": "reports/ai-rule-focus-review.json"
+}

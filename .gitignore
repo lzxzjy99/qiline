@@ -3,3 +3,7 @@ node_modules/
 *.log
 __pycache__/
 build/
+.wrangler/
+.sites-runtime/
+outputs/
+server/assets.generated.mjs

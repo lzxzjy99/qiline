@@ -1,0 +1,6 @@
+{
+  "name": "qiline-online-local",
+  "main": "dist/server/index.js",
+  "compatibility_date": "2025-08-01",
+  "d1_databases": [{"binding":"DB","database_name":"qiline-local","database_id":"00000000-0000-4000-8000-000000000000"}]
+}

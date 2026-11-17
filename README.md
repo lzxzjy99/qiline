@@ -14,7 +14,9 @@ P5.10 继续增强困难档：优先推演最佳变化，其他候选先试探�
 
 ## 启动与构建
 
-需要 Node.js 22.12+。此静态网页版没有运行时第三方依赖，也不需要安装依赖。
+网站第15版已加入在线房间及测试棋谱导入回放。完整网站使用Cloudflare Worker与D1，GitHub和个人Cloudflare发布见[部署说明](docs/github-cloudflare.md)。原Sites入口与个人Cloudflare入口保留各自数据库。
+
+需要 Node.js 22.12+（建议24）。先运行 `npm ci` 安装构建工具；网页规则与AI模块无外部运行时依赖。
 
 ```sh
 npm run build
@@ -22,7 +24,7 @@ npm run check
 npm test
 ```
 
-将 `dist/` 用 HTTP(S) 静态服务托管，入口 `index.html`。不要直接双击 `file://` 页面：浏览器会限制 ESM 模块。托管配置见 `.openai/hosting.json`。
+完整网站的服务入口是 `dist/server/index.js`，包含原游戏、回放和在线房间。仅本地游戏及回放可用 `npm run build:static` 生成静态 `dist/` 托管；在线房间需要Worker与D1。不要直接双击 `file://` 页面。原Sites托管配置见 `.openai/hosting.json`，个人Cloudflare配置见 `wrangler.cloudflare.json`。
 
 `compiled/core` 保持 P2 验证产物；`compiled/session` 仅扩展两处困难难度枚举／验证器。历史 P2 哈希不变，独立的 `node scripts/build-session-levels.mjs` 验证最小源码差异并重新编译会话，扩展清单由 `npm run check` 核对；未修改规则或任务权限。源码在 `packages/core`、`packages/session`。编译产物与源码须一同更新，不得只修改网页中的规则副本。
 

@@ -24,11 +24,13 @@ npm run cloudflare:deploy
 
 该命令构建同一套源码、核对规则与AI文件，再迁移数据库并发布。`wrangler.preview.json`仅用于本机预览，不能作为生产配置。
 
-源码提交后，可用 `npm run publish:all` 在本机一次完成GitHub推送与Cloudflare发布。它要求工作区干净，构建与校验成功后才推送和部署；任何一步失败都会停止并保留错误。GitHub推送需要本机已有Git登录，Cloudflare授权保存于Windows密钥管理器，不写入仓库。
+源码提交后，可用 `npm run publish:all` 推送同一源码提交，由已连接的Cloudflare自动检查、构建和发布。它要求工作区干净，推送失败立即停止；不会在本机同时重复部署。命令返回表示GitHub已接收，不能据此宣称Cloudflare已完成。GitHub推送需要本机已有Git登录；手动Cloudflare授权保存于Windows密钥管理器，不写入仓库。
 
 当前公开源码：[lzxzjy99/qiline](https://github.com/lzxzjy99/qiline)。Cloudflare已发布入口为 [qiline-online.one-vote.workers.dev](https://qiline-online.one-vote.workers.dev)，原Sites入口为 [qiline-rebuild.xuanxliu.chatgpt.site](https://qiline-rebuild.xuanxliu.chatgpt.site)。本机直接访问workers.dev出现连接超时，不能据此宣称公网房间测试已通过；发布控制台与CLI已确认版本上线和数据库绑定。自定义域名未绑定。
 
 ## GitHub 自动部署
+
+2026-11-17已连接 `lzxzjy99/qiline` 仓库，生产分支 `main`，根目录 `/`，预览构建关闭。GitHub应用安装范围只选择了此仓库。Cloudflare创建并保管自己的构建身份，本机授权不会复制到GitHub。
 
 在Cloudflare Workers & Pages中为 `qiline-online` 连接本GitHub仓库，生产分支选择 `main`，根目录为仓库根目录：
 

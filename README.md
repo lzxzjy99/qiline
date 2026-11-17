@@ -14,7 +14,7 @@ P5.10 继续增强困难档：优先推演最佳变化，其他候选先试探�
 
 ## 启动与构建
 
-网站第15版已加入在线房间及测试棋谱导入回放。完整网站使用Cloudflare Worker与D1，GitHub和个人Cloudflare发布见[部署说明](docs/github-cloudflare.md)。原Sites入口与个人Cloudflare入口保留各自数据库。
+网站第15版已加入在线房间及测试棋谱导入回放。完整网站主入口为 https://qiline-online.pages.dev ，使用Cloudflare Pages、Pages Functions与原D1数据库，GitHub提交后自动发布，见[部署说明](docs/github-cloudflare.md)。原Workers入口保留备用；原Sites入口保留独立数据库。
 
 需要 Node.js 22.12+（建议24）。先运行 `npm ci` 安装构建工具；网页规则与AI模块无外部运行时依赖。
 

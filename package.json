@@ -7,7 +7,7 @@
     "build": "node scripts/build-hosted.mjs",
     "build:static": "node scripts/build-web.mjs",
     "build:pages": "node scripts/build-pages.mjs",
-    "pages:deploy": "npm run build:pages && wrangler pages deploy --config wrangler.pages.json --project-name qiline-online --branch main",
+    "pages:deploy": "npm run build:pages && wrangler pages deploy --project-name qiline-online --branch main",
     "dev": "node node_modules/wrangler/bin/wrangler.js dev --config wrangler.preview.json --ip 127.0.0.1 --port 4174 --persist-to .wrangler/state",
     "db:generate": "drizzle-kit generate",
     "cloudflare:setup": "node scripts/cloudflare-setup.mjs",

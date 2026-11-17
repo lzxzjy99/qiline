@@ -8,7 +8,7 @@ GitHub 保存公开网站源码，Cloudflare Workers 运行网页及在线房间
 
 ```sh
 npm ci
-npx wrangler login
+npx wrangler login --use-keyring --scopes account:read user:read workers:write workers_scripts:write d1:write
 npm run cloudflare:setup
 ```
 
@@ -23,6 +23,10 @@ npm run cloudflare:deploy
 ```
 
 该命令构建同一套源码、核对规则与AI文件，再迁移数据库并发布。`wrangler.preview.json`仅用于本机预览，不能作为生产配置。
+
+源码提交后，可用 `npm run publish:all` 在本机一次完成GitHub推送与Cloudflare发布。它要求工作区干净，构建与校验成功后才推送和部署；任何一步失败都会停止并保留错误。GitHub推送需要本机已有Git登录，Cloudflare授权保存于Windows密钥管理器，不写入仓库。
+
+当前公开源码：[lzxzjy99/qiline](https://github.com/lzxzjy99/qiline)。Cloudflare已发布入口为 [qiline-online.one-vote.workers.dev](https://qiline-online.one-vote.workers.dev)，原Sites入口为 [qiline-rebuild.xuanxliu.chatgpt.site](https://qiline-rebuild.xuanxliu.chatgpt.site)。本机直接访问workers.dev出现连接超时，不能据此宣称公网房间测试已通过；发布控制台与CLI已确认版本上线和数据库绑定。自定义域名未绑定。
 
 ## GitHub 自动部署
 

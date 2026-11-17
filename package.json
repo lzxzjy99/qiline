@@ -11,6 +11,7 @@
     "cloudflare:setup": "node scripts/cloudflare-setup.mjs",
     "cloudflare:publish": "node scripts/cloudflare-deploy.mjs",
     "cloudflare:deploy": "npm run build && npm run check && npm run cloudflare:publish",
+    "publish:all": "node scripts/publish-github-cloudflare.mjs",
     "test:online": "node --experimental-sqlite --test tests/online.test.mjs tests/records.test.mjs",
     "test": "node --test tests/*.test.mjs",
     "check": "node scripts/check-web.mjs",

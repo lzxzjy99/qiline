@@ -1,5 +1,15 @@
 # GitHub 与 Cloudflare 发布
 
+## Cloudflare Pages 迁移（2026-11-17）
+
+已准备 `wrangler.pages.json` 与 `npm run build:pages`，前端由 Pages 静态托管，`/api/rooms` 和子路径由 Pages Functions 处理。继续绑定原 `qiline-online` D1 数据库，不创建新库或重建表。规则与产品AI不变。
+
+目标免费地址为 `https://qiline-online.pages.dev`，实际项目创建及发布成功前，不应将目标地址当作已上线网站。Pages 项目应连接同一 GitHub 仓库、`main` 分支，构建命令 `npm ci && npm run test:online && npm run build:pages`，输出目录 `dist-pages`；关闭预览发布。`wrangler.pages.json` 管理生产 D1 绑定。
+
+本机手动更新命令：`npm run pages:deploy`。官方 Wrangler 登录需在已有权限之外加入 `pages:write`；不需要域名或 DNS 权限。GitHub Pages 的联机入口随本次迁移改为目标 Pages 地址。旧 Workers 入口保留，同一数据库中的房间数据继续存在，但浏览器身份和本地存档按域名隔离；旧房间浏览器身份不会自动迁移。
+
+以下为原 Workers 发布流程，保留作为备用入口及历史配置。
+
 GitHub 保存公开网站源码，Cloudflare Workers 运行网页及在线房间，D1 保存服务器棋谱。沿用现有产品AI 0.5.11，不上传本机研究目录、测试结果、存档、凭据或运行中的数据库。
 
 ## 首次配置

@@ -1,4 +1,5 @@
 node_modules/
+dist-pages/
 .openai/local/
 *.log
 __pycache__/

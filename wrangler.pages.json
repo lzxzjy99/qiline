@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "qiline-online",
+  "pages_build_output_dir": "dist-pages",
+  "compatibility_date": "2025-08-01",
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "qiline-online",
+    "database_id": "8b811a5c-aa9e-428e-a5d3-d4a440b0e489",
+    "migrations_dir": "drizzle"
+  }]
+}

@@ -1,7 +1,7 @@
 import { applyAction } from "../../core/src/engine.js";
 import { freeze } from "../../core/src/result.js";
 import { AI_PROTOCOL_VERSION, aiOK } from "./protocol.js";
-import { getNnueWeights, NNUE_BLEND_ALPHA, NNUE_H1, NNUE_H2, NNUE_IN_DENSE, NNUE_SCORE_SCALE, } from "./v21-nnue-weights.js";
+import { getNnueWeights, NNUE_BLEND_ALPHA, NNUE_CLAIM_BLEND_ALPHA, NNUE_H1, NNUE_H2, NNUE_IN_DENSE, NNUE_SCORE_SCALE, } from "./v21-nnue-weights.js";
 const MASK27 = 0x7ffffff; // 27 bits = 3 rows of 9
 const NOT_LEFT_27 = 0b111111110_111111110_111111110;
 const NOT_RIGHT_27 = 0b011111111_011111111_011111111;
@@ -832,6 +832,7 @@ function buildView(s, leafOnly) {
     }
     let pressure0 = 0, pressure1 = 0, potential0 = 0, potential1 = 0;
     let claims0 = 0, claims1 = 0;
+    let claimMinRem0 = 100, claimMinRem1 = 100, claimMinLib0 = 100, claimMinLib1 = 100;
     let comp0 = 0, comp1 = 0, hComp0 = 0, hComp1 = 0;
     let d2_0 = 0, d2_1 = 0, pk0 = 0, pk1 = 0;
     let cm0_0 = 0, cm0_1 = 0, cm0_2 = 0, cm1_0 = 0, cm1_1 = 0, cm1_2 = 0;
@@ -848,6 +849,7 @@ function buildView(s, leafOnly) {
         vTwoDir.fill(0);
         let cp0 = 0, cp1 = 0, cp2 = 0, hc0 = 0, hc1 = 0, hc2 = 0;
         let press = 0, pot = 0, clm = 0, d2 = 0, pkt = 0;
+        let cMinRem = 100, cMinLib = 100;
         for (let w = 0; w < 50; w++) {
             const m0 = WIN_M0[w], m1 = WIN_M1[w], m2 = WIN_M2[w];
             const bl0 = e0 & m0, bl1 = e1 & m1, bl2 = e2 & m2;
@@ -997,10 +999,17 @@ function buildView(s, leafOnly) {
                 }
             }
             if (count === 5 && s.birth[w] >= 0) {
+                const rem = Math.max(1, s.birth[w] + 4 - s.ply);
+                if (rem < cMinRem) {
+                    cMinRem = rem;
+                    cMinLib = minL;
+                }
+                else if (rem === cMinRem && minL > cMinLib)
+                    cMinLib = minL;
                 if (s.birth[w] + 4 <= s.ply + 2 || minL <= 2)
                     unsettled = true;
                 const secure = minL === 1 ? (isTurn ? 0.6 : 0.15) : minL === 2 ? 0.8 : minL === 3 ? 0.9 : minL === 4 ? 0.96 : 1;
-                const cv = 90000 * secure / Math.max(1, s.birth[w] + 4 - s.ply);
+                const cv = 90000 * secure / rem;
                 if (cv > clm)
                     clm = cv;
                 if (!leafOnly) {
@@ -1125,6 +1134,8 @@ function buildView(s, leafOnly) {
             pressure0 = press;
             potential0 = pot;
             claims0 = clm;
+            claimMinRem0 = cMinRem;
+            claimMinLib0 = cMinLib;
             d2_0 = d2;
             pk0 = pkt;
             cm0_0 = cp0;
@@ -1137,6 +1148,8 @@ function buildView(s, leafOnly) {
             pressure1 = press;
             potential1 = pot;
             claims1 = clm;
+            claimMinRem1 = cMinRem;
+            claimMinLib1 = cMinLib;
             d2_1 = d2;
             pk1 = pkt;
             cm1_0 = cp0;
@@ -1168,7 +1181,8 @@ function buildView(s, leafOnly) {
     accum(s.w2, 54, -1);
     return {
         pressure0, pressure1, potential0, potential1, safety0, safety1, oldSafety0, oldSafety1,
-        claims0, claims1, comp0, comp1, hComp0, hComp1, d2_0, d2_1, pk0, pk1,
+        claims0, claims1, claimMinRem0, claimMinRem1, claimMinLib0, claimMinLib1,
+        comp0, comp1, hComp0, hComp1, d2_0, d2_1, pk0, pk1,
         cm0_0, cm0_1, cm0_2, cm1_0, cm1_1, cm1_2, exp0, exp1, unsettled,
         material, spread, stone, libs, moves0, moves1, critical, forcing, priority, leafOnly,
     };
@@ -1245,6 +1259,19 @@ function evalNnueLogit(s, v, W) {
     nnDense[13] = clampF((isB ? v.d2_1 : v.d2_0) / 4, 0, 3);
     nnDense[14] = clampF((isB ? v.pk0 : v.pk1) / 4, 0, 3);
     nnDense[15] = clampF((isB ? v.pk1 : v.pk0) / 4, 0, 3);
+    const cRemOwn = isB ? v.claimMinRem0 : v.claimMinRem1;
+    const cRemEn = isB ? v.claimMinRem1 : v.claimMinRem0;
+    const cLibOwn = isB ? v.claimMinLib0 : v.claimMinLib1;
+    const cLibEn = isB ? v.claimMinLib1 : v.claimMinLib0;
+    const stoneCount = popcnt27(s.b0) + popcnt27(s.b1) + popcnt27(s.b2) + popcnt27(s.w0) + popcnt27(s.w1) + popcnt27(s.w2);
+    nnDense[16] = cRemOwn < 100 ? (1 / Math.max(1, cRemOwn)) : 0;
+    nnDense[17] = cRemEn < 100 ? (1 / Math.max(1, cRemEn)) : 0;
+    nnDense[18] = cRemOwn < 100 ? clampF(cLibOwn / 4, 0, 1) : 0;
+    nnDense[19] = cRemEn < 100 ? clampF(cLibEn / 4, 0, 1) : 0;
+    nnDense[20] = clampF((isB ? v.claims0 : v.claims1) / 90000, 0, 2);
+    nnDense[21] = clampF((isB ? v.claims1 : v.claims0) / 90000, 0, 2);
+    nnDense[22] = clampF(s.ply / 60, 0, 2);
+    nnDense[23] = clampF(stoneCount / 60, 0, 2);
     for (let d = 0; d < NNUE_IN_DENSE; d++) {
         const dv = nnDense[d];
         if (dv === 0)
@@ -1264,6 +1291,7 @@ function evalNnueLogit(s, v, W) {
             continue;
         if (a1 > 1)
             a1 = 1;
+        a1 = a1 * a1; // SCReLU (v22 Gen-3)
         const off = i * NNUE_H2;
         for (let j = 0; j < 16; j += 4) {
             nnH2[j] = nnH2[j] + a1 * w2[off + j];
@@ -1279,6 +1307,7 @@ function evalNnueLogit(s, v, W) {
             continue;
         if (a2 > 1)
             a2 = 1;
+        a2 = a2 * a2; // SCReLU (v22 Gen-3)
         out += a2 * w3[j];
     }
     return out;
@@ -1303,7 +1332,7 @@ function heuristicValueA(s, v, W) {
         score = (1 - NNUE_BLEND_ALPHA) * score + NNUE_BLEND_ALPHA * (nnueBlack + s.side * (12 + initiative));
     }
     else {
-        score += 0.25 * nnueBlack;
+        score = (1 - NNUE_CLAIM_BLEND_ALPHA) * score + NNUE_CLAIM_BLEND_ALPHA * (nnueBlack + claimDiff + s.side * (12 + initiative));
     }
     return (s.ownerBlack === 0 ? 1 : -1) * Math.max(-1000000, Math.min(1000000, score));
 }
@@ -1799,6 +1828,7 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
         let cachedChildStates = 0;
         const preferred = new WeakMap();
         const history = [new Int32Array(84), new Int32Array(84)];
+        const countermove = [new Int8Array(84).fill(-1), new Int8Array(84).fill(-1)];
         const killer0 = new Int8Array(32).fill(-1);
         const killer1 = new Int8Array(32).fill(-1);
         let pathBounds = new WeakMap();
@@ -1885,7 +1915,8 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
                 }
                 ranksBuf[p] = rk;
             }
-            const width = fullWidth ? 81 : (s.phase === 0 && s.opened === 2) ? 81 : atRoot ? 24 : stateActor(s) !== rootActor ? 12 : Math.max(4, 12 - 2 * depth);
+            // v22s2 tight symmetric quiet width: balanced depth scaling for both players
+            const width = fullWidth ? 81 : (s.phase === 0 && s.opened === 2) ? 81 : atRoot ? 24 : Math.max(4, 11 - depth);
             let order = codes.slice();
             let m = n;
             if (!fullWidth && n > width) {
@@ -1914,10 +1945,11 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
                     order.length = m;
             }
             const k0 = killer0[depth], k1 = killer1[depth], act = stateActor(s);
+            const cm = (s.lastPoint >= 0 && s.lastPoint < 84) ? countermove[act][s.lastPoint] : -1;
             const hist = history[act];
             for (let i = 0; i < m; i++) {
                 const p = order[i];
-                sortBuf[p] = ranksBuf[p] + hist[p] + (p === k0 || p === k1 ? 8000 : 0);
+                sortBuf[p] = ranksBuf[p] + hist[p] + (p === k0 || p === k1 ? 8000 : p === cm ? 6000 : 0);
             }
             sortByKey(order, m, sortBuf, s.phase === 2 ? v.critical : null, s.phase === 2 && exp, prev);
             return order;
@@ -1931,7 +1963,8 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
             computeStateKey(s, rootCapTag);
             const keyLo = skLo, keyHi = skHi, activeClaims = skClaims;
             let ttM = -1;
-            const ttSafe = !fullWidth && activeClaims === 0 && s.phase === 2 && s.capB === rootState.capB && s.capW === rootState.capW;
+            // v22s2 captt: allow TT cutoffs across capture subtrees (capB/capW + board verified in key)
+            const ttSafe = !fullWidth && activeClaims === 0 && s.phase === 2;
             const ttIdx = sharedTT ? (keyLo & sharedMask) : (keyLo & TT_MASK);
             if (sharedTT) {
                 const base = ttIdx * SHARED_TT_STRIDE;
@@ -2050,10 +2083,16 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
                 return heuristicValueA(s, view, W);
             if (view.leafOnly)
                 view = buildView(s, false);
+            // v22s2 IIR: internal iterative reduction when no TT move is known
+            if (!fullWidth && !qsearch && remaining >= 4 && ttM < 0 && !view.unsettled)
+                remaining--;
             let ext = 0;
-            if (!fullWidth && !qsearch && extLeft > 0 && depth + remaining < budget.maxDepth && s.phase === 2
-                && (isB ? view.hComp1 : view.hComp0) === 1 && (isB ? view.comp0 : view.comp1) === 0)
-                ext = 1;
+            if (!fullWidth && !qsearch && extLeft > 0 && depth + remaining < budget.maxDepth && s.phase === 2) {
+                if ((isB ? view.hComp1 : view.hComp0) === 1 && (isB ? view.comp0 : view.comp1) === 0)
+                    ext = 1;
+                else if (s.claimCount > 0 && remaining >= 2)
+                    ext = 1;
+            }
             let codes = orderMoves(node, view, legalCodes(s), false, depth, ttM);
             if (qsearch) {
                 const forcing = [];
@@ -2076,14 +2115,14 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
                 const ql = qsearch ? qleft - 1 : qleft;
                 const nextExt = extLeft - ext;
                 const isKiller = p === killer0[depth] || p === killer1[depth];
-                const reduced = !fullWidth && !qsearch && ext === 0 && remaining >= 4 && moveIndex >= 5 && chosen >= 0
+                const reduced = !fullWidth && !qsearch && ext === 0 && remaining >= 3 && moveIndex >= 4 && chosen >= 0
                     && p < 81 && p !== ttM && !isKiller && view.critical[p] === 0 && !view.unsettled
                     && s.phase === 2 && child.state.phase === 2 && !child.proven
                     && s.capB === child.state.capB && s.capW === child.state.capW;
                 let v = 0;
                 let done = false;
                 if (reduced) {
-                    const red = remaining >= 8 && moveIndex >= 13 ? 2 : 1;
+                    const red = 1 + (remaining >= 6 && moveIndex >= 9 ? 1 : 0) + (remaining >= 9 && moveIndex >= 16 ? 1 : 0);
                     if (Number.isFinite(maximize ? alpha : beta)) {
                         v = maximize
                             ? visit(child, Math.max(0, next - red), depth + 1, alpha, Math.min(beta, alpha + 0.000001), ql, nextExt)
@@ -2117,8 +2156,13 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
                     beta = Math.min(beta, value);
                 if (alpha >= beta) {
                     cutoffs++;
-                    const hArr = history[stateActor(s)];
-                    hArr[p] = Math.min(4000, hArr[p] + 20 * (remaining + 1) * (remaining + 1));
+                    const act = stateActor(s);
+                    const hArr = history[act];
+                    const b = Math.min(2400, 20 * (remaining + 1) * (remaining + 1));
+                    const curH = hArr[p];
+                    hArr[p] = Math.min(8000, curH + b - (((curH * b) / 8000) | 0));
+                    if (s.lastPoint >= 0 && s.lastPoint < 84)
+                        countermove[act][s.lastPoint] = p;
                     if (killer0[depth] !== p) {
                         killer1[depth] = killer0[depth];
                         killer0[depth] = p;

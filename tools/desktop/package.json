@@ -1,6 +1,6 @@
 {
   "name":"qiline-desktop-build-tools",
-  "version":"0.8.0",
+  "version":"0.9.0",
   "private":true,
   "type":"module",
   "devDependencies":{"@electron/packager":"20.3.0"},

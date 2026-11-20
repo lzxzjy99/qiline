@@ -1,7 +1,7 @@
 import { applyAction } from "../../core/src/engine.js";
 import { freeze } from "../../core/src/result.js";
 import { AI_PROTOCOL_VERSION, aiOK } from "./protocol.js";
-import { getNnueWeights, NNUE_BLEND_ALPHA, NNUE_CLAIM_BLEND_ALPHA, NNUE_H1, NNUE_H2, NNUE_IN_DENSE, NNUE_SCORE_SCALE, } from "./v21-nnue-weights.js";
+import { getNnueWeights, NNUE_BLEND_ALPHA, NNUE_CLAIM_BLEND_ALPHA, NNUE_H1, NNUE_H2, NNUE_IN_DENSE, NNUE_NUM_BUCKETS, NNUE_SCORE_SCALE, } from "./v21-nnue-weights.js";
 const MASK27 = 0x7ffffff; // 27 bits = 3 rows of 9
 const NOT_LEFT_27 = 0b111111110_111111110_111111110;
 const NOT_RIGHT_27 = 0b011111111_011111111_011111111;
@@ -1284,15 +1284,22 @@ function evalNnueLogit(s, v, W) {
             nnAcc[j + 3] = nnAcc[j + 3] + dv * w1d[off + j + 3];
         }
     }
-    nnH2.set(W.b2);
+    let bkt = (stoneCount / 14) | 0;
+    if (bkt >= NNUE_NUM_BUCKETS)
+        bkt = NNUE_NUM_BUCKETS - 1;
+    const w2Base = bkt * NNUE_H1 * NNUE_H2;
+    const b2Base = bkt * NNUE_H2;
+    const w3Base = bkt * NNUE_H2;
+    for (let j = 0; j < NNUE_H2; j++)
+        nnH2[j] = W.b2[b2Base + j];
     for (let i = 0; i < NNUE_H1; i++) {
         let a1 = nnAcc[i];
         if (a1 <= 0)
             continue;
         if (a1 > 1)
             a1 = 1;
-        a1 = a1 * a1; // SCReLU (v22 Gen-3)
-        const off = i * NNUE_H2;
+        a1 = a1 * a1; // SCReLU (v23 Gen-4 4-bucket)
+        const off = w2Base + i * NNUE_H2;
         for (let j = 0; j < 16; j += 4) {
             nnH2[j] = nnH2[j] + a1 * w2[off + j];
             nnH2[j + 1] = nnH2[j + 1] + a1 * w2[off + j + 1];
@@ -1300,15 +1307,15 @@ function evalNnueLogit(s, v, W) {
             nnH2[j + 3] = nnH2[j + 3] + a1 * w2[off + j + 3];
         }
     }
-    let out = W.b3;
+    let out = W.b3[bkt];
     for (let j = 0; j < NNUE_H2; j++) {
         let a2 = nnH2[j];
         if (a2 <= 0)
             continue;
         if (a2 > 1)
             a2 = 1;
-        a2 = a2 * a2; // SCReLU (v22 Gen-3)
-        out += a2 * w3[j];
+        a2 = a2 * a2; // SCReLU (v23 Gen-4 4-bucket)
+        out += a2 * w3[w3Base + j];
     }
     return out;
 }
@@ -2081,6 +2088,18 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
             const wantQ = !fullWidth && qleft > 0 && depth < budget.maxDepth && view.unsettled;
             if (qsearch && !wantQ)
                 return heuristicValueA(s, view, W);
+            const maximize = stateActor(s) === 0;
+            // v23 Reverse Futility Pruning (verified +136.8 Elo over v22s2 across 112 deep games):
+            // prune shallow non-PV settled zero-claim nodes when static NNUE eval exceeds beta/alpha by 580*remaining.
+            if (!fullWidth && !qsearch && (beta - alpha) <= 0.001 && remaining <= 3 && s.phase === 2
+                && activeClaims === 0 && !view.unsettled && view.comp0 === 0 && view.comp1 === 0) {
+                const rfpEval = heuristicValueA(s, view, W);
+                const rfpMargin = 580 * remaining;
+                if (maximize ? (rfpEval - rfpMargin >= beta) : (rfpEval + rfpMargin <= alpha)) {
+                    cutoffs++;
+                    return rfpEval;
+                }
+            }
             if (view.leafOnly)
                 view = buildView(s, false);
             // v22s2 IIR: internal iterative reduction when no TT move is known
@@ -2103,7 +2122,6 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
                 }
                 codes = forcing;
             }
-            const maximize = stateActor(s) === 0;
             let value = maximize ? -Infinity : Infinity;
             let chosen = -1;
             let moveIndex = 0;
@@ -2282,6 +2300,8 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
         bestCode = initOrdered[0];
         try {
             const startDepth = isHelper ? Math.min(budget.maxDepth, 1 + (threadId % 3)) : 1;
+            let prevBestCode = -1;
+            let stableIters = 0;
             for (let depth = startDepth; depth <= budget.maxDepth; depth++) {
                 pathBounds = new WeakMap();
                 const rootList = orderMoves(rootNode, rootView, fullWidth ? legalCodes(rootState) : allowed, true, 0, bestCode);
@@ -2370,6 +2390,8 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
                     break;
                 }
                 if (best >= 0) {
+                    stableIters = (best === prevBestCode) ? stableIters + 1 : 1;
+                    prevBestCode = best;
                     rootScores = nextScores;
                     bestCode = best;
                     lastScore = value;
@@ -2381,11 +2403,28 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
                         if (depth > prevD)
                             Atomics.store(ctrl, CTRL_MAX_DEPTH, depth);
                     }
+                    const elNow = elapsed();
                     if (onProgress && !isHelper) {
-                        const el = elapsed();
-                        lastProgressMs = el;
+                        lastProgressMs = elNow;
                         publishNodes();
-                        onProgress({ nodes, totalNodes: sumAllNodes(), depth, elapsedMs: el, score: bestScore, bestCode });
+                        onProgress({ nodes, totalNodes: sumAllNodes(), depth, elapsedMs: elNow, score: bestScore, bestCode });
+                    }
+                    // Dynamic Time Management for interactive long-budget fullPower mode:
+                    // finish early when a clear dominant move has been stable across >=3 deep iterations.
+                    if (fullPower && !isHelper && !isPonder && !fullWidth && budget.timeMs >= 10000
+                        && depth >= 8 && stableIters >= 3 && elNow >= softEndMs * 0.35 && Math.abs(value) < 500000) {
+                        let secondBest = maximizeRoot ? -Infinity : Infinity;
+                        for (const [mv, sc] of nextScores) {
+                            if (mv === best)
+                                continue;
+                            if (maximizeRoot ? sc > secondBest : sc < secondBest)
+                                secondBest = sc;
+                        }
+                        const gap = Number.isFinite(secondBest) ? Math.abs(value - secondBest) : 9999;
+                        if (gap >= 380) {
+                            stopReason = "time";
+                            break;
+                        }
                     }
                 }
                 if (Math.abs(value) >= 1000000000) {

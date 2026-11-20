@@ -8,8 +8,8 @@ const hash=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SH
 const token=()=>btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32)))).replaceAll('+','-').replaceAll('/','_').replaceAll('=','');
 const code=()=>Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b&31]).join('');
 function name(value,fallback){
- const n=value===undefined?fallback:typeof value==='string'?value.trim():'';
- if(!n||n.length>24)fail(400,'INVALID_NAME','名字请填写1至24个字符。');return n;
+ const n=value===undefined?fallback:typeof value==='string'?(value.trim()||fallback):'';
+ if(!n||n.length>24)fail(400,'INVALID_NAME','名称请填写1至24个字符。');return n;
 }
 async function bodyOf(request){
  if(!request.headers.get('content-type')?.startsWith('application/json'))fail(415,'JSON_REQUIRED','请使用网页中的房间操作。');
@@ -32,13 +32,15 @@ async function seatOf(row,request){
  const h=await hash(value);if(h===row.a_token_hash)return 'A';if(h===row.b_token_hash)return 'B';
  fail(403,'NOT_YOUR_SEAT','这个身份不能操作此房间。');
 }
-function publicRoom(row,me){
- const s=JSON.parse(row.state_json);
- return {code:row.code,revision:row.revision,me,record:s.record,names:s.names,pending:s.pending,
+function publicRoom(row,seat){
+ const s=JSON.parse(row.state_json),roles=s.roles??{A:'A',B:'B'};
+ const tally=s.tally??{A:0,B:0,draws:0},pastGames=Array.isArray(s.pastGames)?s.pastGames:[];
+ return {code:row.code,revision:row.revision,me:roles[seat],seat,round:s.round??1,roles,tally,pastGames,
+  record:s.record,names:s.names,pending:s.pending,
   joined:{A:true,B:!!row.b_token_hash},seen:{A:row.a_seen,B:row.b_seen},
   serverNow:Date.now(),
   createdAt:row.created_at,updatedAt:row.updated_at,expiresAt:row.expires_at,
-  acknowledgedCommandId:s.receipts?.[me]?.id??null};
+  acknowledgedCommandId:s.receipts?.[seat]?.id??null};
 }
 const coreValue=r=>{if(!r.ok)fail(409,r.error.code,{
  OCCUPIED:'这里已有棋子。',SUICIDE:'这手没有气，不能落子。',REPETITION:'这手会重复历史棋盘，不能落子。',
@@ -52,7 +54,7 @@ export async function roomsFetch(request,env){
   const pathname=new URL(request.url).pathname,now=Date.now();
   if(pathname==='/api/rooms'&&request.method==='POST'){
    const b=await bodyOf(request),m=coreValue(createMatch(b.rules??DEFAULT_RULES)),a=token(),aHash=await hash(a);
-   const data={record:exportRecord(m),names:{A:name(b.name,'玩家A'),B:'等待加入'},pending:null,receipts:{}};
+   const data={record:exportRecord(m),names:{A:name(b.name,'摆局方'),B:'等待加入'},round:1,roles:{A:'A',B:'B'},tally:{A:0,B:0,draws:0},pastGames:[],pending:null,receipts:{}};
    for(let attempt=0;attempt<3;attempt++){
     const id=code();
     const r=await db.prepare('INSERT OR IGNORE INTO qiline_rooms (code,a_token_hash,b_token_hash,state_json,revision,a_seen,b_seen,created_at,updated_at,expires_at) VALUES (?,?,NULL,?,0,?,0,?,?,?)')
@@ -68,7 +70,7 @@ export async function roomsFetch(request,env){
    const b=await bodyOf(request);
    if(row.b_token_hash)fail(409,'ROOM_FULL','房间已有两位玩家。若你已加入，请恢复原来的身份。');
    const playerToken=token(),bHash=await hash(playerToken),data=JSON.parse(row.state_json);
-   data.names.B=name(b.name,'玩家B');
+   data.names.B=name(b.name,'选色方');
    const result=await db.prepare('UPDATE qiline_rooms SET b_token_hash = ?,state_json = ?,revision = revision + 1,b_seen = ?,updated_at = ?,expires_at = ? WHERE code = ? AND revision = ? AND b_token_hash IS NULL')
     .bind(bHash,JSON.stringify(data),now,now,now+RETENTION,id,row.revision).run();
    if(!result.meta.changes)fail(409,'ROOM_FULL','另一位玩家刚刚加入了这个房间。');
@@ -91,30 +93,53 @@ export async function roomsFetch(request,env){
   }
   if(b.revision!==row.revision)fail(409,'STATE_CHANGED','棋局刚刚更新，正在同步最新棋盘。');
   if(!row.b_token_hash)fail(409,'WAITING_FOR_PLAYER','等待另一位玩家加入后开始。');
+  const roles=data.roles??{A:'A',B:'B'},myActor=roles[seat];
   let match=coreValue(replayRecord(data.record));
-  if(match.state.outcome)fail(409,'FINISHED','这局已经结束，可导出棋谱或创建新房间。');
   if(b.kind==='cancel-request'){
-   if(!data.pending||data.pending.by!==seat)fail(409,'NO_REQUEST','没有可撤回的申请。');data.pending=null;
+   if(!data.pending||(data.pending.bySeat?data.pending.bySeat!==seat:data.pending.by!==myActor))fail(409,'NO_REQUEST','没有可撤回的申请。');
+   data.pending=null;
   }else if(b.kind==='respond'){
    const p=data.pending;
-   if(!p||p.id!==b.requestId||p.by===seat||typeof b.accept!=='boolean')fail(409,'STALE_REQUEST','这项申请已失效，请同步后再操作。');
-   if(b.accept){
-    if(p.kind==='undo'){
-     const count=Math.min(2,match.accepted.length);
-     for(let i=0;i<count;i++)match=coreValue(undoLastCommand(match));
-    }else match=coreValue(applyAction(match,{kind:'cancel-opening',actor:p.by,approvedBy:['A','B']})).match;
+   if(!p||p.id!==b.requestId||(p.bySeat?p.bySeat===seat:p.by===myActor)||typeof b.accept!=='boolean')fail(409,'STALE_REQUEST','这项申请已失效，请同步后再操作。');
+   if(p.kind==='rematch'){
+    if(!match.state.outcome)fail(409,'WRONG_PHASE','当前对局尚未结束。');
+    if(b.accept){
+     const outcome=match.state.outcome;
+     const winnerSeat=outcome.kind==='win'?(roles.A===outcome.winner?'A':'B'):null;
+     data.tally??={A:0,B:0,draws:0};
+     if(outcome.kind==='win'&&winnerSeat)data.tally[winnerSeat]+=1;
+     else if(outcome.kind==='draw')data.tally.draws+=1;
+     data.pastGames=[...(Array.isArray(data.pastGames)?data.pastGames:[]),{round:data.round??1,roles:{...roles},outcome,winnerSeat,record:data.record}].slice(-12);
+     data.round=(data.round??1)+1;
+     data.roles=outcome.kind==='cancelled'?{...roles}:{A:roles.B,B:roles.A};
+     match=coreValue(createMatch(match.rules));
+    }
+    data.pending=null;
+   }else{
+    if(match.state.outcome)fail(409,'FINISHED','这局已经结束，可申请再来一局或导出棋谱。');
+    if(b.accept){
+     if(p.kind==='undo'){
+      const count=Math.min(2,match.accepted.length);
+      for(let i=0;i<count;i++)match=coreValue(undoLastCommand(match));
+     }else match=coreValue(applyAction(match,{kind:'cancel-opening',actor:p.by,approvedBy:['A','B']})).match;
+    }
+    data.pending=null;
    }
-   data.pending=null;
+  }else if(b.kind==='request-rematch'){
+   if(!match.state.outcome)fail(409,'WRONG_PHASE','当前对局尚未结束。');
+   if(data.pending)fail(409,'CONSENT_REQUIRED','请先回应或撤回当前申请。');
+   data.pending={id:b.commandId,kind:'rematch',by:myActor,bySeat:seat};
   }else{
+   if(match.state.outcome)fail(409,'FINISHED','这局已经结束，可申请再来一局或导出棋谱。');
    if(data.pending)fail(409,'CONSENT_REQUIRED','请先回应或撤回当前申请。');
    if(b.kind==='request-undo'){
     if(!match.accepted.length)fail(409,'NO_UNDO','还没有可撤回的操作。');
-    data.pending={id:b.commandId,kind:'undo',by:seat};
+    data.pending={id:b.commandId,kind:'undo',by:myActor,bySeat:seat};
    }else if(b.kind==='request-cancel'){
     if(!['opening','choose'].includes(match.state.phase.kind))fail(409,'WRONG_PHASE','正式行棋后不能取消开局，可选择认输。');
-    data.pending={id:b.commandId,kind:'cancel',by:seat};
+    data.pending={id:b.commandId,kind:'cancel',by:myActor,bySeat:seat};
    }else if(b.kind==='move'){
-    if(b.action?.actor!==seat)fail(403,'NOT_YOUR_SEAT','只能操作自己的身份。');
+    if(b.action?.actor!==myActor)fail(403,'NOT_YOUR_SEAT','只能操作自己的身份。');
     if(!['place','pass','choose-color','resign'].includes(b.action?.kind))fail(400,'INVALID_ACTION','不支持这项棋盘操作。');
     match=coreValue(applyAction(match,b.action)).match;
    }else fail(400,'INVALID_ACTION','不支持这项操作。');

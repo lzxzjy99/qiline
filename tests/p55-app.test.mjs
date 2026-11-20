@@ -252,7 +252,7 @@ test('product settings react to radio changes and practice assigns the selected 
     h.change('humanActor','A');h.change('level','standard');h.form.elements.player1.value='林';h.form.dispatch('submit');
     assert.equal(h.current().session.controllers.A.kind,'human');
     assert.deepEqual(h.current().session.controllers.B,{kind:'ai',level:'standard',seed:17});
-    assert.match(h.$('play-context').textContent,/你是 A/);assert.match(h.$('players').innerHTML,/林/);
+    assert.match(h.$('play-context').textContent,/摆局方/);assert.match(h.$('players').innerHTML,/摆局方|执黑/);
     assert.equal(h.$('ai-panel').hidden,false);assert.equal(h.$('pass-btn').disabled,true);
     h.clock.tick();assert.equal(h.workers.length,0,'human opening must not start a worker');
   }finally{h.close();}
@@ -490,7 +490,7 @@ test('practice resignation on an AI turn closes work using the human identity',a
     const worker=h.workers.at(-1);worker.ready();h.$('end-btn').click();h.$('practice-end').click();
     assert.equal(worker.terminated,1);const last=h.current().session.record.actions.at(-1);
     assert.deepEqual(last,{kind:'resign',actor:'A'});assert.equal(h.$('ai-panel').hidden,true);
-    assert.match(h.$('turn-title').textContent,/弈合 AI.*获胜/);h.clock.tick(10000);assert.equal(h.workers.length,1);
+    assert.match(h.$('turn-title').textContent,/执白.*获胜/);h.clock.tick(10000);assert.equal(h.workers.length,1);
   }finally{h.close();}
 });
 

@@ -6,6 +6,7 @@ export const SAVE_KEY = 'qiline.web.r3.current';
 export const BACKUP_KEY = 'qiline.web.r3.previous';
 export const other = p => p === 'A' ? 'B' : 'A';
 export const colorName = c => c === 'black' ? '黑棋' : '白棋';
+export const sideColorLabel = c => c === 'black' ? '执黑' : '执白';
 export const levelName = level => ({easy:'简单',standard:'标准',hard:'困难'}[level]??'未知难度');
 export function localCalendarDate(date=new Date()) {
   return `${String(date.getFullYear()).padStart(4,'0')}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
@@ -104,21 +105,21 @@ export function parseWebSave(input, matchId) {
   const result=restorePlayableSession(matchId,raw);
   if (!result.ok) return result;
   const {session,mode}=result.value,practice=practiceView(session);
-  players??=practice?{names:['玩家','弈合 AI'],aIndex:practice.humanActor==='A'?0:1,round:1}
-    :{names:['玩家A','玩家B'],aIndex:0,round:1};
+  players??=practice?{names:['执黑','弈合 AI'],aIndex:practice.humanActor==='A'?0:1,round:1}
+    :{names:['执黑','执白'],aIndex:0,round:1};
   return {ok:true,value:{session,players,mode}};
 }
-export function phaseView(match, meta) {
-  if (!match) return {title:'准备好，下一手见。',detail:'围棋的提子，五连的胜负。两个人，一盘棋。',actor:null,color:null};
+export function phaseView(match, _meta) {
+  if (!match) return {title:'准备好，下一手见。',detail:'围棋的提子，五连的胜负。不区分姓名，对局显示执黑与执白。',actor:null,color:null};
   const s=match.state,p=s.phase,actor=activePlayer(match);
   if (p.kind==='opening') {
     const color=p.placed===1?'white':'black';
-    return {title:`${playerName(meta,'A')}摆${colorName(color)}`,detail:`三手换色 · 第 ${p.placed+1} / 3 子，摆局不能提子。`,actor,color};
+    return {title:`摆局方摆${colorName(color)}`,detail:`三手换色 · 第 ${p.placed+1} / 3 子，摆局不能提子（选色后确定执黑／执白）。`,actor,color};
   }
-  if (p.kind==='choose') return {title:`${playerName(meta,'B')}选择执色`,detail:'看过三子布局后选黑或白；选定后，由白棋先行。',actor,color:null};
-  if (p.kind==='playing') return {title:`${playerName(meta,actor)} · ${colorName(p.toMove)}行棋`,detail:s.passStreak?(s.claims.length?'上一手停手；仍有五连候选，继续计时。':'上一手停手，再停一手即和棋。'):'点击交叉点落子；也可以停手。',actor,color:p.toMove};
+  if (p.kind==='choose') return {title:'选色方选择执色',detail:'看过三子布局后选择执黑或执白；选定后，由执白先行。',actor,color:null};
+  if (p.kind==='playing') return {title:`${sideColorLabel(p.toMove)}行棋`,detail:s.passStreak?(s.claims.length?'上一手停手；仍有五连候选，继续计时。':'上一手停手，再停一手即和棋。'):'点击交叉点落子；也可以停手。',actor,color:p.toMove};
   const o=s.outcome;
-  if (o.kind==='win') return {title:`${playerName(meta,o.winner)}获胜`,detail:`${colorName(o.color)} · ${o.reason==='line'?'五连已确认':'对方认输'}`,actor:null,color:o.color};
+  if (o.kind==='win') return {title:`${sideColorLabel(o.color)}获胜`,detail:o.reason==='line'?'五连已确认':'对方认输',actor:null,color:o.color};
   return {title:o.kind==='draw'?'本局和棋':'开局已取消',detail:o.kind==='draw'?'无五连候选，双方连续停手。':'双方同意取消，不记录胜负。',actor:null,color:null};
 }
 export function rulesView(r=DEFAULT_RULES) {

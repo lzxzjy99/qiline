@@ -14,7 +14,7 @@ test('web save restores real player mapping, configuration, actions and candidat
  const save=makeWebSave(s,meta,'one'),restored=value(parseWebSave(JSON.stringify(save),'restored'));
  assert.deepEqual(restored.players,meta);assert.deepEqual(restored.session.state.match.state,s.state.match.state);
  assert.equal(playerName(meta,'A'),'李四');assert.equal(claimsView(restored.session.state.match)[0].remaining,4);
- assert.match(phaseView(restored.session.state.match,meta).title,/张三.*白棋/);
+ assert.match(phaseView(restored.session.state.match,meta).title,/执白行棋/);
  assert.match(rulesView(s.state.match.rules).join(','),/固定五子.*延迟 4 手/);
 });
 test('session and core record imports work without a web wrapper',()=>{

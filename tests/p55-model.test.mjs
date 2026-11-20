@@ -48,7 +48,7 @@ test('new-game adapter keeps dual-human and competitive dual-human games availab
     assert.deepEqual(session.state.controllers,{A:{kind:'human'},B:{kind:'human'}});
     const restored=value(parseWebSave(session.exportSave(),'restored'));
     assert.equal(restored.mode,'pvp');assert.equal(restored.session.state.competitive,competitive);
-    assert.deepEqual(restored.players,{names:['玩家A','玩家B'],aIndex:0,round:1});
+    assert.deepEqual(restored.players,{names:['执黑','执白'],aIndex:0,round:1});
   }
   assert.equal(practiceView(null),null);
 });
@@ -58,7 +58,7 @@ test('bare practice SessionSave has names mapped to human identity rather than c
     const original=create({humanActor});
     const restored=value(parseWebSave(original.exportSave(),'restored'));
     assert.equal(restored.mode,'practice');
-    assert.equal(playerName(restored.players,humanActor),'玩家');
+    assert.equal(playerName(restored.players,humanActor),'执黑');
     assert.equal(playerName(restored.players,humanActor==='A'?'B':'A'),'弈合 AI');
   }
 });

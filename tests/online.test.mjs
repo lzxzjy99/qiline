@@ -85,3 +85,33 @@ test('a consent request can be withdrawn; opening cancellation needs the other p
   assert.equal((await call(db,'/'+p.code,{token:p.A})).status,410);
  }finally{db.sqlite.close();}
 });
+test('rooms work without player names and support multi-round rematches with alternating A/B roles and score tally',async()=>{
+ const db=database();try{
+  const a=await call(db,'',{method:'POST',body:{rules:DEFAULT_RULES}});assert.equal(a.status,201);
+  const b=await call(db,'/'+a.room.code+'/join',{method:'POST',body:{}});assert.equal(b.status,200);
+  const p={code:a.room.code,A:a.playerToken,B:b.playerToken};
+  assert.equal(b.room.round,1);assert.deepEqual(b.room.tally,{A:0,B:0,draws:0});
+  for(const point of [40,20,42])assert.equal((await cmd(db,p,'A',move('A',point))).status,200);
+  await cmd(db,p,'B',{kind:'move',action:{kind:'choose-color',actor:'B',color:'black'}});
+  await cmd(db,p,'A',{kind:'move',action:{kind:'resign',actor:'A'}});
+  assert.equal((await cmd(db,p,'A',{kind:'request-undo'})).error.code,'FINISHED');
+  const req=await cmd(db,p,'B',{kind:'request-rematch'});assert.equal(req.status,200);assert.equal(req.room.pending.kind,'rematch');
+  assert.equal((await cmd(db,p,'B',{kind:'respond',requestId:req.room.pending.id,accept:true})).status,409);
+  const r2=await cmd(db,p,'A',{kind:'respond',requestId:req.room.pending.id,accept:true});
+  assert.equal(r2.status,200);assert.equal(r2.room.round,2);
+  assert.deepEqual(r2.room.tally,{A:0,B:1,draws:0});
+  assert.equal(r2.room.pastGames.length,1);assert.equal(r2.room.pastGames[0].winnerSeat,'B');
+  assert.equal(r2.room.me,'B');assert.equal(r2.room.seat,'A');
+  const seatB=await call(db,'/'+p.code,{token:p.B});assert.equal(seatB.room.me,'A');assert.equal(seatB.room.seat,'B');
+  assert.equal((await cmd(db,p,'A',move('A',40))).status,403);
+  assert.equal((await cmd(db,p,'B',move('A',40))).status,200);
+  assert.equal((await cmd(db,p,'A',{kind:'request-cancel'})).status,200);
+  const reqCancel=await call(db,'/'+p.code,{token:p.B});
+  const cancelled=await cmd(db,p,'B',{kind:'respond',requestId:reqCancel.room.pending.id,accept:true});
+  assert.equal(replayRecord(cancelled.room.record).value.state.outcome.kind,'cancelled');
+  const rematchCancel=await cmd(db,p,'A',{kind:'request-rematch'});
+  const r3=await cmd(db,p,'B',{kind:'respond',requestId:rematchCancel.room.pending.id,accept:true});
+  assert.equal(r3.room.round,3);assert.deepEqual(r3.room.tally,{A:0,B:1,draws:0});
+  assert.equal(r3.room.me,'A');
+ }finally{db.sqlite.close();}
+});

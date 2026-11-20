@@ -3,13 +3,14 @@ export const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 export const colorName=c=>c==='black'?'黑棋':'白棋';
 export const duration=ms=>typeof ms==='number'&&Number.isFinite(ms)?(ms>=60000?`${Math.floor(ms/60000)}分${((ms%60000)/1000).toFixed(1)}秒`:`${(ms/1000).toFixed(1)}秒`):'未记录用时';
 export const actorColor=(m,a)=>m.state.owners?(m.state.owners.black===a?'black':'white'):null;
-export function phaseText(m,names={A:'A',B:'B'}){
+export const actorRoleName=(m,a)=>{const c=actorColor(m,a);return c?colorName(c):(a==='A'?'摆局方':'选色方');};
+export function phaseText(m,_names){
  const s=m.state,p=s.phase;
- if(s.outcome){const o=s.outcome;return o.kind==='win'?{title:`${names[o.winner]}获胜`,detail:`${colorName(o.color)} · ${o.reason==='line'?'五连已确认':'对方认输'}`}:
+ if(s.outcome){const o=s.outcome;return o.kind==='win'?{title:`${colorName(o.color)}获胜`,detail:`${colorName(o.color)} · ${o.reason==='line'?'五连已确认':'对方认输'}`}:
   {title:o.kind==='draw'?'本局和棋':'开局已取消',detail:o.kind==='draw'?'双方连续停手，没有待确认五连。':'双方同意取消开局。'};}
- if(p.kind==='opening')return {title:`${names.A}摆${p.placed===1?'白棋':'黑棋'}`,detail:`三手换色 · 第${p.placed+1}/3子，摆局不能提子。`};
- if(p.kind==='choose')return {title:`${names.B}选择执色`,detail:'B选择黑或白，之后白棋先行。'};
- const a=activePlayer(m);return {title:`${names[a]} · ${colorName(p.toMove)}行棋`,detail:s.passStreak?'上一手停手；有五连时仍继续确认。':'提子按上下左右，五连按本局方向确认。'};
+ if(p.kind==='opening')return {title:`摆局方摆${p.placed===1?'白棋':'黑棋'}`,detail:`三手换色 · 第${p.placed+1}/3子，摆局不能提子。`};
+ if(p.kind==='choose')return {title:'选色方选择执色',detail:'选色方选择黑或白，之后白棋先行。'};
+ const a=activePlayer(m);return {title:`${colorName(p.toMove)}行棋`,detail:s.passStreak?'上一手停手；有五连时仍继续确认。':'提子按上下左右，五连按本局方向确认。'};
 }
 export function actionText(a,n){return a.kind==='place'?`落子 ${formatPoint(a.point,n)}`:a.kind==='choose-color'?`选择${colorName(a.color)}`:a.kind==='pass'?'停一手':a.kind==='resign'?'认输':'取消开局';}
 export function ruleLabels(r){return [`${r.boardSize}路`,r.directions==='diagonal'?'对角线':'四方向',`确认延迟${r.confirmationDelay}手`,r.swap3?'三手换色':'直接开局',r.claimMode==='fixed-five'?'固定五子':'换线继承',r.superko==='positional'?'全局禁重复':'允许重复'];}

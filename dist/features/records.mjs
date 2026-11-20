@@ -1,4 +1,4 @@
-import {esc,duration,actionText,phaseText,ruleLabels,renderBoard,renderClaims,downloadJSON,colorName} from './common.mjs';
+import {esc,duration,actionText,phaseText,ruleLabels,renderBoard,renderClaims,downloadJSON,colorName,actorRoleName} from './common.mjs';
 import {decodeRecords,framesOf,recordLabel,counts,mergeRecord,bundleOf} from './records-model.mjs';
 import {openRecords,readAll,saveAll,removeRecord} from './records-store.mjs';
 const $=id=>document.getElementById(id);let db=null,games=[],selected=null,frames=[],cursor=0,timer=null,inspect=false,labels=false,point=null;
@@ -11,20 +11,20 @@ function renderLibrary(){
  $('library-count').textContent=`${games.length}局`;
  const filter=$('records-filter').value;
  const items=sorted().filter(g=>filter==='all'||filter==='wins'&&(g.status==='terminal'&&g.winner===g.candidateActor&&!!g.candidateActor)||filter==='losses'&&(g.status==='terminal'&&!!g.candidateActor&&g.winner!==g.candidateActor)||filter==='unfinished'&&(g.status!=='terminal'||!g.outcome));
- $('records-list').innerHTML=items.length?items.map(g=>`<button class="record-card ${g.id===selected?.id?'selected':''}" data-id="${esc(g.id)}" aria-pressed="${g.id===selected?.id}"><b>${esc(g.title)}</b><span>${esc(recordLabel(g))} <small>${g.record.actions.length}次操作</small></span><small>${esc(g.players.A.name)} / ${esc(g.players.B.name)}</small></button>`).join(''):'<p class="micro">没有符合筛选的记录。</p>';
+ $('records-list').innerHTML=items.length?items.map(g=>`<button class="record-card ${g.id===selected?.id?'selected':''}" data-id="${esc(g.id)}" aria-pressed="${g.id===selected?.id}"><b>${esc(g.title)}</b><span>${esc(recordLabel(g))} <small>${g.record.actions.length}次操作</small></span><small>${g.players.A.version||g.players.B.version?[g.players.A.version,g.players.B.version].filter(Boolean).join(' vs '):`${g.record.rules.boardSize}路对局`}</small></button>`).join(''):'<p class="micro">没有符合筛选的记录。</p>';
 }
 function stop(){clearTimeout(timer);timer=null;$('replay-play').textContent='播放';}
 function select(g){stop();selected=g;frames=framesOf(g.record);cursor=0;point=null;renderLibrary();renderRecord();}
 function renderRecord(){
- if(!selected)return;const g=selected,m=frames[cursor],s=m.state,n=m.rules.boardSize,names={A:g.players.A.name,B:g.players.B.name},v=phaseText(m,names);
- $('record-title').textContent=g.title;$('record-players').textContent=['A','B'].map(a=>`${a} · ${g.players[a].name}${g.players[a].version?'（'+g.players[a].version+'）':''}${s.owners?' · '+colorName(s.owners.black===a?'black':'white'):''}${g.candidateActor===a?' · 候选':''}`).join('  /  ');
+ if(!selected)return;const g=selected,m=frames[cursor],s=m.state,n=m.rules.boardSize,v=phaseText(m);
+ $('record-title').textContent=g.title;$('record-players').textContent=['A','B'].map(a=>`${actorRoleName(m,a)}${g.players[a].version?'（'+g.players[a].version+'）':''}${g.candidateActor===a?' · 候选':''}`).join('  /  ');
  $('record-rules').innerHTML=ruleLabels(m.rules).map(x=>`<span>${esc(x)}</span>`).join('');
  $('record-phase').textContent=v.title;$('record-ply').textContent=`棋局第${s.ply}手`;$('record-position').textContent=`操作${cursor} / ${g.record.actions.length}`;
  const group=renderBoard($('board'),m,{labels,inspect,selected:point,onPoint:inspect?p=>{point=p;renderRecord();}:null});
  $('record-inspection').hidden=!inspect;$('record-inspection').textContent=group?`${colorName(group.color)}：${group.stones.length}子，${group.liberties.length}口气。`:'点击棋子查看整块与气，不会落子。';
  $('record-inspect').setAttribute('aria-pressed',inspect);$('record-labels').setAttribute('aria-pressed',labels);
- const action=g.record.actions[cursor-1],stat=g.searches.find(x=>x.revision===cursor-1);
- $('replay-action').textContent=action?`${action.actor} · ${actionText(action,n)}`:'开局前';
+ const action=g.record.actions[cursor-1],stat=g.searches.find(x=>x.revision===cursor-1),pre=cursor>0?frames[cursor-1]:m;
+ $('replay-action').textContent=action?`${actorRoleName(pre,action.actor)} · ${actionText(action,n)}`:'开局前';
  $('replay-thinking').textContent=action?duration(stat?.elapsedMs):'使用前后箭头，或点击操作记录定位。';
  $('replay-search-details').hidden=!stat;$('replay-search').textContent=stat?[stat.completedDepth===undefined?'':stat.completedDepth?`已完成${stat.completedDepth}层搜索`:'直接判断',stat.nodes===undefined?'':`${stat.nodes.toLocaleString()}个计费节点`,stat.maxVisitedDepth===undefined?'':`最大访问深度${stat.maxVisitedDepth}`].filter(Boolean).join(' · '):'';
  renderClaims($('replay-claims'),m);$('record-result').textContent=recordLabel(g);
@@ -32,7 +32,7 @@ function renderRecord(){
  for(const id of ['replay-first','replay-prev'])$(id).disabled=cursor===0;
  for(const id of ['replay-last','replay-next'])$(id).disabled=cursor===g.record.actions.length;
  $('replay-play').disabled=!g.record.actions.length;
- $('replay-moves').innerHTML=g.record.actions.map((a,i)=>`<li><button data-index="${i+1}" class="${cursor===i+1?'active':''}" aria-current="${cursor===i+1?'step':'false'}"><span>${i+1}. ${a.actor} · ${esc(actionText(a,n))}</span><small>${g.searches.find(x=>x.revision===i)?.elapsedMs===undefined?'':duration(g.searches.find(x=>x.revision===i).elapsedMs)}</small></button></li>`).join('');
+ $('replay-moves').innerHTML=g.record.actions.map((a,i)=>{const stepFrame=frames[i]??m;return `<li><button data-index="${i+1}" class="${cursor===i+1?'active':''}" aria-current="${cursor===i+1?'step':'false'}"><span>${i+1}. ${actorRoleName(stepFrame,a.actor)} · ${esc(actionText(a,n))}</span><small>${g.searches.find(x=>x.revision===i)?.elapsedMs===undefined?'':duration(g.searches.find(x=>x.revision===i).elapsedMs)}</small></button></li>`;}).join('');
  $('record-id').textContent=g.id;$('record-status-note').textContent=g.status.includes('censored')?'这是一份异常或截断记录，不能计作直接获胜。':!g.outcome?'此记录尚未结束，展示导入时已保存的棋盘。重新导入较新文件可更新。':'胜负已按棋谱重新计算。导入记录仅用于回放，不代替完整验收。';
 }
 function go(n){stop();cursor=Math.max(0,Math.min(frames.length-1,n));point=null;renderRecord();}

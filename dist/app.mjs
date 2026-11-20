@@ -1,13 +1,13 @@
 import {DEFAULT_RULES, activePlayer, formatPoint, inspectGroup} from './core/src/index.js';
 import {createBrowserAI, detectHardwareCapabilities, PERF_MODES} from './ui/ai-host.mjs';
 import {createAIThinkingClock, formatThinkingTime} from './ui/ai-timing.mjs';
-import {SAVE_KEY, SafeStorage, createGameSession, practiceView, undoPracticePair, respondUndoPair, localCalendarDate, makeWebSave, parseWebSave, phaseView, rulesView, claimsView, playerName, colorName, levelName, other, errorText} from './ui/model.mjs';
+import {SAVE_KEY, SafeStorage, createGameSession, practiceView, undoPracticePair, respondUndoPair, localCalendarDate, makeWebSave, parseWebSave, phaseView, rulesView, claimsView, colorName, sideColorLabel, levelName, other, errorText} from './ui/model.mjs';
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>typeof crypto.randomUUID==='function'?crypto.randomUUID():Array.from(crypto.getRandomValues(new Uint32Array(4)),n=>n.toString(16).padStart(8,'0')).join('-');
 const PERF_KEY='qiline.perfMode';
-let session=null, meta={names:['玩家一','玩家二'],aIndex:0,round:1};
+let session=null, meta={names:['执黑','执白'],aIndex:0,round:1};
 let ai=null, aiState=null, aiTelemetry=null, restoreHold=false, observedMatch=null, replaceAction=null;
 let inspect=false, labels=false, selected=null, focusPoint=40, flash=[], noticeTimer;
 const thinkingClock=createAIThinkingClock();
@@ -161,11 +161,21 @@ function render() {
   $('mode-label').textContent=p?`人机练习 · ${levelName(p.level)}`:'本地双人';
   $('play-context').textContent=p?`本地人机 · 你是 ${p.humanActor} · ${m.rules.swap3?(p.humanActor==='A'?'摆局方':'选色方'):(p.humanActor==='A'?'执黑先行':'执白')}`:'同一设备，双方轮流操作';
   renderAI();
-  $('players').innerHTML=['A','B'].map(p=>{
-    const color=s?.owners?(s.owners.black===p?'black':'white'):null;
-    const controller=session?.state.controllers[p];
-    return `<div class="player-row ${active===p?'active':''}">${color?`<i class="stone-dot ${color}"></i>`:`<span class="role-dot">${p}</span>`}<div class="player-text"><b>${esc(playerName(meta,p))}${controller?.kind==='ai'?'<span class="ai-badge">AI</span>':''}</b><small>${p}${m?.rules.swap3!==false?` · ${p==='A'?'摆局方':'选色方'}`:''}${color?` · ${colorName(color)}`:''}</small></div><span class="player-captures">提子<strong>${color?s.captures[color]:'—'}</strong></span></div>`;
-  }).join('');
+  $('players').innerHTML=s?.owners
+    ?['black','white'].map(color=>{
+      const actorKey=s.owners[color];
+      const controller=session?.state.controllers[actorKey];
+      const badge=p?(controller?.kind==='ai'?'<span class="ai-badge">AI</span>':'<span class="ai-badge">你</span>'):'';
+      const roleSub=m?.rules.swap3!==false?(actorKey==='A'?'摆局方 A':'选色方 B'):(color==='black'?'先手方':'后手方');
+      return `<div class="player-row ${active===actorKey?'active':''}"><i class="stone-dot ${color}"></i><div class="player-text"><b>${sideColorLabel(color)}${badge}</b><small>${roleSub}</small></div><span class="player-captures">提子<strong>${s.captures[color]}</strong></span></div>`;
+    }).join('')
+    :['A','B'].map(actorKey=>{
+      const controller=session?.state.controllers[actorKey];
+      const badge=p?(controller?.kind==='ai'?'<span class="ai-badge">AI</span>':'<span class="ai-badge">你</span>'):'';
+      const roleName=actorKey==='A'?'摆局方（A）':'选色方（B）';
+      const roleSub=actorKey==='A'?'执色待定 · 摆黑白黑':'执色待定 · 选黑或白';
+      return `<div class="player-row ${active===actorKey?'active':''}"><span class="role-dot">${actorKey}</span><div class="player-text"><b>${roleName}${badge}</b><small>${roleSub}</small></div><span class="player-captures">提子<strong>—</strong></span></div>`;
+    }).join('');
   const ended=!m||!!s.outcome,paused=!!session?.state.paused;
   $('pass-btn').disabled=ended||paused||!humanTurn()||s?.phase.kind!=='playing'||storage.conflict;
   const recoveryPaused=p&&['retrying','failed'].includes(aiState?.status);
@@ -186,7 +196,8 @@ function render() {
   $('consent-panel').hidden=!c;
   if(c) {
     const responder=other(c.requester),text=c.kind==='undo'?`撤回最后 ${Math.min(2,m.accepted.length)} 手操作`:'取消本次开局';
-    $('consent-panel').innerHTML=`<h3>请${esc(playerName(meta,responder))}回应</h3><p>${esc(playerName(meta,c.requester))}申请${text}。请将设备交给对方。</p><div class="consent-buttons"><button data-consent="no">不同意</button><button data-consent="yes">同意${c.kind==='undo'?'悔棋':'取消'}</button></div>`;
+    const sideOf=a=>s?.owners?(s.owners.black===a?'执黑方':'执白方'):(a==='A'?'摆局方（A）':'选色方（B）');
+    $('consent-panel').innerHTML=`<h3>请${sideOf(responder)}回应</h3><p>${sideOf(c.requester)}申请${text}。请将设备交给对方。</p><div class="consent-buttons"><button data-consent="no">不同意</button><button data-consent="yes">同意${c.kind==='undo'?'悔棋':'取消'}</button></div>`;
   }
   renderRecords();renderWarning();
 }
@@ -239,10 +250,19 @@ function renderAI(){
   for(const id of ['ai-pause','ai-resume','ai-retry'])$(id).disabled=storage.conflict||!ai;
 }
 function renderRecords() {
-  const m=match();let label=0;
+  const m=match();let label=0,owners=m&&!m.rules.swap3?{A:'black',B:'white'}:null;
   const items=(m?.accepted??[]).map((a,i)=>{
-    let text=a.kind==='place'?`第 ${++label} 子 · ${formatPoint(a.point,m.rules.boardSize)}`:a.kind==='pass'?'停手':a.kind==='choose-color'?`选择${colorName(a.color)}`:a.kind==='resign'?'认输':'双方取消开局';
-    return `<li value="${i+1}">${esc(playerName(meta,a.actor))} · ${text}</li>`;
+    let who=owners?(owners[a.actor]==='black'?'执黑':'执白'):(a.actor==='A'?'摆局方':'选色方');
+    let text;
+    if(a.kind==='place'){
+      label++;
+      if(!owners&&label<=3)who=label===2?'摆白':'摆黑';
+      text=`第 ${label} 子 · ${formatPoint(a.point,m.rules.boardSize)}`;
+    }else if(a.kind==='choose-color'){
+      owners={[a.actor]:a.color,[other(a.actor)]:a.color==='black'?'white':'black'};
+      text=`选择${sideColorLabel(a.color)}`;
+    }else text=a.kind==='pass'?'停手':a.kind==='resign'?'认输':'双方取消开局';
+    return `<li value="${i+1}">${who} · ${text}</li>`;
   });
   $('move-list').innerHTML=items.slice(-120).join('');
 }
@@ -303,14 +323,15 @@ function actorDialog(kind) {
     };
     $('action-dialog').showModal();return;
   }
-  $('action-title').textContent=`谁要${request}？`;
-  $('action-body').innerHTML=`<p class="dialog-note">${kind==='undo'?'每次撤回最后两手操作及其自动动作；不足两手则撤回一手，须另一位玩家同意。':opening?'双方同意后取消，不记胜负。':'任一方都可随时认输，确认后本局结束。'}</p><div class="actor-options">${['A','B'].map(p=>`<button data-actor="${p}">${esc(playerName(meta,p))}（${p}）${request}</button>`).join('')}</div>`;
+  const sideText=a=>m.state.owners?(m.state.owners.black===a?'执黑方':'执白方'):(a==='A'?'摆局方（A）':'选色方（B）');
+  $('action-title').textContent=`哪一方要${request}？`;
+  $('action-body').innerHTML=`<p class="dialog-note">${kind==='undo'?'每次撤回最后两手操作及其自动动作；不足两手则撤回一手，须对方同意。':opening?'双方同意后取消，不记胜负。':'任一方都可随时认输，确认后本局结束。'}</p><div class="actor-options">${['A','B'].map(a=>`<button data-actor="${a}">${sideText(a)} · ${request}</button>`).join('')}</div>`;
   $('action-body').onclick=e=>{
     const actor=e.target.closest('[data-actor]')?.dataset.actor;if(!actor)return;
     if(kind==='undo'||opening) {
       $('action-dialog').close();operate(()=>kind==='undo'?session.requestUndo(actor):session.requestCancelOpening(actor));return;
     }
-    $('action-title').textContent=`确认${playerName(meta,actor)}认输？`;
+    $('action-title').textContent=`确认${sideText(actor)}认输？`;
     $('action-body').innerHTML='<p class="dialog-note">对方将立即获胜，终局后不能悔棋。</p><div class="confirm-resign"><button id="resign-back">继续对局</button><button id="resign-confirm" class="danger">确认认输</button></div>';
     $('resign-back').onclick=()=>$('action-dialog').close();
     $('resign-confirm').onclick=()=>{$('action-dialog').close();operate(()=>session.submit(actor,{kind:'resign',actor}));};
@@ -328,7 +349,7 @@ function populateSettings(defaults=false) {
   const p=practice();f.elements.mode.value=defaults?'pvp':p?'practice':'pvp';
   f.elements.level.value=defaults?'standard':p?.level??'standard';
   f.elements.humanActor.value=defaults?'A':p?.humanActor??'A';
-  f.elements.player1.value=p?playerName(meta,p.humanActor):meta.names[0];f.elements.player2.value=p?'玩家二':meta.names[1];explainDelay();explainMode();
+  f.elements.player1.value='执黑';f.elements.player2.value='执白';explainDelay();explainMode();
 }
 function openSettings() {
   populateSettings();const locked=!replaceable()||storage.conflict;
@@ -339,11 +360,11 @@ function openSettings() {
 function explainMode(){
   const f=$('settings-form'),isPractice=f.elements.mode.value==='practice';
   $('practice-settings').hidden=!isPractice;$('player2-label').hidden=isPractice;
-  f.elements.player2.required=!isPractice;f.elements.competitive.disabled=isPractice;
+  f.elements.player2.required=false;f.elements.competitive.disabled=isPractice;
   if(isPractice)f.elements.competitive.checked=false;
-  $('player1-label-text').textContent=isPractice?'你的名字':'玩家一';
+  $('player1-label-text').textContent='执黑';
   const role=f.elements.humanActor.value;
-  $('role-explain').textContent=isPractice?`${role==='A'?'你担任 A，AI 担任 B。':role==='B'?'AI 担任 A，你担任 B。':'开局时随机分配你与 AI 的 A / B。'}${f.elements.swap3.checked?'A 连摆黑白黑三子，B 选色；选色后身份不变。':'不换色：A 执黑先行，B 执白。'} 人机练习不启用竞技模式。`:session?`双人续局轮换 A / B；${[f.elements.player1.value,f.elements.player2.value][1-meta.aIndex]}担任 A。A 摆局，B 选色；关闭换色时 A 执黑先行。`:'双人首局随机分配 A / B。A 摆局，B 选色；关闭换色时 A 执黑先行。';
+  $('role-explain').textContent=isPractice?`${role==='A'?'你担任 A，AI 担任 B。':role==='B'?'AI 担任 A，你担任 B。':'开局时随机分配你与 AI 的 A / B。'}${f.elements.swap3.checked?'A 连摆黑白黑三子，B 选执黑／执白；选色后身份不变。':'不换色：A 执黑先行，B 执白。'} 人机练习不启用竞技模式。`:'对局中不区分姓名，统一显示为“执黑”与“执白”（三手换色时先由 A 摆局、B 选色）。';
 }
 function explainDelay() {
   const delay=Number($('settings-form').elements.confirmationDelay.value);
@@ -356,13 +377,14 @@ $('settings-form').onsubmit=e=>{
   e.preventDefault();if(!replaceable()||!mayChange())return;
   const f=e.currentTarget,rules={...DEFAULT_RULES,boardSize:Number(f.elements.boardSize.value),confirmationDelay:Number(f.elements.confirmationDelay.value),directions:f.elements.directions.value,swap3:f.elements.swap3.checked,superko:f.elements.superko.checked?'positional':'off',claimMode:f.elements.pressure.checked?'color-pressure':'fixed-five'};
   const mode=f.elements.mode.value,isPractice=mode==='practice';
-  const names=[f.elements.player1.value.trim(),isPractice?'弈合 AI':f.elements.player2.value.trim()];if(names.some(n=>!n)){notice('请填写双方的名字。',true);return;}
+  const names=['执黑',isPractice?'弈合 AI':'执白'];
   const humanActor=f.elements.humanActor.value==='random'?(crypto.getRandomValues(new Uint8Array(1))[0]%2?'A':'B'):f.elements.humanActor.value;
   const result=createGameSession({matchId:uid(),rules,mode,level:f.elements.level.value,humanActor,seed:crypto.getRandomValues(new Uint32Array(1))[0],competitive:isPractice?false:f.elements.competitive.checked});
   if(!result.ok){notice(errorText(result.error),true);return;}
   const players={names,aIndex:isPractice?(humanActor==='A'?0:1):session?1-meta.aIndex:crypto.getRandomValues(new Uint8Array(1))[0]%2,round:session?meta.round+1:1};
   $('settings-dialog').close();
-  confirmReplacement(()=>{installSession(result.value,players);notice(`本局 A：${playerName(meta,'A')}；B：${playerName(meta,'B')}。`);},'重新开始人机练习？');
+  const startMsg=rules.swap3?(isPractice?(humanActor==='A'?'已开局：你负责摆局（A），AI 负责选色（B）。':'已开局：AI 负责摆局（A），你负责选色（B）。'):'已开局：请摆局三子，之后由选色方选择执黑或执白。'):'已开局：执黑先行，执白后行。';
+  confirmReplacement(()=>{installSession(result.value,players);notice(startMsg);},'重新开始人机练习？');
 };
 for(const b of document.querySelectorAll('[data-close]'))b.onclick=()=>$(b.dataset.close).close();
 for(const id of ['manual-open','rules-details'])$(id).onclick=()=>$('manual-dialog').showModal();

@@ -1,4 +1,4 @@
-import {activePlayer,formatPoint,inspectGroup} from '../core/src/index.js';
+import {activePlayer,applyAction,formatPoint,inspectGroup} from '../core/src/index.js';
 export const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const colorName=c=>c==='black'?'黑棋':'白棋';
 export const duration=ms=>typeof ms==='number'&&Number.isFinite(ms)?(ms>=60000?`${Math.floor(ms/60000)}分${((ms%60000)/1000).toFixed(1)}秒`:`${(ms/1000).toFixed(1)}秒`):'未记录用时';
@@ -17,10 +17,27 @@ export function ruleLabels(r){return [`${r.boardSize}路`,r.directions==='diagon
 export function renderClaims(el,m){
  el.innerHTML=m.state.claims.length?m.state.claims.map(c=>`<div class="claim-item"><div><i class="stone-dot ${c.color}"></i> ${colorName(c.color)}五连 <strong>余${Math.max(0,c.dueAt-m.state.ply)}手</strong></div><p>${c.points.map(p=>formatPoint(p,m.rules.boardSize)).join(' · ')}</p></div>`).join(''):'<p class="empty-claims">暂无等待确认的五连。</p>';
 }
-export function renderBoard(el,m,{labels=false,onPoint=null,inspect=false,selected=null}={}){
+const illegalReasons={OCCUPIED:'已有棋子',SUICIDE:'无气自杀点，不可落子',REPETITION:'全局禁重复历史局面，不可落子',OPENING_CAPTURE:'摆局三手内不可提子'};
+let illegalCacheKey='',illegalCacheMap=new Map();
+export function computeIllegalPoints(m,actor){
+ if(!m||!actor||m.state.outcome||!['opening','playing'].includes(m.state.phase.kind))return new Map();
+ const key=`${m.accepted.length}:${m.state.ply}:${actor}:${m.state.phase.placed??''}`;
+ if(key===illegalCacheKey)return illegalCacheMap;
+ const map=new Map(),n=m.rules.boardSize,board=m.state.board;
+ for(let p=0;p<n*n;p++){
+  if(board[p]!==0)continue;
+  const r=applyAction(m,{kind:'place',actor,point:p});
+  if(!r.ok)map.set(p,illegalReasons[r.error.code]??'当前不可落子');
+ }
+ illegalCacheKey=key;illegalCacheMap=map;return map;
+}
+export function renderBoard(el,m,{labels=false,onPoint=null,inspect=false,selected=null,ghostColor=null,illegalPoints=null,advisedPoint=null,zoom='fit'}={}){
  const n=m.rules.boardSize,s=m.state,pad=38,step=524/(n-1),xy=p=>[pad+(p%n)*step,pad+(n-1-Math.floor(p/n))*step];
- const focus=Math.max(0,Math.min(n*n-1,Number(el.dataset.focus??Math.floor(n*n/2))));el.style.minWidth=n>=15?`${n===19?530:430}px`:'290px';
- el.setAttribute('aria-label',`${n}路棋盘，${inspect?'查气':onPoint?'在线行棋':'只读棋盘'}。方向键移动，回车确认。`);
+ const focus=Math.max(0,Math.min(n*n-1,Number(el.dataset.focus??Math.floor(n*n/2))));
+ const baseMin=n>=15?(n===19?530:430):290;
+ el.style.minWidth=zoom==='large'?`${Math.max(baseMin,620)}px`:zoom==='compact'?`${Math.min(baseMin,340)}px`:`${baseMin}px`;
+ el.style.maxWidth=zoom==='fit'?'100%':zoom==='compact'?'460px':'760px';
+ el.setAttribute('aria-label',`${n}路棋盘，${inspect?'查气':onPoint?'可落子':'只读棋盘'}。方向键移动，回车确认。`);
  el.setAttribute('aria-rowcount',n);el.setAttribute('aria-colcount',n);
  let group=null;if(selected!==null){const r=inspectGroup(m,selected);if(r.ok)group=r.value;}
  const stones=new Set(group?.stones??[]),libs=new Set(group?.liberties??[]);
@@ -33,7 +50,12 @@ export function renderBoard(el,m,{labels=false,onPoint=null,inspect=false,select
  html+='</svg>';
  for(let y=n-1;y>=0;y--){html+='<div role="row">';for(let x=0;x<n;x++){
   const p=y*n+x,[xx,yy]=xy(p),cell=s.board[p],color=cell===1?'black':'white';
-  html+=`<button type="button" role="gridcell" data-point="${p}" tabindex="${p===focus?0:-1}" class="cell ${stones.has(p)?'selected':''} ${libs.has(p)?'liberty':''}" style="left:${xx/6}%;top:${yy/6}%;width:${Math.min(48,step*.95)/6}%;height:${Math.min(48,step*.95)/6}%;" aria-label="${formatPoint(p,n)}，${cell?colorName(color):'空点'}${libs.has(p)?'，气':''}" ${!onPoint?'disabled':''}>${cell?`<span class="stone ${color} ${s.lastPlacement===p?'last':''} ${labels?'with-label':''}">${labels?s.moveLabels[p]:''}</span>`:''}</button>`;
+  const illegalReason=!cell&&illegalPoints?.get(p);
+  const isAdvised=advisedPoint===p&&!cell;
+  const ghostHtml=!cell&&!inspect&&onPoint&&ghostColor&&!illegalReason?`<span class="ghost-stone ${ghostColor}"></span>`:'';
+  const adviseHtml=isAdvised?'<span class="advised-mark" aria-hidden="true">★</span>':'';
+  const titleAttr=illegalReason?` title="${esc(illegalReason)}"`:isAdvised?' title="AI 推荐着点"':'';
+  html+=`<button type="button" role="gridcell" data-point="${p}" tabindex="${p===focus?0:-1}"${titleAttr} class="cell ${stones.has(p)?'selected':''} ${libs.has(p)?'liberty':''} ${illegalReason?'illegal':''} ${isAdvised?'advised':''}" style="left:${xx/6}%;top:${yy/6}%;width:${Math.min(48,step*.95)/6}%;height:${Math.min(48,step*.95)/6}%;" aria-label="${formatPoint(p,n)}，${cell?colorName(color):illegalReason||'空点'}${libs.has(p)?'，气':''}${isAdvised?'，AI推荐':''}" ${!onPoint?'disabled':''}>${cell?`<span class="stone ${color} ${s.lastPlacement===p?'last':''} ${labels?'with-label':''}">${labels?s.moveLabels[p]:''}</span>`:ghostHtml}${adviseHtml}</button>`;
  }html+='</div>';}
  el.innerHTML=html;
  el.onclick=e=>{const b=e.target.closest('[data-point]');if(b&&onPoint){el.dataset.focus=b.dataset.point;onPoint(Number(b.dataset.point));}};

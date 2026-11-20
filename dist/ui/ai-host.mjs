@@ -242,7 +242,7 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
             if(!d||d.jobSeq!==seq)return;
             if(d.kind==='smp-progress'){
               const nps=d.elapsedMs>20?Math.round(d.totalNodes/(d.elapsedMs/1000)):0;
-              emitTelemetry({threads:activeThreads,ttMB:useMulti?p.ttMB:14,totalNodes:d.totalNodes,depth:d.depth,nps,elapsedMs:d.elapsedMs,score:d.score,pondering:false});
+              emitTelemetry({threads:activeThreads,ttMB:useMulti?p.ttMB:14,totalNodes:d.totalNodes,depth:d.depth,nps,elapsedMs:d.elapsedMs,score:d.score,bestCode:d.bestCode,pondering:false});
               return;
             }
             if(d.kind==='smp-done'){

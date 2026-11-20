@@ -1,15 +1,23 @@
-import {DEFAULT_RULES, activePlayer, formatPoint, inspectGroup} from './core/src/index.js';
+import {DEFAULT_RULES, activePlayer, applyAction, formatPoint, inspectGroup} from './core/src/index.js';
 import {createBrowserAI, detectHardwareCapabilities, PERF_MODES} from './ui/ai-host.mjs';
 import {createAIThinkingClock, formatThinkingTime} from './ui/ai-timing.mjs';
 import {SAVE_KEY, SafeStorage, createGameSession, practiceView, undoPracticePair, respondUndoPair, localCalendarDate, makeWebSave, parseWebSave, phaseView, rulesView, claimsView, colorName, sideColorLabel, levelName, other, errorText} from './ui/model.mjs';
+import {isMuted, toggleMuted, playSound, notifyTurnArrival} from './features/sound.mjs';
+import {installCornerManual} from './features/manual-widget.mjs';
+import {formatAdvisedAction, formatEvalSummary, runAdvisorySearch, saveGameRecordToLibrary} from './features/board-ai.mjs';
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>typeof crypto.randomUUID==='function'?crypto.randomUUID():Array.from(crypto.getRandomValues(new Uint32Array(4)),n=>n.toString(16).padStart(8,'0')).join('-');
-const PERF_KEY='qiline.perfMode';
+const PERF_KEY='qiline.perfMode', EVAL_HIDDEN_KEY='qiline.evalHidden', ZOOM_KEY='qiline.boardZoom', HANDOFF_KEY='qiline.handoff', REPLAY_TARGET_KEY='qiline.replayTarget';
+
 let session=null, meta={names:['执黑','执白'],aIndex:0,round:1};
 let ai=null, aiState=null, aiTelemetry=null, restoreHold=false, observedMatch=null, replaceAction=null;
 let inspect=false, labels=false, selected=null, focusPoint=40, flash=[], noticeTimer;
+let boardZoom='fit', evalHidden=false, lastEvalScore=null, advisory=null, advisoryJob=null, advisoryBusy=false;
+const illegalLabels={OCCUPIED:'已有棋子',SUICIDE:'无气自杀点',REPETITION:'禁重复局面',OPENING_CAPTURE:'摆局不能提子'};
+let illegalCacheKey='', illegalCacheMap=new Map();
+
 const thinkingClock=createAIThinkingClock();
 let thinkingTick=null;
 let storageObject;
@@ -17,11 +25,48 @@ try {storageObject=window.localStorage;} catch {storageObject={getItem(){throw E
 const storage=new SafeStorage(storageObject);
 const hwCaps=detectHardwareCapabilities();
 let perfMode='turbo';
-try {const savedPerf=storageObject.getItem(PERF_KEY);if(PERF_MODES.includes(savedPerf))perfMode=savedPerf;} catch {}
+try {
+  const savedPerf=storageObject.getItem(PERF_KEY);if(PERF_MODES.includes(savedPerf))perfMode=savedPerf;
+  const savedZoom=storageObject.getItem(ZOOM_KEY);if(['fit','compact','large'].includes(savedZoom))boardZoom=savedZoom;
+  evalHidden=storageObject.getItem(EVAL_HIDDEN_KEY)==='1';
+} catch {}
 function fmtCount(n){if(!n||n<0)return '0';if(n>=1000000)return (n/1000000).toFixed(2)+'M';if(n>=1000)return Math.round(n/1000)+'k';return String(n);}
-const startupRaw=storage.read();
+
+// Offline Electron mode check: disable online room link while keeping replay fully active.
+try {
+  const isOfflineDesktop=typeof window!=='undefined'&&window.location?.protocol==='qiline:';
+  const onlineLink=$('online-nav-link');
+  if(isOfflineDesktop&&onlineLink){
+    onlineLink.classList.toggle('disabled-offline',true);
+    onlineLink.setAttribute('aria-disabled','true');
+    onlineLink.setAttribute('title','仅网页版支持在线对战');
+    onlineLink.onclick=e=>{e.preventDefault();notice('桌面离线版不联网；好友在线对战请访问网页版。');};
+  }
+} catch {}
+
+let handoffRaw=null;
+try {
+  handoffRaw=storageObject.getItem(HANDOFF_KEY);
+  if(handoffRaw){
+    if(typeof storageObject.removeItem==='function')storageObject.removeItem(HANDOFF_KEY);
+    else storageObject.setItem(HANDOFF_KEY,'');
+  }
+} catch {}
+
+const startupRaw=handoffRaw?null:storage.read();
 let badStartup=null, startupNote='';
-if (startupRaw) {
+if(handoffRaw){
+  try {
+    const payload=JSON.parse(handoffRaw);
+    const restored=parseWebSave(payload.save,uid());
+    if(restored.ok){
+      session=restored.value.session;meta=restored.value.players;
+      restoreHold=!!practiceView(session);
+      startupNote=payload.note||(practiceView(session)?'已从棋谱指定位置载入，点击“继续对局”由 AI 接手或落子。':'已从棋谱指定位置载入，可继续双人对局。');
+    }
+  } catch {}
+}
+if(!session && startupRaw) {
   const restored=parseWebSave(startupRaw,uid());
   if (restored.ok) {session=restored.value.session;meta=restored.value.players;startupNote=practiceView(session)?'已恢复人机对局。确认棋盘后点击“继续对局”。':'已恢复上次对局；未完成的同意请求需重新发起。';restoreHold=!!practiceView(session);}
   else {badStartup=startupRaw;storage.warning=errorText(restored.error)+' 可导出原文件留存。';}
@@ -36,9 +81,53 @@ const match=()=>session?.state.match;
 const practice=()=>session?practiceView(session):null;
 const humanTurn=()=>!!match()&&session.state.controllers[activePlayer(match())]?.kind==='human';
 const replaceable=()=>!live()||!!practice();
+
+function clearAdvisory(){
+  if(advisoryJob){advisoryJob.cancel();advisoryJob=null;}
+  advisoryBusy=false;advisory=null;
+}
+
+function illegalPointsFor(m,actor){
+  if(!m||!actor||m.state.outcome||!['opening','playing'].includes(m.state.phase.kind))return illegalCacheMap.size?(illegalCacheMap=new Map()):illegalCacheMap;
+  const key=`${m.accepted.length}:${m.state.ply}:${actor}:${m.state.phase.placed??''}`;
+  if(key===illegalCacheKey)return illegalCacheMap;
+  const map=new Map(),n=m.rules.boardSize,board=m.state.board;
+  for(let p=0;p<n*n;p++){
+    if(board[p]!==0)continue;
+    const r=applyAction(m,{kind:'place',actor,point:p});
+    if(!r.ok)map.set(p,illegalLabels[r.error.code]??'当前不可落子');
+  }
+  illegalCacheKey=key;illegalCacheMap=map;return map;
+}
+
+async function persistLibraryRecord(silent=true){
+  const m=match();if(!m||!session||typeof indexedDB==='undefined')return null;
+  try{
+    const p=practice();
+    const players={
+      A:{name:'执黑',...(p&&p.aiActor==='A'?{version:`弈合 AI（${levelName(p.level)}）`}:{})},
+      B:{name:'执白',...(p&&p.aiActor==='B'?{version:`弈合 AI（${levelName(p.level)}）`}:{})},
+    };
+    const title=`${p?`人机(${levelName(p.level)})`:'本地双人'} · ${m.rules.boardSize}路 第${meta.round}局`;
+    const saved=await saveGameRecordToLibrary({
+      id:`local:${session.state.matchId}`,
+      title,
+      record:session.exportSave().record,
+      outcome:m.state.outcome,
+      players,
+    });
+    if(!silent)notice('已保存到本机棋谱库，可在“棋谱复盘”查看或续下。');
+    return saved;
+  }catch(e){
+    if(!silent)notice(e.message||'未能保存到棋谱库。',true);
+    return null;
+  }
+}
+
 function attachAI(restored=false) {
   clearTimeout(thinkingTick);thinkingTick=null;thinkingClock.reset();
-  aiState=null;aiTelemetry=null;observedMatch=match();restoreHold=restored&&!!practice()&&!!live();
+  aiState=null;aiTelemetry=null;lastEvalScore=null;observedMatch=match();restoreHold=restored&&!!practice()&&!!live();
+  clearAdvisory();
   if(!practice())return;
   const owned=session;let announcedError=null;
   const result=createBrowserAI(owned,state=>{
@@ -50,24 +139,33 @@ function attachAI(restored=false) {
     if(state.status==='failed'&&!storage.conflict&&state.error!==announcedError){
       announcedError=state.error;notice(`AI 未能完成这一手${state.retryAttempt?'，已自动重试 '+state.retryAttempt+' 次':''}。${errorText(state.error??{code:'AI_WORKER_FAILED'})}`,true);
     }else if(!['failed','retrying'].includes(state.status))announcedError=null;
-    // The Worker clock is already running: update only cheap status text before posting.
     if(current===observedMatch&&['starting','thinking','retrying'].includes(state.status)){renderAI();return;}
     if(current!==observedMatch){
-      flash=current.state.placements>observedMatch.state.placements?[...current.state.lastCaptured]:[];
-      observedMatch=current;selected=null;save();
+      const prev=observedMatch;
+      flash=current.state.placements>prev.state.placements?[...current.state.lastCaptured]:[];
+      observedMatch=current;selected=null;clearAdvisory();save();
+      if(current.state.outcome){notifyTurnArrival('win');persistLibraryRecord(true);}
+      else if(current.state.claims.length>prev.state.claims.length)notifyTurnArrival('claim');
+      else notifyTurnArrival(flash.length?'capture':'notify');
       if(flash.length)setTimeout(()=>{flash=[];renderBoard();},750);
     }
     render();
   },undefined,()=>storage.check(),{
     perfMode,
-    onTelemetry:info=>{if(session!==owned)return;aiTelemetry=info;renderTelemetry();},
+    onTelemetry:info=>{
+      if(session!==owned)return;
+      aiTelemetry=info;
+      if(Number.isFinite(info?.score))lastEvalScore=info.score;
+      renderTelemetry();
+    },
   });
   if(!result.ok){session.setPaused(true);aiState={status:'failed',error:result.error};notice(errorText(result.error),true);return;}
   ai=result.value;
   if(restoreHold||storage.conflict)ai.pause();else ai.start();
   aiState=ai.state;
 }
-function releaseSession(){clearTimeout(thinkingTick);thinkingTick=null;thinkingClock.reset();const oldAI=ai;ai=null;aiState=null;aiTelemetry=null;if(oldAI)oldAI.close();else session?.close();}
+
+function releaseSession(){clearTimeout(thinkingTick);thinkingTick=null;thinkingClock.reset();clearAdvisory();const oldAI=ai;ai=null;aiState=null;aiTelemetry=null;if(oldAI)oldAI.close();else session?.close();}
 function installSession(next,players,restored=false){
   releaseSession();session=next;meta=players;inspect=false;selected=null;flash=[];
   focusPoint=Math.floor(match().rules.boardSize**2/2);attachAI(restored);save();render();
@@ -91,9 +189,15 @@ function operate(fn,success) {
   const result=ai?ai.change(fn):fn();
   if (!result.ok) {notice(errorText(result.error),true);return;}
   const after=session.state.match;
-  selected=null;
+  selected=null;clearAdvisory();
   flash=after.state.placements>before.state.placements?[...after.state.lastCaptured]:[];
-  if(observedMatch!==after){observedMatch=after;save();}render();
+  if(observedMatch!==after){
+    observedMatch=after;save();
+    if(after.state.outcome){playSound('win');persistLibraryRecord(true);}
+    else if(after.state.claims.length>before.state.claims.length)playSound('claim');
+    else if(after.state.placements>before.state.placements)playSound(flash.length?'capture':'stone');
+  }
+  render();
   if (success) notice(success);
   const delta=after.state.ply-before.state.ply;
   const last=after.accepted.at(-1);
@@ -101,13 +205,28 @@ function operate(fn,success) {
   if (automatic>0) notice(`已自动停手 ${automatic} 次（无合法落点），计时已同步结算。`);
   if (flash.length) setTimeout(()=>{flash=[];renderBoard();},750);
 }
+
+function isHardNine(){const m=match(),p=practice();return !!p&&p.level==='hard'&&!!m&&m.rules.boardSize===9&&m.rules.directions==='diagonal'&&m.rules.confirmationDelay===4&&m.rules.claimMode==='fixed-five'&&m.rules.superko==='positional';}
+
 function renderRules() {
-  $('rules-summary').innerHTML=rulesView(match()?.rules).map(s=>`<span>${esc(s)}</span>`).join('');
+  const m=match(),p=practice();
+  $('rules-summary').innerHTML=rulesView(m?.rules).map(s=>`<span>${esc(s)}</span>`).join('');
+  const badge=$('ai-kernel-badge');
+  if(!p||p.level!=='hard'){badge.hidden=true;return;}
+  badge.hidden=false;
+  const nnue=isHardNine();
+  badge.classList.toggle('fallback',!nnue);
+  badge.textContent=nnue?(hwCaps.sabSupported?'Gen-3 NNUE · 多核并行':'Gen-3 NNUE · 单核常驻'):'通用规则深算内核（NNUE 限默认 9 路）';
 }
+
 function renderBoard() {
   const m=match(),n=m?.rules.boardSize??9,s=m?.state;
   const oldFocus=document.activeElement?.closest?.('#board')?Number(document.activeElement.dataset.point??focusPoint):null;
-  const board=$('board');board.style.setProperty('--n',n);board.style.minWidth=n>=15?`${n===19?530:430}px`:'310px';
+  const board=$('board');board.style.setProperty('--n',n);
+  const baseMin=n>=15?(n===19?530:430):300;
+  board.style.minWidth=boardZoom==='large'?`${Math.max(baseMin,640)}px`:boardZoom==='compact'?`${Math.min(baseMin,340)}px`:`${baseMin}px`;
+  board.style.maxWidth=boardZoom==='compact'?'460px':boardZoom==='large'?'760px':'100%';
+  $('zoom-select').value=boardZoom;
   board.setAttribute('aria-label',`${n}路棋盘，${inspect?'查气模式':'落子模式'}。方向键移动，Enter或空格确认。`);
   board.setAttribute('aria-rowcount',String(n));board.setAttribute('aria-colcount',String(n));
   const pad=38,step=(600-pad*2)/(n-1),xy=p=>[pad+(p%n)*step,pad+(n-1-Math.floor(p/n))*step];
@@ -127,30 +246,106 @@ function renderBoard() {
   let group=null;
   if (s && selected!==null) {const r=inspectGroup(m,selected);if(r.ok)group=r.value;}
   const stones=new Set(group?.stones??[]),libs=new Set(group?.liberties??[]);
+  const actor=m?activePlayer(m):null;
   const canPlay=!!m && !s.outcome && !session.state.paused && humanTurn() && ['opening','playing'].includes(s.phase.kind) && !storage.conflict;
+  const ghostColor=canPlay&&!inspect?(s.phase.kind==='opening'?(s.phase.placed===1?'white':'black'):s.phase.toMove):null;
+  const illegalMap=canPlay&&!inspect?illegalPointsFor(m,actor):null;
+  const advisedPoint=advisory?.action?.kind==='place'&&!s.outcome?advisory.action.point:null;
   focusPoint=Math.min(focusPoint,n*n-1);
-  // Rows are displayed from highest coordinate to 1; points retain core row-major indexing.
   let html=svg;
   for(let y=n-1;y>=0;y--) {
     html+='<div role="row">';
     for(let x=0;x<n;x++) {
       const p=y*n+x,[xx,yy]=xy(p),cell=s?.board[p]??0,color=cell===1?'black':'white',coord=formatPoint(p,n);
       const isLast=cell && s.lastPlacement===p;
-      const aria=`${coord}，${cell?colorName(color)+'，第'+s.moveLabels[p]+'子':'空点'}${libs.has(p)?'，气':''}`;
-      html+=`<button role="gridcell" type="button" data-point="${p}" aria-label="${aria}" tabindex="${p===focusPoint?0:-1}" class="cell keyboard-focus ${stones.has(p)?'selected':''} ${libs.has(p)?'liberty':''} ${flash.includes(p)?'flash-capture':''}" style="left:${xx/6}%;top:${yy/6}%;width:${Math.min(48,step*.95)/6}%;height:${Math.min(48,step*.95)/6}%;" ${!inspect&&!canPlay?'disabled':''}>${cell?`<span class="stone ${color} ${isLast?'last':''} ${labels?'with-label':''}">${labels?s.moveLabels[p]:''}</span>`:''}</button>`;
+      const illegalReason=!cell&&illegalMap?.get(p);
+      const isAdvised=advisedPoint===p&&!cell;
+      const ghostHtml=!cell&&ghostColor&&!illegalReason?`<span class="ghost-stone ${ghostColor}"></span>`:'';
+      const adviseHtml=isAdvised?'<span class="advised-mark" aria-hidden="true">★</span>':'';
+      const titleAttr=illegalReason?` title="${esc(illegalReason)}"`:isAdvised?' title="AI 推荐着点"':'';
+      const aria=`${coord}，${cell?colorName(color)+'，第'+s.moveLabels[p]+'子':illegalReason||'空点'}${libs.has(p)?'，气':''}${isAdvised?'，AI推荐':''}`;
+      html+=`<button role="gridcell" type="button" data-point="${p}" aria-label="${aria}"${titleAttr} tabindex="${p===focusPoint?0:-1}" class="cell keyboard-focus ${stones.has(p)?'selected':''} ${libs.has(p)?'liberty':''} ${illegalReason?'illegal':''} ${isAdvised?'advised':''} ${flash.includes(p)?'flash-capture':''}" style="left:${xx/6}%;top:${yy/6}%;width:${Math.min(48,step*.95)/6}%;height:${Math.min(48,step*.95)/6}%;" ${!inspect&&!canPlay?'disabled':''}>${cell?`<span class="stone ${color} ${isLast?'last':''} ${labels?'with-label':''}">${labels?s.moveLabels[p]:''}</span>`:ghostHtml}${adviseHtml}</button>`;
     }
     html+='</div>';
   }
   board.innerHTML=html;
   if(oldFocus!==null)board.querySelector(`[data-point="${Math.min(oldFocus,n*n-1)}"]`)?.focus({preventScroll:true});
   $('inspect-toggle').setAttribute('aria-pressed',String(inspect));$('labels-toggle').setAttribute('aria-pressed',String(labels));
-  $('board-help').textContent=inspect?'查气模式 · 点棋子查看，不会落子':'交叉点落子 · 方向键移动 / Enter 确认';
+  $('board-help').textContent=inspect?'查气模式 · 点棋子查看，不会落子':'方向键移动 / Enter落子 · I查气 L手数 P停手 Z悔棋';
   $('inspect-info').hidden=!inspect;
   $('inspect-info').textContent=group?`${colorName(group.color)}棋块：${group.stones.length} 子，${group.liberties.length} 口气。绿圈为空气点。`:'查气模式：点任一棋子查看整块与气；再次点击“查气”返回落子。';
 }
+
+function renderEvalAndProgress(){
+  const m=match(),box=$('eval-box'),track=$('ai-progress-track'),fill=$('ai-progress-fill');
+  const activeScore=advisory?.score??lastEvalScore;
+  const summary=Number.isFinite(activeScore)&&m?formatEvalSummary(activeScore,m):null;
+  if(!summary||evalHidden){
+    if(!summary)box.hidden=true;
+    else{
+      box.hidden=false;
+      $('eval-headline').textContent='局势优势条已隐藏';
+      $('eval-toggle').textContent='显示优势条';
+      $('eval-bar-fill').style.width='50%';
+      $('eval-left').textContent='—';$('eval-right').textContent='—';
+    }
+  }else{
+    box.hidden=false;
+    $('eval-toggle').textContent='隐藏优势条';
+    $('eval-headline').textContent=summary.headline;
+    $('eval-bar-fill').style.width=`${summary.pct}%`;
+    $('eval-left').textContent=summary.leftLabel;
+    $('eval-right').textContent=summary.rightLabel;
+  }
+  const thinking=!!aiState&&['starting','thinking','retrying'].includes(aiState.status);
+  track.hidden=!thinking;
+  if(thinking&&aiTelemetry){
+    const pct=aiTelemetry.depth>0?Math.min(96,Math.max(12,Math.round((aiTelemetry.depth/14)*100))):18;
+    fill.style.width=`${pct}%`;
+  }else if(thinking){
+    fill.style.width='15%';
+  }
+}
+
+function renderAdvisory(){
+  const m=match(),card=$('advisory-card'),quick=$('advise-quick-btn');
+  const blocked=!m||!!m.state.outcome||!!session?.state.competitive;
+  card.hidden=!m||!!session?.state.competitive;
+  quick.disabled=blocked||advisoryBusy;
+  $('advise-turn-btn').disabled=blocked||advisoryBusy;
+  $('advise-swap-btn').disabled=blocked||advisoryBusy||m?.state.phase.kind!=='playing'||(m?.state.passStreak??0)>0;
+  const res=$('advisory-result'),applyBtn=$('advise-apply-btn');
+  if(!advisory){
+    res.hidden=true;applyBtn.hidden=true;return;
+  }
+  res.hidden=false;
+  if(advisory.loading){
+    res.innerHTML=`正在为<b>${advisory.targetLabel}</b>计算建议着法…`;
+    applyBtn.hidden=true;
+    return;
+  }
+  if(advisory.error){
+    res.innerHTML=`<span class="danger">${esc(advisory.error)}</span>`;
+    applyBtn.hidden=true;
+    return;
+  }
+  const n=m.rules.boardSize,actionText=formatAdvisedAction(advisory.action,n);
+  const ev=Number.isFinite(advisory.score)?formatEvalSummary(advisory.score,m):null;
+  res.innerHTML=`<b>${esc(advisory.targetLabel)}</b>：${esc(actionText)}${ev?`<br><small>${esc(ev.headline)}</small>`:''}${advisory.elapsedMs?`<br><small>用时 ${(advisory.elapsedMs/1000).toFixed(1)} 秒${advisory.stats?.completedDepth?` · 深度 ${advisory.stats.completedDepth}`:''}</small>`:''}`;
+  const canApply=!advisory.swapped&&!m.state.outcome&&!session?.state.paused&&humanTurn()&&advisory.targetActor===activePlayer(m);
+  applyBtn.hidden=!canApply;
+}
+
+function renderSoundButton(){
+  const btn=$('sound-toggle'),muted=isMuted();
+  if(!btn)return;
+  btn.setAttribute('aria-pressed',String(muted));
+  btn.textContent=muted?'🔇 静音':'🔊 音效';
+}
+
 function render() {
-  const m=match(),s=m?.state,v=phaseView(m,meta),active=v.actor,p=practice();
-  renderRules();renderBoard();
+  const m=match(),s=m?.state,v=phaseView(m,meta),p=practice();
+  renderSoundButton();renderRules();renderBoard();
   $('board-caption').textContent=!m?'准备开局':s.outcome?'终局棋盘':inspect?'查气 · 不会落子':v.title;
   $('move-count').textContent=`第 ${meta.round} 局${m?` · ${s.ply} 手 / ${s.placements} 子`:''}`;
   $('phase-label').textContent=!m?'一起开局':s.outcome?'本局结束':session.state.consent?'等待对方同意':s.phase.kind==='opening'?'01 / 三手换色':s.phase.kind==='choose'?'02 / 选择执色':'对局进行中';
@@ -159,8 +354,9 @@ function render() {
   $('choice-actions').hidden=s?.phase.kind!=='choose'||!humanTurn();
   for(const id of ['choose-black','choose-white'])$(id).disabled=!!session?.state.paused||!humanTurn()||storage.conflict;
   $('mode-label').textContent=p?`人机练习 · ${levelName(p.level)}`:'本地双人';
-  $('play-context').textContent=p?`本地人机 · 你是 ${p.humanActor} · ${m.rules.swap3?(p.humanActor==='A'?'摆局方':'选色方'):(p.humanActor==='A'?'执黑先行':'执白')}`:'同一设备，双方轮流操作';
-  renderAI();
+  $('play-context').textContent=p?`本地人机 · 你是 ${p.humanActor}（${m.rules.swap3?(p.humanActor==='A'?'摆局方':'选色方'):(p.humanActor==='A'?'执黑':'执白')}）`:'同一设备，双方轮流操作';
+  renderAI();renderAdvisory();
+  const active=v.actor;
   $('players').innerHTML=s?.owners
     ?['black','white'].map(color=>{
       const actorKey=s.owners[color];
@@ -184,7 +380,7 @@ function render() {
   $('end-btn').disabled=ended||storage.conflict;
   $('end-btn').textContent=s?.phase.kind==='opening'||s?.phase.kind==='choose'?'双方取消开局':'认输';
   $('end-btn').textContent=p&&['opening','choose'].includes(s?.phase.kind)?'取消开局':$('end-btn').textContent;
-  $('export-btn').disabled=!m;$('import-btn').disabled=!replaceable()||storage.conflict;
+  $('save-library-btn').disabled=!m;$('export-btn').disabled=!m;$('import-btn').disabled=!replaceable()||storage.conflict;
   $('save-status').textContent=storage.conflict?'存在冲突':storage.warning?'请手动导出':m?'已自动保存':'尚未开局';
   const cs=m?claimsView(m):[];
   $('mobile-status').hidden=ended;
@@ -201,6 +397,7 @@ function render() {
   }
   renderRecords();renderWarning();
 }
+
 function renderThinkingTime(){
   clearTimeout(thinkingTick);thinkingTick=null;
   const t=thinkingClock.snapshot,p=practice();
@@ -209,8 +406,9 @@ function renderThinkingTime(){
   $('mobile-ai-elapsed').hidden=!p||!text;$('mobile-ai-elapsed').textContent=text?` ｜ ${text}`:'';
   if(p&&live()&&t.running)thinkingTick=setTimeout(renderThinkingTime,100);
 }
-function isHardNine(){const m=match(),p=practice();return !!p&&p.level==='hard'&&!!m&&m.rules.boardSize===9&&m.rules.directions==='diagonal'&&m.rules.confirmationDelay===4&&m.rules.claimMode==='fixed-five'&&m.rules.superko==='positional';}
+
 function renderTelemetry(){
+  renderEvalAndProgress();
   const el=$('ai-telemetry');if(!el)return;
   const hard9=isHardNine(),ended=!live();
   if(!hard9){el.hidden=true;return;}
@@ -230,10 +428,20 @@ function renderTelemetry(){
   el.hidden=false;
   el.textContent=perfMode==='standard'?'单核常驻 · 标准 400 万节点上限':hwCaps.sabSupported?`就绪：${threads} 核并行 · ${ttMB}MB 共享缓存`:`单核满载（当前环境未开启多核隔离）`;
 }
+
 function renderAI(){
   renderThinkingTime();
-  const p=practice(),ended=!live();$('ai-panel').hidden=!p||(ended&&thinkingClock.snapshot.lastElapsedMs===null);
-  if(!p||$('ai-panel').hidden)return;
+  const p=practice(),ended=!live(),hasEval=Number.isFinite(advisory?.score??lastEvalScore);
+  $('ai-panel').hidden=(!p||(ended&&thinkingClock.snapshot.lastElapsedMs===null))&&!hasEval;
+  if($('ai-panel').hidden)return;
+  if(!p){
+    $('ai-indicator').classList.toggle('thinking',false);
+    $('ai-status').textContent='双边 AI 推演分析';
+    $('ai-detail').textContent='评估结果来自独立推演。';
+    $('ai-perf-wrap').hidden=true;$('ai-controls').hidden=true;
+    renderEvalAndProgress();
+    return;
+  }
   const status=aiState?.status??'failed',recovering=status==='retrying',paused=!!session.state.paused&&!recovering,failed=status==='failed';
   $('ai-indicator').classList.toggle('thinking',!ended&&['starting','thinking','retrying'].includes(status));
   $('ai-status').textContent=ended?'本局已结束':storage.conflict?'存档冲突，AI 已停止':restoreHold?'存档已恢复，等待继续':failed?'AI 未能完成这一手':aiState?.hold==='undo'?'已悔棋，等待继续 AI 回合':paused?'对局已暂停':status==='starting'?'AI 准备中':status==='thinking'||recovering?'AI 正在思考':humanTurn()?'轮到你了':'AI 即将行动';
@@ -249,6 +457,7 @@ function renderAI(){
   $('ai-pause').hidden=paused||failed;$('ai-resume').hidden=!paused||failed;$('ai-retry').hidden=!failed;
   for(const id of ['ai-pause','ai-resume','ai-retry'])$(id).disabled=storage.conflict||!ai;
 }
+
 function renderRecords() {
   const m=match();let label=0,owners=m&&!m.rules.swap3?{A:'black',B:'white'}:null;
   const items=(m?.accepted??[]).map((a,i)=>{
@@ -262,15 +471,42 @@ function renderRecords() {
       owners={[a.actor]:a.color,[other(a.actor)]:a.color==='black'?'white':'black'};
       text=`选择${sideColorLabel(a.color)}`;
     }else text=a.kind==='pass'?'停手':a.kind==='resign'?'认输':'双方取消开局';
-    return `<li value="${i+1}">${who} · ${text}</li>`;
+    return `<li value="${i+1}"><button type="button" class="move-jump" data-step="${i+1}" title="点击跳转至复盘页第 ${i+1} 步">${i+1}. ${who} · ${text}</button></li>`;
   });
-  $('move-list').innerHTML=items.slice(-120).join('');
+  $('move-list').innerHTML=items.join('');
 }
+
 function renderWarning() {
   $('storage-warning').hidden=!storage.warning;
   $('storage-warning').textContent=storage.warning;
   if (badStartup) {const b=document.createElement('button');b.textContent='导出原存档';b.onclick=()=>download(badStartup,'弈合_原始存档.json');$('storage-warning').append(b);}
 }
+
+async function requestAdvisory(swapSide=false){
+  const m=match();if(!m||m.state.outcome||session?.state.competitive||advisoryBusy)return;
+  clearAdvisory();
+  const lvl=$('advisory-level').value||'standard';
+  const cur=activePlayer(m);
+  const targetActor=swapSide?other(cur):cur;
+  const targetLabel=m.state.owners?(m.state.owners.black===targetActor?'执黑':'执白'):(targetActor==='A'?'摆局方 A':'选色方 B');
+  advisoryBusy=true;
+  advisory={loading:true,targetActor,targetLabel,swapped:swapSide};
+  renderAdvisory();
+  const job=runAdvisorySearch({match:m,level:lvl,swapSide,seed:crypto.getRandomValues(new Uint32Array(1))[0],onProgress:info=>{
+    if(Number.isFinite(info?.score)&&advisory){advisory.score=info.score;renderEvalAndProgress();}
+  }});
+  advisoryJob=job;
+  try{
+    const res=await job.promise;
+    advisory={...res,targetLabel,loading:false};
+    playSound('notify');
+  }catch(e){
+    advisory={error:e.message||'AI 推演未完成。',targetLabel,loading:false};
+  }finally{
+    advisoryBusy=false;advisoryJob=null;render();
+  }
+}
+
 function onPoint(p) {
   focusPoint=p;
   if(inspect) {selected=p;renderBoard();return;}
@@ -280,6 +516,7 @@ function onPoint(p) {
   const actor=activePlayer(m);if(!actor)return;
   operate(()=>session.submit(actor,{kind:'place',actor,point:p}));
 }
+
 $('board').addEventListener('click',e=>{const b=e.target.closest('[data-point]');if(b)onPoint(Number(b.dataset.point));});
 $('board').addEventListener('keydown',e=>{
   const n=match()?.rules.boardSize??9;let p=Number(e.target.dataset.point??focusPoint),x=p%n,y=Math.floor(p/n);
@@ -291,6 +528,28 @@ $('board').addEventListener('keydown',e=>{
 });
 $('inspect-toggle').onclick=()=>{inspect=!inspect;selected=null;render();};
 $('labels-toggle').onclick=()=>{labels=!labels;renderBoard();};
+$('zoom-select').onchange=e=>{boardZoom=e.target.value;try{storageObject.setItem(ZOOM_KEY,boardZoom);}catch{}renderBoard();};
+$('eval-toggle').onclick=()=>{evalHidden=!evalHidden;try{storageObject.setItem(EVAL_HIDDEN_KEY,evalHidden?'1':'0');}catch{}renderEvalAndProgress();};
+$('sound-toggle').onclick=()=>{const muted=toggleMuted();renderSoundButton();if(!muted)playSound('stone');};
+$('advise-quick-btn').onclick=()=>requestAdvisory(false);
+$('advise-turn-btn').onclick=()=>requestAdvisory(false);
+$('advise-swap-btn').onclick=()=>requestAdvisory(true);
+$('advise-apply-btn').onclick=()=>{
+  if(!advisory?.action||advisory.swapped)return;
+  const act=advisory.action;
+  operate(()=>session.submit(act.actor,act));
+};
+$('save-library-btn').onclick=()=>persistLibraryRecord(false);
+$('move-list').addEventListener('click',async e=>{
+  const btn=e.target.closest('[data-step]');if(!btn||!session)return;
+  const step=Number(btn.dataset.step);
+  const saved=await persistLibraryRecord(true);
+  if(saved){
+    try{storageObject.setItem(REPLAY_TARGET_KEY,JSON.stringify({id:saved.id,step}));}catch{}
+    window.location.href='./test-records.html';
+  }
+});
+$('open-records-btn').addEventListener('click',()=>{if(match()?.accepted.length)persistLibraryRecord(true);});
 $('pass-btn').onclick=()=>{const actor=activePlayer(match());operate(()=>session.submit(actor,{kind:'pass',actor}));};
 for(const color of ['black','white'])$('choose-'+color).onclick=()=>operate(()=>session.submit('B',{kind:'choose-color',actor:'B',color}));
 $('consent-panel').addEventListener('click',e=>{
@@ -316,7 +575,6 @@ function actorDialog(kind) {
     $('practice-end').onclick=()=>{
       $('action-dialog').close();
       operate(()=>{
-        // Cancellation is a single synchronous command; never resume the scheduler between steps.
         if(opening&&session.state.paused)session.setPaused(false);
         return opening?session.requestCancelOpening(p.humanActor):session.submit(p.humanActor,{kind:'resign',actor:p.humanActor});
       });
@@ -387,7 +645,7 @@ $('settings-form').onsubmit=e=>{
   confirmReplacement(()=>{installSession(result.value,players);notice(startMsg);},'重新开始人机练习？');
 };
 for(const b of document.querySelectorAll('[data-close]'))b.onclick=()=>$(b.dataset.close).close();
-for(const id of ['manual-open','rules-details'])$(id).onclick=()=>$('manual-dialog').showModal();
+installCornerManual();
 function download(content,name) {
   const blob=new Blob([content],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -417,6 +675,29 @@ $('ai-perf-mode').onchange=e=>{
 };
 $('replace-confirm').onclick=()=>{const action=replaceAction;replaceAction=null;$('replace-dialog').close();if(mayChange()&&replaceable())action?.();};
 $('replace-dialog').addEventListener('close',()=>{replaceAction=null;});
+
+window.addEventListener('keydown',e=>{
+  if(e.metaKey||e.ctrlKey||e.altKey)return;
+  const tag=e.target?.tagName;
+  if(tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA')return;
+  if($('settings-dialog').open||$('manual-dialog').open||$('action-dialog').open||$('replace-dialog').open)return;
+  const k=e.key.toLowerCase();
+  if(k==='i'){e.preventDefault();$('inspect-toggle').click();}
+  else if(k==='l'){e.preventDefault();$('labels-toggle').click();}
+  else if(k==='p'&&!$('pass-btn').disabled){e.preventDefault();$('pass-btn').click();}
+  else if(k==='z'&&!$('undo-btn').disabled){e.preventDefault();$('undo-btn').click();}
+  else if(k==='m'){e.preventDefault();$('manual-dialog').showModal?.();}
+});
+try{
+  window.qilineDesktop?.onMenuCommand?.(cmd=>{
+    if(cmd==='new-game')openSettings();
+    else if(cmd==='save-library')persistLibraryRecord(false);
+    else if(cmd==='export-save')$('export-btn').click();
+    else if(cmd==='import-save')$('import-btn').click();
+    else if(cmd==='open-manual')$('manual-dialog').showModal?.();
+  });
+}catch{}
+
 window.addEventListener('storage',e=>{if((e.key===SAVE_KEY||e.key===null)&&e.newValue!==storage.raw){storage.conflict=true;storage.warning=errorText({code:'STORAGE_CONFLICT'});ai?.pause();render();}});
 window.addEventListener('pagehide',()=>releaseSession());
 window.addEventListener('pageshow',e=>{if(e.persisted)window.location.reload();});

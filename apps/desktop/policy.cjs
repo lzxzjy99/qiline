@@ -15,6 +15,10 @@ function isHomeURL(raw) {
   if (!isGameURL(raw)) return false;
   const u=new URL(raw);return (u.pathname==='/' || u.pathname==='/index.html') && !u.search;
 }
+function isDesktopPageURL(raw) {
+  if (!isGameURL(raw)) return false;
+  const u=new URL(raw);return ['/','/index.html','/test-records.html'].includes(u.pathname) && !u.search;
+}
 function resolveAsset(root, raw, pathAPI=path) {
   if(!isGameURL(raw)) return null;
   let decoded;try {decoded=decodeURIComponent(new URL(raw).pathname);}catch{return null;}
@@ -63,4 +67,4 @@ function installCloseGuard(win,dialog) {
       .catch(()=>{pending=false;});
   });
 }
-module.exports={SCHEME,HOST,HOME,CSP,WEB_PREFERENCES,isGameURL,isHomeURL,resolveAsset,createAssetHandler,configureDownload,installCloseGuard};
+module.exports={SCHEME,HOST,HOME,CSP,WEB_PREFERENCES,isGameURL,isHomeURL,isDesktopPageURL,resolveAsset,createAssetHandler,configureDownload,installCloseGuard};

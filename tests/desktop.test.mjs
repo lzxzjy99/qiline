@@ -7,7 +7,7 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {checkPE} from '../scripts/pe-check.mjs';
 const require=createRequire(import.meta.url);
-const {HOME,WEB_PREFERENCES,isGameURL,isHomeURL,resolveAsset,createAssetHandler,configureDownload,installCloseGuard}=require('../apps/desktop/policy.cjs');
+const {HOME,WEB_PREFERENCES,isGameURL,isHomeURL,isDesktopPageURL,resolveAsset,createAssetHandler,configureDownload,installCloseGuard}=require('../apps/desktop/policy.cjs');
 
 test('desktop release metadata and standalone manual describe the current human-AI build',async()=>{
  const [desktop,project,tools,manual]=await Promise.all([
@@ -33,6 +33,7 @@ test('desktop origin accepts only the packaged game and refuses credentials or r
  for(const u of [HOME,'qiline://game/','qiline://game/core/src/index.js'])assert.equal(isGameURL(u),true);
  for(const u of ['https://qiline-rebuild.honeybow16.chatgpt.site','qiline://game.evil/a','qiline://user:pass@game/','qiline://game:99/','file:///a','javascript:alert(1)','invalid'])assert.equal(isGameURL(u),false,u);
  assert.equal(isHomeURL(HOME),true);assert.equal(isHomeURL('qiline://game/'),true);
+ assert.equal(isDesktopPageURL('qiline://game/test-records.html'),true);assert.equal(isDesktopPageURL('qiline://game/online.html'),false);
  for(const u of ['qiline://game/app.mjs','qiline://game/index.html?remote=x','https://game/'])assert.equal(isHomeURL(u),false);
 });
 test('asset containment works with Chinese and spaces on both POSIX and Windows paths',()=>{

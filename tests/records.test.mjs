@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {DEFAULT_RULES,createMatch,applyAction,exportRecord} from '../compiled/core/src/index.js';
 import {decodeRecords,framesOf,mergeRecord,counts} from '../dist/features/records-model.mjs';
+import {prepareAdvisoryMatch,scoreToBlackWinPct,buildMatchFrameRecord} from '../dist/features/board-ai.mjs';
 function record(actions,rules={...DEFAULT_RULES,swap3:false}){
  let m=createMatch(rules).value;for(const a of actions){const r=applyAction(m,a);assert.ok(r.ok,JSON.stringify(r));m=r.value.match;}return exportRecord(m);
 }
@@ -34,4 +35,16 @@ test('new snapshots extend a record; shorter or divergent imports do not overwri
  assert.equal(mergeRecord(old,newer).record.actions.length,2);assert.equal(mergeRecord(newer,old),newer);
  const [other]=await decodeRecords(JSON.stringify({id:'same',record:record([{kind:'place',actor:'A',point:30}])}));
  assert.throws(()=>mergeRecord(old,other),/不同分支/);assert.equal(old.record.actions.length,1);
+});
+test('advisory framing supports both sides, preserves black-perspective eval scores, and slices arbitrary cursors for replay handoff',()=>{
+ const r=record([{kind:'place',actor:'A',point:40},{kind:'place',actor:'B',point:20},{kind:'place',actor:'A',point:42}]);
+ const frames=framesOf(r);
+ const cur=prepareAdvisoryMatch(frames[1],{swapSide:false});
+ assert.equal(cur.ok,true);assert.equal(cur.targetActor,'B');assert.equal(cur.targetColor,'white');
+ const swapped=prepareAdvisoryMatch(frames[1],{swapSide:true});
+ assert.equal(swapped.ok,true);assert.equal(swapped.targetActor,'A');assert.equal(swapped.targetColor,'black');
+ const pct=scoreToBlackWinPct(350,frames[1]);
+ assert.ok(pct>70&&pct<80,`expected black pct near 73, got ${pct}`);
+ const slice=buildMatchFrameRecord(r,2);
+ assert.equal(slice.actions.length,2);
 });

@@ -1,15 +1,95 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#1c5344"><title>测试对局记录 · 弈合</title><link rel="icon" href="./favicon.svg"><link rel="stylesheet" href="./style.css"><link rel="stylesheet" href="./features/features.css"><script type="module" src="./features/records.mjs"></script></head>
-<body><header class="header"><a href="./" class="brand"><span>弈合<small>吃子与五连</small></span></a><nav aria-label="主菜单"><a class="text-btn" href="./">本地对局</a><a class="text-btn" href="./online.html">在线对战</a><span class="nav-current">对局记录</span></nav></header>
-<main class="feature-main"><div class="intro"><div><p class="eyebrow">REVIEW EVERY MOVE</p><h1>看见每一手的来由。</h1></div><p class="intro-note">导入测试棋谱，逐手回看。<br>提子、选色与五连确认，完整还原。</p></div>
-<div class="record-topbar"><button class="primary" id="records-import">导入测试记录 <span>＋</span></button><button id="records-export" disabled>导出本机记录</button><span id="record-count" class="micro">尚未导入</span><input id="records-files" type="file" accept=".json,application/json" multiple hidden></div>
-<p class="micro feature-note">支持测试汇总、game-final / checkpoint、网站存档与批量JSON。文件只在本浏览器读取与保存，不上传服务器。进行中记录是导入时的快照，重新导入可更新；所选记录不代表完整胜率验收。</p>
-<div id="record-message" class="warning" role="status" hidden></div>
-<section id="records-empty" class="feature-empty"><span class="empty-board-icon" aria-hidden="true">棋</span><h2>把一盘测试，放回棋盘。</h2><p>点击上方导入记录，或将JSON文件拖到此处。<br>支持一次导入多局；回放不会替换你的本地对局。</p></section>
-<div id="records-layout" class="records-layout" hidden>
- <aside class="record-library"><div class="section-heading"><h3>已导入对局</h3><span id="library-count"></span></div><label class="sr-only" for="records-filter">筛选记录</label><select id="records-filter"><option value="all">全部记录</option><option value="wins">候选获胜</option><option value="losses">候选未胜</option><option value="unfinished">未完局／异常</option></select><div id="records-list" class="records-list"></div></aside>
- <section class="record-replay"><div class="replay-title"><div><p id="record-category" class="eyebrow">只读回放</p><h2 id="record-title"></h2></div><button id="record-remove" class="text-btn danger">移除本机记录</button></div><p id="record-players" class="record-players"></p><div id="record-rules" class="feature-pills"></div>
-  <div class="record-content"><section class="board-panel"><div class="board-heading"><span id="record-phase"></span><span id="record-ply"></span></div><div class="feature-board-viewport"><div id="board" role="grid" tabindex="0"></div></div><div class="board-toolbar"><button id="record-inspect" aria-pressed="false">查气</button><button id="record-labels" aria-pressed="false">手数</button><span id="record-position" class="toolbar-help"></span></div><p id="record-inspection" class="inspect-info" hidden></p>
-   <div class="replay-controls"><button id="replay-first" aria-label="回到开局">|←</button><button id="replay-prev" aria-label="上一步">←</button><button id="replay-play" class="primary">播放</button><button id="replay-next" aria-label="下一步">→</button><button id="replay-last" aria-label="到最后一步">→|</button><label><span class="sr-only">播放速度</span><select id="replay-speed"><option value="1200">慢速</option><option value="650" selected>正常</option><option value="250">快速</option></select></label></div><label class="sr-only" for="replay-range">回放进度</label><input id="replay-range" class="replay-range" type="range" min="0" value="0"></section>
-   <aside class="replay-sidebar"><section class="turn-card"><p class="eyebrow">当前操作</p><h2 id="replay-action"></h2><p id="replay-thinking"></p><details id="replay-search-details"><summary>搜索详情</summary><p id="replay-search"></p></details></section><section class="claims-panel"><div class="section-heading"><h3>五连确认</h3></div><div id="replay-claims"></div></section><section><div class="section-heading"><h3>操作记录</h3><span id="record-result"></span></div><ol id="replay-moves" class="replay-moves"></ol></section><button id="record-export-one">导出这局记录</button><details class="record-meta"><summary>记录信息</summary><p id="record-id"></p><p id="record-status-note"></p></details></aside></div>
- </section></div></main><footer><span>弈合 / 每一手，都有回应。</span><span>回放使用正式规则引擎逐手校验。</span></footer></body></html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#1c5344">
+  <title>棋谱库与复盘 · 弈合</title>
+  <link rel="icon" href="./favicon.svg">
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./features/features.css">
+  <script type="module" src="./features/records.mjs"></script>
+</head>
+<body>
+ <header class="header">
+  <a href="./" class="brand"><span>弈合<small>吃子与五连</small></span></a>
+  <nav class="workspace-tabs" aria-label="功能分区">
+   <a href="./" class="workspace-tab">本地 / 人机</a>
+   <a href="./online.html" id="online-nav-link" class="workspace-tab">在线对战</a>
+   <a href="./test-records.html" class="workspace-tab active" aria-current="page">棋谱复盘</a>
+  </nav>
+  <div class="header-actions">
+   <button type="button" id="sound-toggle" class="icon-btn" aria-pressed="false">🔊 音效</button>
+   <button type="button" id="manual-open" class="manual-corner-btn">玩法手册 ↗</button>
+  </div>
+ </header>
+ <main class="feature-main">
+  <div class="feature-top">
+   <div><h1>棋谱库与复盘</h1><p class="feature-note">统一保存本地、人机与线上棋谱；支持文件导入导出、一步步复盘、双边 AI 建议与从任意位置接续下棋。</p></div>
+  </div>
+  <div class="record-topbar">
+   <button type="button" class="primary small" id="records-import">导入棋谱文件 ＋</button>
+   <button type="button" id="records-export" disabled>导出全部棋谱</button>
+   <input type="search" id="records-search" class="search-input" placeholder="搜索棋谱标题或来源…" aria-label="搜索棋谱">
+   <span id="record-count" class="micro">尚未导入</span>
+   <input id="records-files" type="file" accept=".json,application/json" multiple hidden>
+  </div>
+  <div id="record-message" class="warning" role="status" hidden></div>
+  <section id="records-empty" class="feature-empty">
+   <span class="empty-board-icon" aria-hidden="true">棋</span>
+   <h2>还没有保存或导入的棋谱</h2>
+   <p>本地与在线对局结束会自动或手动存到这里；也可以点击上方导入 JSON 棋谱文件，或直接把文件拖入窗口。</p>
+  </section>
+  <div id="records-layout" class="records-layout" hidden>
+   <aside class="record-library">
+    <div class="section-heading"><h3>本机棋谱库</h3><span id="library-count"></span></div>
+    <label class="sr-only" for="records-filter">筛选棋谱</label>
+    <select id="records-filter"><option value="all">全部棋谱</option><option value="black-win">执黑获胜</option><option value="white-win">执白获胜</option><option value="unfinished">未完局／取消</option><option value="wins">测试：候选胜</option><option value="losses">测试：候选负</option></select>
+    <div id="records-list" class="records-list"></div>
+   </aside>
+   <section class="record-replay">
+    <div class="replay-title"><div><p id="record-category" class="eyebrow">棋谱复盘与续下</p><h2 id="record-title"></h2></div><button type="button" id="record-remove" class="text-btn danger">移除此条记录</button></div>
+    <p id="record-players" class="record-players"></p>
+    <div id="record-rules" class="feature-pills"></div>
+    <div class="record-content">
+     <section class="board-panel">
+      <div class="board-heading"><span id="record-phase"></span><span id="record-ply"></span></div>
+      <div class="feature-board-viewport"><div id="board" role="grid" tabindex="0"></div></div>
+      <div class="board-toolbar"><button type="button" id="record-inspect" aria-pressed="false">查气</button><button type="button" id="record-labels" aria-pressed="false">手数</button><select id="record-zoom" class="zoom-select" aria-label="棋盘视图缩放"><option value="fit">适应窗口</option><option value="compact">紧凑视图</option><option value="large">放大棋盘</option></select><span id="record-position" class="toolbar-help"></span></div>
+      <p id="record-inspection" class="inspect-info" hidden></p>
+      <div class="replay-controls"><button id="replay-first" aria-label="回到开局">|←</button><button id="replay-prev" aria-label="上一步">←</button><button id="replay-play" class="primary">播放</button><button id="replay-next" aria-label="下一步">→</button><button id="replay-last" aria-label="到最后一步">→|</button><label><span class="sr-only">播放速度</span><select id="replay-speed"><option value="1200">慢速</option><option value="650" selected>正常</option><option value="250">快速</option></select></label></div>
+      <label class="sr-only" for="replay-range">回放进度</label><input id="replay-range" class="replay-range" type="range" min="0" value="0">
+     </section>
+     <aside class="replay-sidebar">
+      <section class="turn-card"><p class="eyebrow">当前操作</p><h2 id="replay-action"></h2><p id="replay-thinking"></p><details id="replay-search-details"><summary>搜索详情</summary><p id="replay-search"></p></details></section>
+      <section class="advisory-card" aria-label="任意位置 AI 建议">
+       <div class="advisory-head"><h3>当前局面 AI 建议</h3><select id="replay-advise-level" aria-label="AI 推演与续下难度"><option value="easy">简单（快速）</option><option value="standard" selected>标准</option><option value="hard">困难（NNUE/深算）</option></select></div>
+       <div class="advisory-actions"><button type="button" id="replay-advise-btn">为当前方建议</button><button type="button" id="replay-advise-swap-btn">换边假设推演</button></div>
+       <div id="replay-eval-box" class="eval-box" hidden>
+        <div class="eval-head"><span id="replay-eval-headline">局势评估</span></div>
+        <div class="eval-bar-track"><div id="replay-eval-fill" class="eval-bar-fill"></div></div>
+        <div class="eval-bar-labels"><span id="replay-eval-left">执黑 50%</span><span id="replay-eval-right">执白 50%</span></div>
+       </div>
+       <div id="replay-advise-result" class="advisory-result" hidden></div>
+      </section>
+      <section class="continue-card" aria-label="从当前局面开始下棋">
+       <h3>从此位置开始下棋</h3>
+       <p class="micro" id="continue-hint">保持第 0 步之前的全部走子与规则，直接进入实战或人机续下：</p>
+       <div class="continue-buttons">
+        <button type="button" id="continue-black-ai" class="primary">从此处开始：我执黑 vs AI →</button>
+        <button type="button" id="continue-white-ai"><span>从此处开始：我执白 vs AI</span><span>→</span></button>
+        <button type="button" id="continue-pvp"><span>从此处继续：本地双人对局</span><span>→</span></button>
+       </div>
+      </section>
+      <section class="claims-panel"><div class="section-heading"><h3>五连确认</h3></div><div id="replay-claims"></div></section>
+      <section><div class="section-heading"><h3>步数一览（点击跳转）</h3><span id="record-result"></span></div><ol id="replay-moves" class="replay-moves"></ol></section>
+      <button type="button" id="record-export-one">导出此局棋谱文件</button>
+      <details class="record-meta"><summary>棋谱元数据</summary><p id="record-id"></p><p id="record-status-note"></p></details>
+     </aside>
+    </div>
+   </section>
+  </div>
+ </main>
+ <footer><span>弈合 / 每一手，都有回应。</span><span>所有复盘与续下均经正式规则引擎逐手校验。</span></footer>
+ <button type="button" id="corner-manual-fab" class="corner-manual-fab" aria-label="打开玩法手册">？玩法手册</button>
+</body>
+</html>

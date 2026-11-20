@@ -4,6 +4,7 @@ import { runSearchWithRuntime } from "./search.js";
 import { readSearchEnvelope } from "./protocol.js";
 import { CTRL_ACTIVE_WORKERS, CTRL_JOB_SEQ, SHARED_TT_STRIDE } from "./v21-engine.js";
 import { getNnueWeights } from "./v21-nnue-weights.js";
+import { warmupV24WasmKernel } from "./v24-wasm-kernel.js";
 
 interface WorkerScope {
   onmessage: ((event: { readonly data: unknown }) => void) | null;
@@ -36,8 +37,8 @@ let sharedTT: Int32Array | null = null;
 let sharedTTMask = 0;
 let control: Int32Array | null = null;
 
-// Pre-decode NNUE weights on worker startup so first move has zero decode latency
-try { getNnueWeights(); } catch {}
+// Pre-decode NNUE weights and compile WASM SIMD128 kernel on worker startup so first move has zero latency
+try { getNnueWeights(); warmupV24WasmKernel(); } catch {}
 
 scope.onmessage = event => {
   const msg = event.data as InitMsg | JobMsg | null;

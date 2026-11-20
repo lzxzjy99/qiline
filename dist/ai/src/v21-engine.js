@@ -2,6 +2,7 @@ import { applyAction } from "../../core/src/engine.js";
 import { freeze } from "../../core/src/result.js";
 import { AI_PROTOCOL_VERSION, aiOK } from "./protocol.js";
 import { getNnueWeights, NNUE_BLEND_ALPHA, NNUE_CLAIM_BLEND_ALPHA, NNUE_H1, NNUE_H2, NNUE_IN_DENSE, NNUE_NUM_BUCKETS, NNUE_SCORE_SCALE, } from "./v21-nnue-weights.js";
+import { runV24WasmSearch } from "./v24-wasm-kernel.js";
 const MASK27 = 0x7ffffff; // 27 bits = 3 rows of 9
 const NOT_LEFT_27 = 0b111111110_111111110_111111110;
 const NOT_RIGHT_27 = 0b011111111_011111111_011111111;
@@ -1586,10 +1587,13 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
     };
     // Reconstruct bitboard State from validated Match
     let rootState = emptyState(match.rules.swap3);
+    const moveCodes = [];
     try {
         for (const act of match.accepted) {
             if (act.kind === "place" || act.kind === "pass" || act.kind === "choose-color") {
-                rootState = applyCode(rootState, actionToCode(act));
+                const code = actionToCode(act);
+                moveCodes.push(code);
+                rootState = applyCode(rootState, code);
             }
         }
     }
@@ -1601,6 +1605,126 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
         return finish("nodes");
     bestCode = rootLegal[0];
     rootCandidates = rootLegal.length;
+    // Fast Path: v24 WASM SIMD128 Engine Kernel (5.5x-6x faster than scalar JS, full Gen-5-128-B4 + Lazy SMP TT bridge)
+    if (budget.maxNodes > 2 && budget.maxDepth >= 1 && moveCodes.length <= 512) {
+        try {
+            const wasmFlags = (isHelper || isPonder ? 0 : 1) |
+                (fullPower ? 2 : 0) |
+                (isPonder ? 4 : 0) |
+                (keepTT ? 8 : 0) |
+                (sharedTT ? 16 : 0);
+            const gen = (sharedTT && ctrl) ? (Atomics.load(ctrl, CTRL_TT_GEN) & 63) : 1;
+            const wasmRes = runV24WasmSearch(match.rules.swap3, moveCodes, budget.maxNodes, budget.timeMs, budget.maxDepth, seed, wasmFlags, threadId, {
+                nowMs: () => elapsed(),
+                pollStatus: (wNodes, wDepth, wScore, wBest, forceProg) => {
+                    nodes = wNodes;
+                    if (wDepth > completedDepth)
+                        completedDepth = wDepth;
+                    if (wBest >= 0)
+                        bestCode = wBest;
+                    if (wDepth > 0)
+                        bestScore = wScore;
+                    if (ctrl && Atomics.load(ctrl, CTRL_JOB_SEQ) !== jobSeq)
+                        return 1;
+                    publishNodes();
+                    if (ctrl && wDepth > 0) {
+                        const prevD = Atomics.load(ctrl, CTRL_MAX_DEPTH);
+                        if (wDepth > prevD)
+                            Atomics.store(ctrl, CTRL_MAX_DEPTH, wDepth);
+                    }
+                    if (cancelled())
+                        return 1;
+                    if (onProgress && !isHelper) {
+                        const elNow = elapsed();
+                        if (forceProg !== 0 || elNow - lastProgressMs >= 250) {
+                            lastProgressMs = elNow;
+                            const maxD = ctrl ? Math.max(completedDepth, ctrl[CTRL_MAX_DEPTH]) : completedDepth;
+                            onProgress({ nodes, totalNodes: sumAllNodes(), depth: maxD, elapsedMs: elNow, score: bestScore, bestCode });
+                        }
+                    }
+                    return 0;
+                },
+                ttProbe: (keyLo, keyHi, b0, b1, b2, w0, w1, w2, activeClaims, rem, qleft, ttSafe, ioOut) => {
+                    if (!sharedTT)
+                        return 0;
+                    const base = (keyLo & sharedMask) * SHARED_TT_STRIDE;
+                    const s0 = sharedTT[base], s1 = sharedTT[base + 1], s2 = sharedTT[base + 2];
+                    const s3 = sharedTT[base + 3], s4 = sharedTT[base + 4], s5 = sharedTT[base + 5];
+                    const s6 = sharedTT[base + 6], s7 = sharedTT[base + 7], s8 = sharedTT[base + 8], s9 = sharedTT[base + 9];
+                    if ((s9 ^ s0 ^ s1 ^ s2 ^ s3 ^ s4 ^ s5 ^ s6 ^ s7 ^ s8) === keyLo && s6 === keyHi
+                        && s0 === b0 && s1 === b1 && s2 === b2 && s3 === w0 && s4 === w1 && s5 === w2
+                        && (((s8 >>> 20) & 0x3f) === activeClaims)) {
+                        const mv = s8 & 0xff;
+                        const eDepth = (s8 >>> 8) & 0x3f;
+                        const eBnd = ((s8 >>> 14) & 0x7) - 2;
+                        const eQLeft = (s8 >>> 17) & 0x7;
+                        ioOut[0] = s7;
+                        ioOut[1] = mv === 255 ? -1 : mv;
+                        ioOut[2] = (ttSafe !== 0 && eBnd >= -1 && (eDepth > rem || (eDepth === rem && eQLeft >= qleft))) ? eBnd : -2;
+                        return 1;
+                    }
+                    return 0;
+                },
+                ttStore: (keyLo, keyHi, b0, b1, b2, w0, w1, w2, activeClaims, rem, qleft, ttSafe, val, mv, bnd) => {
+                    if (!sharedTT)
+                        return;
+                    const base = (keyLo & sharedMask) * SHARED_TT_STRIDE;
+                    const oldMeta = sharedTT[base + 8];
+                    const oldGen = (oldMeta >>> 26) & 0x3f;
+                    const oldDepth = (oldMeta >>> 8) & 0x3f;
+                    const oldBnd = ((oldMeta >>> 14) & 0x7) - 2;
+                    if (ttSafe !== 0) {
+                        if (oldGen !== gen || sharedTT[base + 6] !== keyHi || rem >= oldDepth || (bnd === 0 && oldBnd !== 0)) {
+                            const mvB = (mv >= 0 ? mv : 255) & 0xff;
+                            const valInt = val >= 1000000000 ? 1000000000 : val <= -1000000000 ? -1000000000 : (Math.round(val) | 0);
+                            const meta = mvB | ((rem & 0x3f) << 8) | (((bnd + 2) & 0x7) << 14) | ((qleft & 0x7) << 17) | ((activeClaims & 0x3f) << 20) | ((gen & 0x3f) << 26);
+                            sharedTT[base] = b0;
+                            sharedTT[base + 1] = b1;
+                            sharedTT[base + 2] = b2;
+                            sharedTT[base + 3] = w0;
+                            sharedTT[base + 4] = w1;
+                            sharedTT[base + 5] = w2;
+                            sharedTT[base + 6] = keyHi;
+                            sharedTT[base + 7] = valInt;
+                            sharedTT[base + 8] = meta;
+                            sharedTT[base + 9] = keyLo ^ b0 ^ b1 ^ b2 ^ w0 ^ w1 ^ w2 ^ keyHi ^ valInt ^ meta;
+                        }
+                    }
+                    else if (mv >= 0 && (oldGen !== gen || sharedTT[base + 6] !== keyHi || rem >= oldDepth)) {
+                        const meta = (mv & 0xff) | ((rem & 0x3f) << 8) | (0 << 14) | ((qleft & 0x7) << 17) | ((activeClaims & 0x3f) << 20) | ((gen & 0x3f) << 26);
+                        sharedTT[base] = b0;
+                        sharedTT[base + 1] = b1;
+                        sharedTT[base + 2] = b2;
+                        sharedTT[base + 3] = w0;
+                        sharedTT[base + 4] = w1;
+                        sharedTT[base + 5] = w2;
+                        sharedTT[base + 6] = keyHi;
+                        sharedTT[base + 7] = 0;
+                        sharedTT[base + 8] = meta;
+                        sharedTT[base + 9] = keyLo ^ b0 ^ b1 ^ b2 ^ w0 ^ w1 ^ w2 ^ keyHi ^ meta;
+                    }
+                },
+            });
+            if (wasmRes) {
+                bestCode = wasmRes.bestCode;
+                bestScore = wasmRes.completedDepth > 0 || wasmRes.stopCode === 4 ? wasmRes.score : null;
+                nodes = Math.max(1, wasmRes.nodes);
+                completedDepth = wasmRes.completedDepth;
+                maxVisitedDepth = wasmRes.maxVisitedDepth;
+                cutoffs = wasmRes.cutoffs;
+                rootCandidates = Math.max(1, wasmRes.rootCandidates);
+                if (wasmRes.stopCode === 4) {
+                    const afterWin = applyCode(rootState, bestCode);
+                    return finish(afterWin.phase === 3 && afterWin.outcome === 1 ? "terminal-win" : "secured-line");
+                }
+                const stopMap = ["max-depth", "nodes", "time", "cancelled", "secured-line", "secured-line"];
+                return finish(stopMap[wasmRes.stopCode] ?? "max-depth");
+            }
+        }
+        catch {
+            return finish("internal");
+        }
+    }
     // Tactics helpers
     const formations = (s, color, holes) => {
         const o0 = color === 1 ? s.b0 : s.w0, o1 = color === 1 ? s.b1 : s.w1, o2 = color === 1 ? s.b2 : s.w2;

@@ -22,18 +22,25 @@ function imix32(x) {
 }
 // Precomputed 9x9 geometry & 50 diagonal 5-windows (matching Rules.cs bit-for-bit)
 const ADJ = [];
+const ADJ_M0 = new Int32Array(81);
+const ADJ_M1 = new Int32Array(81);
+const ADJ_M2 = new Int32Array(81);
 const PT_WORD = new Int32Array(81);
 const PT_BIT = new Int32Array(81);
 const ZOB_LO = new Int32Array(162);
 const ZOB_HI = new Int32Array(162);
 const WIN_PTS = [];
+const PT_WINS = Array.from({ length: 81 }, () => []);
 const WIN_M0 = new Int32Array(50);
 const WIN_M1 = new Int32Array(50);
 const WIN_M2 = new Int32Array(50);
+const EMPTY_BIRTH = new Int16Array(50).fill(-1);
 (function initGeometry() {
     for (let p = 0; p < 81; p++) {
         PT_WORD[p] = (p / 27) | 0;
         PT_BIT[p] = 1 << (p % 27);
+    }
+    for (let p = 0; p < 81; p++) {
         const a = [];
         if (p % 9 > 0)
             a.push(p - 1);
@@ -44,6 +51,20 @@ const WIN_M2 = new Int32Array(50);
         if (p < 72)
             a.push(p + 9);
         ADJ.push(a);
+        let am0 = 0, am1 = 0, am2 = 0;
+        for (let i = 0; i < a.length; i++) {
+            const q = a[i];
+            const wd = PT_WORD[q], bt = PT_BIT[q];
+            if (wd === 0)
+                am0 |= bt;
+            else if (wd === 1)
+                am1 |= bt;
+            else
+                am2 |= bt;
+        }
+        ADJ_M0[p] = am0;
+        ADJ_M1[p] = am1;
+        ADJ_M2[p] = am2;
         ZOB_LO[p * 2] = imix32(p * 4 + 1);
         ZOB_HI[p * 2] = imix32(p * 4 + 2 ^ 0x9e3779b9);
         ZOB_LO[p * 2 + 1] = imix32(p * 4 + 3);
@@ -61,6 +82,7 @@ const WIN_M2 = new Int32Array(50);
                 for (let k = 0; k < 5; k++) {
                     const p = (y + k) * 9 + x + k * step;
                     w.push(p);
+                    PT_WINS[p].push(at);
                     const wd = PT_WORD[p], bt = PT_BIT[p];
                     if (wd === 0)
                         m0 |= bt;
@@ -79,8 +101,6 @@ const WIN_M2 = new Int32Array(50);
     }
 })();
 function emptyState(swap3) {
-    const birth = new Int16Array(50);
-    birth.fill(-1);
     return {
         b0: 0, b1: 0, b2: 0, w0: 0, w1: 0, w2: 0,
         phase: swap3 ? 0 : 2,
@@ -94,21 +114,28 @@ function emptyState(swap3) {
         outcome: 0,
         winnerColor: 0,
         lastPoint: -1,
-        birth,
+        claimCount: 0,
+        birth: EMPTY_BIRTH,
         history: { b0: 0, b1: 0, b2: 0, w0: 0, w1: 0, w2: 0, hLo: 0, hHi: 0, prev: null },
         hLo: 0,
         hHi: 0,
     };
 }
 function cloneState(s) {
-    const nb = new Int16Array(50);
-    nb.set(s.birth);
+    let nb;
+    if (s.claimCount === 0) {
+        nb = EMPTY_BIRTH;
+    }
+    else {
+        nb = new Int16Array(50);
+        nb.set(s.birth);
+    }
     return {
         b0: s.b0, b1: s.b1, b2: s.b2, w0: s.w0, w1: s.w1, w2: s.w2,
         phase: s.phase, opened: s.opened, side: s.side, ownerBlack: s.ownerBlack,
         ply: s.ply, passes: s.passes, capB: s.capB, capW: s.capW,
         outcome: s.outcome, winnerColor: s.winnerColor, lastPoint: s.lastPoint,
-        birth: nb, history: s.history, hLo: s.hLo, hHi: s.hHi,
+        claimCount: s.claimCount, birth: nb, history: s.history, hLo: s.hLo, hHi: s.hHi,
     };
 }
 function stateActor(s) {
@@ -252,7 +279,51 @@ function tryBoard(s, point, color, opening) {
     return true;
 }
 function canPlace(s, point) {
+    if (point < 0 || point >= 81)
+        return false;
+    const occ0 = s.b0 | s.w0, occ1 = s.b1 | s.w1, occ2 = s.b2 | s.w2;
+    if (hasPt(occ0, occ1, occ2, point))
+        return false;
     const color = s.phase === 0 ? (s.opened === 1 ? -1 : 1) : s.side;
+    const am0 = ADJ_M0[point], am1 = ADJ_M1[point], am2 = ADJ_M2[point];
+    // Fast path: if at least one orthogonal neighbor is empty and NO adjacent enemy stone exists,
+    // placing cannot capture and cannot suicide.
+    const hasEmptyAdj = ((am0 & ~occ0) | (am1 & ~occ1) | (am2 & ~occ2)) !== 0;
+    if (hasEmptyAdj) {
+        const en0 = color === 1 ? s.w0 : s.b0, en1 = color === 1 ? s.w1 : s.b1, en2 = color === 1 ? s.w2 : s.b2;
+        if (((am0 & en0) | (am1 & en1) | (am2 & en2)) === 0) {
+            if (s.capB === 0 && s.capW === 0)
+                return true;
+            const wd = PT_WORD[point], bt = PT_BIT[point];
+            let b0 = s.b0, b1 = s.b1, b2 = s.b2, w0 = s.w0, w1 = s.w1, w2 = s.w2;
+            let hLo = s.hLo, hHi = s.hHi;
+            if (color === 1) {
+                if (wd === 0)
+                    b0 |= bt;
+                else if (wd === 1)
+                    b1 |= bt;
+                else
+                    b2 |= bt;
+                hLo ^= ZOB_LO[point * 2];
+                hHi ^= ZOB_HI[point * 2];
+            }
+            else {
+                if (wd === 0)
+                    w0 |= bt;
+                else if (wd === 1)
+                    w1 |= bt;
+                else
+                    w2 |= bt;
+                hLo ^= ZOB_LO[point * 2 + 1];
+                hHi ^= ZOB_HI[point * 2 + 1];
+            }
+            for (let h = s.history; h !== null; h = h.prev) {
+                if (h.hLo === hLo && h.hHi === hHi && h.b0 === b0 && h.b1 === b1 && h.b2 === b2 && h.w0 === w0 && h.w1 === w1 && h.w2 === w2)
+                    return false;
+            }
+            return true;
+        }
+    }
     return tryBoard(s, point, color, s.phase === 0);
 }
 function legalCodes(s) {
@@ -282,42 +353,67 @@ function windowColor(s, i) {
         return -1;
     return 0;
 }
-function settleState(s) {
-    let earliest = 1e9, winner = 0;
+function settleState(s, placedPoint) {
+    if (s.claimCount === 0 && placedPoint >= 0) {
+        const wins = PT_WINS[placedPoint];
+        let born = 0;
+        for (let k = 0; k < wins.length; k++) {
+            const i = wins[k];
+            if (windowColor(s, i) !== 0) {
+                if (born === 0) {
+                    const nb = new Int16Array(50);
+                    nb.fill(-1);
+                    s.birth = nb;
+                }
+                s.birth[i] = s.ply;
+                born++;
+            }
+        }
+        s.claimCount = born;
+        return;
+    }
+    if (s.claimCount === 0) {
+        if (s.passes >= 2) {
+            s.phase = 3;
+            s.outcome = 2;
+        }
+        return;
+    }
+    let earliest = 1e9, winner = 0, active = 0;
     for (let i = 0; i < 50; i++) {
         const c = windowColor(s, i);
-        if (c === 0)
-            s.birth[i] = -1;
-        else if (s.birth[i] < 0)
-            s.birth[i] = s.ply;
-        if (c !== 0 && s.ply >= s.birth[i] + 4 && s.birth[i] < earliest) {
-            earliest = s.birth[i];
-            winner = c;
+        if (c === 0) {
+            if (s.birth[i] >= 0)
+                s.birth[i] = -1;
+        }
+        else {
+            if (s.birth[i] < 0)
+                s.birth[i] = s.ply;
+            active++;
+            if (s.ply >= s.birth[i] + 4 && s.birth[i] < earliest) {
+                earliest = s.birth[i];
+                winner = c;
+            }
         }
     }
+    s.claimCount = active;
+    if (active === 0)
+        s.birth = EMPTY_BIRTH;
     if (winner !== 0) {
         s.phase = 3;
         s.outcome = 1;
         s.winnerColor = winner;
         return;
     }
-    if (s.passes >= 2) {
-        let anyClaim = false;
-        for (let i = 0; i < 50; i++)
-            if (s.birth[i] >= 0) {
-                anyClaim = true;
-                break;
-            }
-        if (!anyClaim) {
-            s.phase = 3;
-            s.outcome = 2;
-        }
+    if (s.passes >= 2 && active === 0) {
+        s.phase = 3;
+        s.outcome = 2;
     }
 }
 function applyPass(s) {
     s.ply++;
     s.passes = s.passes < 2 ? s.passes + 1 : 2;
-    settleState(s);
+    settleState(s, -1);
     if (s.phase !== 3)
         s.side = -s.side;
 }
@@ -358,7 +454,7 @@ function applyCode(source, code) {
                 s.phase = 1;
             return s;
         }
-        settleState(s);
+        settleState(s, code);
         if (s.phase !== 3)
             s.side = -s.side;
     }
@@ -373,6 +469,8 @@ function applyCode(source, code) {
 function provenWin(s, color) {
     if (s.phase === 3)
         return s.outcome === 1 && s.winnerColor === color;
+    if (s.claimCount === 0)
+        return false;
     const occ0 = s.b0 | s.w0, occ1 = s.b1 | s.w1, occ2 = s.b2 | s.w2;
     const o0 = color === 1 ? s.b0 : s.w0, o1 = color === 1 ? s.b1 : s.w1, o2 = color === 1 ? s.b2 : s.w2;
     for (let i = 0; i < 50; i++) {
@@ -466,8 +564,16 @@ function getPL(occ0, occ1, occ2, s, libs, col, pt) {
     vPLCache[key] = val + 1;
     return val;
 }
+const leafLibs = new Uint8Array(81);
 function buildView(s, leafOnly) {
-    const libs = new Uint8Array(81);
+    let libs;
+    if (leafOnly) {
+        leafLibs.fill(0);
+        libs = leafLibs;
+    }
+    else {
+        libs = new Uint8Array(81);
+    }
     const moves0 = leafOnly ? null : new Float64Array(81);
     const moves1 = leafOnly ? null : new Float64Array(81);
     const critical = leafOnly ? null : new Uint8Array(81);
@@ -483,9 +589,10 @@ function buildView(s, leafOnly) {
     let sb0_0 = 0, sb0_1 = 0, sb0_2 = 0, sb1_0 = 0, sb1_1 = 0, sb1_2 = 0;
     let at0_0 = 0, at0_1 = 0, at0_2 = 0, at1_0 = 0, at1_1 = 0, at1_2 = 0;
     let exp0 = false, exp1 = false;
+    const hasClaims = s.claimCount > 0;
     for (let w = 0; w < 50; w++) {
         const m0 = WIN_M0[w], m1 = WIN_M1[w], m2 = WIN_M2[w];
-        if (s.birth[w] >= 0) {
+        if (hasClaims && s.birth[w] >= 0) {
             const col = windowColor(s, w);
             if (col === 1) {
                 live0_0 |= m0;
@@ -1080,6 +1187,14 @@ function evalNnueLogit(s, v, W) {
     const o0 = isB ? s.b0 : s.w0, o1 = isB ? s.b1 : s.w1, o2 = isB ? s.b2 : s.w2;
     const e0 = isB ? s.w0 : s.b0, e1 = isB ? s.w1 : s.b1, e2 = isB ? s.w2 : s.b2;
     const libs = v.libs;
+    const addAcc64 = (wArr, off) => {
+        for (let j = 0; j < 64; j += 4) {
+            nnAcc[j] = nnAcc[j] + wArr[off + j];
+            nnAcc[j + 1] = nnAcc[j + 1] + wArr[off + j + 1];
+            nnAcc[j + 2] = nnAcc[j + 2] + wArr[off + j + 2];
+            nnAcc[j + 3] = nnAcc[j + 3] + wArr[off + j + 3];
+        }
+    };
     const addStones = (mask, base, enemyOff) => {
         let x = mask;
         while (x) {
@@ -1087,8 +1202,7 @@ function evalNnueLogit(s, v, W) {
             x &= x - 1;
             const lb = libs[p];
             const off = (p * 6 + enemyOff + (lb === 1 ? 0 : lb === 2 ? 1 : 2)) * NNUE_H1;
-            for (let j = 0; j < NNUE_H1; j++)
-                nnAcc[j] = nnAcc[j] + w1s[off + j];
+            addAcc64(w1s, off);
         }
     };
     addStones(o0, 0, 0);
@@ -1103,19 +1217,13 @@ function evalNnueLogit(s, v, W) {
         const em0 = e0 & m0, em1 = e1 & m1, em2 = e2 & m2;
         if ((em0 | em1 | em2) === 0) {
             const c = popcnt27(om0) + popcnt27(om1) + popcnt27(om2);
-            if (c >= 2) {
-                const off = (486 + w * 8 + (c - 2)) * NNUE_H1;
-                for (let j = 0; j < NNUE_H1; j++)
-                    nnAcc[j] = nnAcc[j] + w1s[off + j];
-            }
+            if (c >= 2)
+                addAcc64(w1s, (486 + w * 8 + (c - 2)) * NNUE_H1);
         }
         else if ((om0 | om1 | om2) === 0) {
             const c = popcnt27(em0) + popcnt27(em1) + popcnt27(em2);
-            if (c >= 2) {
-                const off = (486 + w * 8 + 4 + (c - 2)) * NNUE_H1;
-                for (let j = 0; j < NNUE_H1; j++)
-                    nnAcc[j] = nnAcc[j] + w1s[off + j];
-            }
+            if (c >= 2)
+                addAcc64(w1s, (486 + w * 8 + 4 + (c - 2)) * NNUE_H1);
         }
     }
     const pOwn = isB ? v.pressure0 : v.pressure1, pEn = isB ? v.pressure1 : v.pressure0;
@@ -1142,8 +1250,12 @@ function evalNnueLogit(s, v, W) {
         if (dv === 0)
             continue;
         const off = d * NNUE_H1;
-        for (let j = 0; j < NNUE_H1; j++)
+        for (let j = 0; j < 64; j += 4) {
             nnAcc[j] = nnAcc[j] + dv * w1d[off + j];
+            nnAcc[j + 1] = nnAcc[j + 1] + dv * w1d[off + j + 1];
+            nnAcc[j + 2] = nnAcc[j + 2] + dv * w1d[off + j + 2];
+            nnAcc[j + 3] = nnAcc[j + 3] + dv * w1d[off + j + 3];
+        }
     }
     nnH2.set(W.b2);
     for (let i = 0; i < NNUE_H1; i++) {
@@ -1153,8 +1265,12 @@ function evalNnueLogit(s, v, W) {
         if (a1 > 1)
             a1 = 1;
         const off = i * NNUE_H2;
-        for (let j = 0; j < NNUE_H2; j++)
+        for (let j = 0; j < 16; j += 4) {
             nnH2[j] = nnH2[j] + a1 * w2[off + j];
+            nnH2[j + 1] = nnH2[j + 1] + a1 * w2[off + j + 1];
+            nnH2[j + 2] = nnH2[j + 2] + a1 * w2[off + j + 2];
+            nnH2[j + 3] = nnH2[j + 3] + a1 * w2[off + j + 3];
+        }
     }
     let out = W.b3;
     for (let j = 0; j < NNUE_H2; j++) {
@@ -1209,18 +1325,20 @@ const ttClaims = new Uint8Array(TT_SIZE);
 const ttGen = new Uint32Array(TT_SIZE);
 let globalTTGen = 0;
 let skLo = 0, skHi = 0, skClaims = 0;
-function computeStateKey(s) {
+function computeStateKey(s, rootCapTag) {
     const meta = (s.phase & 3) | ((s.opened & 3) << 2) | ((s.side === 1 ? 1 : 0) << 4)
         | (((s.ownerBlack + 1) & 3) << 5) | ((s.passes & 3) << 7) | ((s.capB & 127) << 9) | ((s.capW & 127) << 16);
-    let lo = s.hLo ^ imix32(meta);
-    let hi = s.hHi ^ imix32(meta ^ 0x517cc1b7);
+    let lo = s.hLo ^ imix32(meta) ^ rootCapTag;
+    let hi = s.hHi ^ imix32(meta ^ 0x517cc1b7) ^ imix32(rootCapTag ^ 0x9e3779b9);
     let claims = 0;
-    for (let w = 0; w < 50; w++) {
-        if (s.birth[w] >= 0) {
-            claims++;
-            const cm = (w << 8) | ((s.ply - s.birth[w]) & 255) | 0x10000;
-            lo ^= imix32(cm);
-            hi ^= imix32(cm ^ 0x27d4eb2d);
+    if (s.claimCount > 0) {
+        for (let w = 0; w < 50; w++) {
+            if (s.birth[w] >= 0) {
+                claims++;
+                const cm = (w << 8) | ((s.ply - s.birth[w]) & 255) | 0x10000;
+                lo ^= imix32(cm);
+                hi ^= imix32(cm ^ 0x27d4eb2d);
+            }
         }
     }
     skLo = lo;
@@ -1266,16 +1384,39 @@ function codeToAction(code, actor) {
 function actionToCode(a) {
     return a.kind === "place" ? a.point : a.kind === "pass" ? 81 : a.color === "black" ? 82 : 83;
 }
+export const SHARED_TT_STRIDE = 10;
+// Cache-line isolated (64-byte = 16 Int32 stride) SharedArrayBuffer control slots to prevent false sharing
+export const CTRL_JOB_SEQ = 0;
+export const CTRL_MAX_DEPTH = 16;
+export const CTRL_ACTIVE_WORKERS = 32;
+export const CTRL_TT_GEN = 48;
+export const CTRL_THREAD_COUNT = 64;
+export const CTRL_NODES_BASE = 80;
+export const CTRL_NODES_STRIDE = 16;
+export const CTRL_BUFFER_BYTES = 2048; // 512 Int32s: up to 26 cache-line-isolated threads
 export function isV21Profile(match) {
     const r = match.rules;
     return r.boardSize === 9 && r.directions === "diagonal" && r.confirmationDelay === 4
         && r.claimMode === "fixed-five" && r.superko === "positional";
 }
-export function runV21Search(header, match, now, cancelled, started, initialLastTime = started) {
+export function runV21Search(header, match, now, cancelled, started, initialLastTime = started, opts) {
     const budget = header.budget;
     const actor = header.context.actor;
-    const seed = header.seed >>> 0;
+    const threadId = opts?.threadId ?? 0;
+    const isHelper = threadId > 0;
+    const isPonder = opts?.ponder === true;
+    const fullPower = opts?.fullPower === true || isHelper || isPonder;
+    const sharedTT = opts?.sharedTT ?? null;
+    const sharedMask = opts?.sharedTTMask ?? 0;
+    const ctrl = opts?.control ?? null;
+    const jobSeq = opts?.jobSeq ?? 0;
+    const keepTT = opts?.keepTT === true;
+    const onProgress = opts?.onProgress;
+    const seed = isHelper ? ((header.seed >>> 0) ^ Math.imul(threadId + 1, 0x9e3779b9)) >>> 0 : (header.seed >>> 0);
     const W = getNnueWeights();
+    const tieRanks = new Uint32Array(84);
+    for (let c = 0; c < 84; c++)
+        tieRanks[c] = tieRankCode(c, seed);
     let lastTime = initialLastTime;
     const elapsed = () => {
         const t = now();
@@ -1285,16 +1426,53 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
         return Math.min(Number.MAX_SAFE_INTEGER, t - started);
     };
     let nodes = 1;
+    let lastProgressMs = 0;
+    let checkTick = 0;
     let maxVisitedDepth = 0;
     let completedDepth = 0;
     let cutoffs = 0;
     let rootCandidates = 0;
     let bestCode = -1;
     let bestScore = null;
-    let maxAllowedNodes = budget.maxNodes;
-    const softEndMs = budget.timeMs - Math.min(2500, Math.max(0, budget.timeMs * 0.05));
-    let curTimeLimit = budget.timeMs;
+    const hardNodeCap = fullPower ? 1000000000 : budget.maxNodes;
+    let maxAllowedNodes = hardNodeCap;
+    const softEndMs = isPonder ? 3600000 : budget.timeMs - Math.min(2500, Math.max(0, budget.timeMs * 0.05));
+    let curTimeLimit = isPonder ? 3600000 : budget.timeMs;
+    const myNodeSlot = CTRL_NODES_BASE + threadId * CTRL_NODES_STRIDE;
+    const publishNodes = () => {
+        if (ctrl && myNodeSlot < ctrl.length)
+            ctrl[myNodeSlot] = nodes;
+    };
+    const sumAllNodes = () => {
+        if (!ctrl)
+            return nodes;
+        const tc = Math.max(1, Math.min(24, ctrl[CTRL_THREAD_COUNT] || 1));
+        let tot = 0;
+        for (let t = 0; t < tc; t++)
+            tot += ctrl[CTRL_NODES_BASE + t * CTRL_NODES_STRIDE];
+        return Math.max(nodes, tot);
+    };
     const checkBudget = () => {
+        if (opts) {
+            if (nodes >= maxAllowedNodes)
+                throw new LimitStop("nodes");
+            if ((++checkTick & 511) !== 0)
+                return;
+            if (ctrl && Atomics.load(ctrl, CTRL_JOB_SEQ) !== jobSeq)
+                throw new LimitStop("cancelled");
+            publishNodes();
+            if (cancelled())
+                throw new LimitStop("cancelled");
+            const el = elapsed();
+            if (el >= curTimeLimit)
+                throw new LimitStop("time");
+            if (onProgress && !isHelper && el - lastProgressMs >= 250) {
+                lastProgressMs = el;
+                const maxD = ctrl ? Math.max(completedDepth, ctrl[CTRL_MAX_DEPTH]) : completedDepth;
+                onProgress({ nodes, totalNodes: sumAllNodes(), depth: maxD, elapsedMs: el, score: bestScore, bestCode });
+            }
+            return;
+        }
         if (cancelled())
             throw new LimitStop("cancelled");
         if (elapsed() >= curTimeLimit)
@@ -1312,22 +1490,29 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
         return applyCode(s, code);
     };
     const finish = (stop) => {
+        const stillOwner = !ctrl || Atomics.load(ctrl, CTRL_JOB_SEQ) === jobSeq;
+        if (stillOwner)
+            publishNodes();
         let el = Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, lastTime - started));
         try {
             el = elapsed();
-            if (cancelled())
+            if (cancelled() || !stillOwner)
                 stop = "cancelled";
-            else if (el >= budget.timeMs && stop !== "internal" && stop !== "cancelled")
+            else if (!isPonder && el >= budget.timeMs && stop !== "internal" && stop !== "cancelled")
                 stop = "time";
         }
         catch {
             stop = "internal";
         }
+        if (onProgress && !isHelper && stillOwner) {
+            const maxD = ctrl ? Math.max(completedDepth, ctrl[CTRL_MAX_DEPTH]) : completedDepth;
+            onProgress({ nodes, totalNodes: sumAllNodes(), depth: maxD, elapsedMs: el, score: bestScore, bestCode });
+        }
         const common = {
             protocolVersion: AI_PROTOCOL_VERSION,
             kind: "result",
             context: header.context,
-            stats: { elapsedMs: el, nodes, completedDepth: Math.min(completedDepth, budget.maxDepth) },
+            stats: { elapsedMs: el, nodes: Math.min(nodes, budget.maxNodes), completedDepth: Math.min(completedDepth, budget.maxDepth) },
         };
         let bestAction = bestCode >= 0 ? codeToAction(bestCode, actor) : null;
         let immediateOutcome = null;
@@ -1593,13 +1778,20 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
                 return finish(afterWin.phase === 3 && afterWin.outcome === 1 ? "terminal-win" : "secured-line");
             }
         }
-        // 2. Hybrid Iterative-Deepening Alpha-Beta with 262K Zobrist TT + Root PVS + Aspiration + LMR + NNUE
-        const curGen = ++globalTTGen;
-        if (curGen === 0) {
-            ttGen.fill(0);
-            globalTTGen = 1;
+        // 2. Hybrid Iterative-Deepening Alpha-Beta with Local or Shared Lock-Free Zobrist TT + Root PVS + Aspiration + LMR + NNUE
+        const rootCapTag = imix32(((rootState.capB & 0xff) << 8) | (rootState.capW & 0xff) | 0x31410000);
+        let gen;
+        if (sharedTT && ctrl) {
+            gen = Atomics.load(ctrl, CTRL_TT_GEN) & 63;
         }
-        const gen = globalTTGen;
+        else {
+            const curGen = ++globalTTGen;
+            if (curGen === 0) {
+                ttGen.fill(0);
+                globalTTGen = 1;
+            }
+            gen = globalTTGen;
+        }
         const rootNode = makeNode(rootState);
         const rootActor = stateActor(rootState);
         const maximizeRoot = rootActor === 0;
@@ -1607,8 +1799,8 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
         let cachedChildStates = 0;
         const preferred = new WeakMap();
         const history = [new Int32Array(84), new Int32Array(84)];
-        const killer0 = new Int8Array(20).fill(-1);
-        const killer1 = new Int8Array(20).fill(-1);
+        const killer0 = new Int8Array(32).fill(-1);
+        const killer1 = new Int8Array(32).fill(-1);
         let pathBounds = new WeakMap();
         let fullWidth = false;
         let rootScores = new Map();
@@ -1637,7 +1829,7 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
         };
         const sortByKey = (arr, len, scores, crit, passCrit, firstMove) => {
             for (let i = 1; i < len; i++) {
-                const cur = arr[i], cs = scores[cur], ct = tieRankCode(cur, seed), cf = cur === firstMove;
+                const cur = arr[i], cs = scores[cur], ct = tieRanks[cur], cf = cur === firstMove;
                 const cc = crit !== null && (cur > 81 || (cur === 81 ? passCrit : crit[cur] !== 0));
                 let j = i - 1;
                 while (j >= 0) {
@@ -1651,7 +1843,7 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
                             better = cc;
                         else {
                             const ps = scores[prev];
-                            if (cs > ps || (cs === ps && ct > tieRankCode(prev, seed)))
+                            if (cs > ps || (cs === ps && ct > tieRanks[prev]))
                                 better = true;
                         }
                     }
@@ -1736,26 +1928,57 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
                 return node.value * 1000000000;
             const origAlpha = alpha, origBeta = beta;
             const s = node.state;
-            computeStateKey(s);
+            computeStateKey(s, rootCapTag);
             const keyLo = skLo, keyHi = skHi, activeClaims = skClaims;
-            const ttIdx = keyLo & TT_MASK;
             let ttM = -1;
             const ttSafe = !fullWidth && activeClaims === 0 && s.phase === 2 && s.capB === rootState.capB && s.capW === rootState.capW;
-            if (ttGen[ttIdx] === gen && ttKeyLo[ttIdx] === keyLo && ttKeyHi[ttIdx] === keyHi && ttClaims[ttIdx] === activeClaims
-                && ttB0[ttIdx] === s.b0 && ttB1[ttIdx] === s.b1 && ttB2[ttIdx] === s.b2
-                && ttW0[ttIdx] === s.w0 && ttW1[ttIdx] === s.w1 && ttW2[ttIdx] === s.w2) {
-                ttM = ttMove[ttIdx];
-                if (ttSafe && (ttDepth[ttIdx] > remaining || (ttDepth[ttIdx] === remaining && ttQLeft[ttIdx] >= qleft))) {
-                    const bnd = ttBound[ttIdx], val = ttVal[ttIdx];
-                    if (bnd === 0)
-                        return val;
-                    if (bnd === 1)
-                        alpha = Math.max(alpha, val);
-                    else if (bnd === -1)
-                        beta = Math.min(beta, val);
-                    if (alpha >= beta) {
-                        cutoffs++;
-                        return val;
+            const ttIdx = sharedTT ? (keyLo & sharedMask) : (keyLo & TT_MASK);
+            if (sharedTT) {
+                const base = ttIdx * SHARED_TT_STRIDE;
+                const s0 = sharedTT[base], s1 = sharedTT[base + 1], s2 = sharedTT[base + 2];
+                const s3 = sharedTT[base + 3], s4 = sharedTT[base + 4], s5 = sharedTT[base + 5];
+                const s6 = sharedTT[base + 6], s7 = sharedTT[base + 7], s8 = sharedTT[base + 8], s9 = sharedTT[base + 9];
+                if ((s9 ^ s0 ^ s1 ^ s2 ^ s3 ^ s4 ^ s5 ^ s6 ^ s7 ^ s8) === keyLo && s6 === keyHi
+                    && s0 === s.b0 && s1 === s.b1 && s2 === s.b2 && s3 === s.w0 && s4 === s.w1 && s5 === s.w2
+                    && (((s8 >>> 20) & 0x3f) === activeClaims)) {
+                    const mv = s8 & 0xff;
+                    ttM = mv === 255 ? -1 : mv;
+                    const eDepth = (s8 >>> 8) & 0x3f;
+                    const eBnd = ((s8 >>> 14) & 0x7) - 2;
+                    const eQLeft = (s8 >>> 17) & 0x7;
+                    if (ttSafe && eBnd >= -1 && (eDepth > remaining || (eDepth === remaining && eQLeft >= qleft))) {
+                        const val = s7;
+                        if (eBnd === 0)
+                            return val;
+                        if (eBnd === 1)
+                            alpha = Math.max(alpha, val);
+                        else if (eBnd === -1)
+                            beta = Math.min(beta, val);
+                        if (alpha >= beta) {
+                            cutoffs++;
+                            return val;
+                        }
+                    }
+                }
+            }
+            else {
+                const genMatch = keepTT || ttGen[ttIdx] === gen;
+                if (genMatch && ttKeyLo[ttIdx] === keyLo && ttKeyHi[ttIdx] === keyHi && ttClaims[ttIdx] === activeClaims
+                    && ttB0[ttIdx] === s.b0 && ttB1[ttIdx] === s.b1 && ttB2[ttIdx] === s.b2
+                    && ttW0[ttIdx] === s.w0 && ttW1[ttIdx] === s.w1 && ttW2[ttIdx] === s.w2) {
+                    ttM = ttMove[ttIdx];
+                    if (ttSafe && (ttDepth[ttIdx] > remaining || (ttDepth[ttIdx] === remaining && ttQLeft[ttIdx] >= qleft))) {
+                        const bnd = ttBound[ttIdx], val = ttVal[ttIdx];
+                        if (bnd === 0)
+                            return val;
+                        if (bnd === 1)
+                            alpha = Math.max(alpha, val);
+                        else if (bnd === -1)
+                            beta = Math.min(beta, val);
+                        if (alpha >= beta) {
+                            cutoffs++;
+                            return val;
+                        }
                     }
                 }
             }
@@ -1907,7 +2130,62 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
                 preferred.set(s, chosen);
             const finalVal = chosen >= 0 ? value : heuristicValueA(s, view, W);
             const storeBnd = finalVal <= origAlpha ? -1 : finalVal >= origBeta ? 1 : 0;
-            if (ttSafe) {
+            if (sharedTT) {
+                if (remaining >= 1) {
+                    const base = ttIdx * SHARED_TT_STRIDE;
+                    const oldMeta = sharedTT[base + 8];
+                    const oldGen = (oldMeta >>> 26) & 0x3f;
+                    const oldDepth = (oldMeta >>> 8) & 0x3f;
+                    const oldBnd = ((oldMeta >>> 14) & 0x7) - 2;
+                    if (ttSafe) {
+                        if (oldGen !== gen || sharedTT[base + 6] !== keyHi || remaining >= oldDepth || (storeBnd === 0 && oldBnd !== 0)) {
+                            const mv = (chosen >= 0 ? chosen : ttM) & 0xff;
+                            const valInt = finalVal >= 1000000000 ? 1000000000 : finalVal <= -1000000000 ? -1000000000 : (Math.round(finalVal) | 0);
+                            const meta = mv | ((remaining & 0x3f) << 8) | (((storeBnd + 2) & 0x7) << 14) | ((qleft & 0x7) << 17) | ((activeClaims & 0x3f) << 20) | ((gen & 0x3f) << 26);
+                            sharedTT[base] = s.b0;
+                            sharedTT[base + 1] = s.b1;
+                            sharedTT[base + 2] = s.b2;
+                            sharedTT[base + 3] = s.w0;
+                            sharedTT[base + 4] = s.w1;
+                            sharedTT[base + 5] = s.w2;
+                            sharedTT[base + 6] = keyHi;
+                            sharedTT[base + 7] = valInt;
+                            sharedTT[base + 8] = meta;
+                            sharedTT[base + 9] = keyLo ^ s.b0 ^ s.b1 ^ s.b2 ^ s.w0 ^ s.w1 ^ s.w2 ^ keyHi ^ valInt ^ meta;
+                        }
+                    }
+                    else {
+                        if (chosen >= 0 && !qsearch && (oldGen !== gen || sharedTT[base + 6] !== keyHi || remaining >= oldDepth)) {
+                            const meta = (chosen & 0xff) | ((remaining & 0x3f) << 8) | (0 << 14) | ((qleft & 0x7) << 17) | ((activeClaims & 0x3f) << 20) | ((gen & 0x3f) << 26);
+                            sharedTT[base] = s.b0;
+                            sharedTT[base + 1] = s.b1;
+                            sharedTT[base + 2] = s.b2;
+                            sharedTT[base + 3] = s.w0;
+                            sharedTT[base + 4] = s.w1;
+                            sharedTT[base + 5] = s.w2;
+                            sharedTT[base + 6] = keyHi;
+                            sharedTT[base + 7] = 0;
+                            sharedTT[base + 8] = meta;
+                            sharedTT[base + 9] = keyLo ^ s.b0 ^ s.b1 ^ s.b2 ^ s.w0 ^ s.w1 ^ s.w2 ^ keyHi ^ meta;
+                        }
+                        let entries = pathBounds.get(s);
+                        if (!entries) {
+                            entries = new Map();
+                            pathBounds.set(s, entries);
+                        }
+                        entries.set(pathKey, { value: finalVal, kind: storeBnd });
+                    }
+                }
+                else if (!ttSafe) {
+                    let entries = pathBounds.get(s);
+                    if (!entries) {
+                        entries = new Map();
+                        pathBounds.set(s, entries);
+                    }
+                    entries.set(pathKey, { value: finalVal, kind: storeBnd });
+                }
+            }
+            else if (ttSafe) {
                 if (ttGen[ttIdx] !== gen || ttKeyLo[ttIdx] !== keyLo || ttKeyHi[ttIdx] !== keyHi || remaining >= ttDepth[ttIdx] || (storeBnd === 0 && ttBound[ttIdx] !== 0)) {
                     ttGen[ttIdx] = gen;
                     ttKeyLo[ttIdx] = keyLo;
@@ -1952,14 +2230,15 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
             return finalVal;
         };
         // Reserve small node margin for root guard (matching v21 Worker.cs)
-        const guardReserve = Math.min(12000, Math.max(0, ((budget.maxNodes - nodes) / 10) | 0));
-        maxAllowedNodes = Math.min(budget.maxNodes, Math.max(nodes + 1, budget.maxNodes - guardReserve));
+        const guardReserve = fullPower ? 0 : Math.min(12000, Math.max(0, ((budget.maxNodes - nodes) / 10) | 0));
+        maxAllowedNodes = fullPower ? hardNodeCap : Math.min(budget.maxNodes, Math.max(nodes + 1, budget.maxNodes - guardReserve));
         curTimeLimit = Math.max(1, softEndMs);
         const rootView = buildView(rootState, false);
         const initOrdered = orderMoves(rootNode, rootView, allowed, true, 0, -1);
         bestCode = initOrdered[0];
         try {
-            for (let depth = 1; depth <= budget.maxDepth; depth++) {
+            const startDepth = isHelper ? Math.min(budget.maxDepth, 1 + (threadId % 3)) : 1;
+            for (let depth = startDepth; depth <= budget.maxDepth; depth++) {
                 pathBounds = new WeakMap();
                 const rootList = orderMoves(rootNode, rootView, fullWidth ? legalCodes(rootState) : allowed, true, 0, bestCode);
                 if (depth >= 2 && rootScores.size > 0) {
@@ -1977,10 +2256,10 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
                         }
                         else if (ha !== hb)
                             return ha ? -1 : 1;
-                        return tieRankCode(b, seed) - tieRankCode(a, seed);
+                        return tieRanks[b] - tieRanks[a];
                     });
                 }
-                let delta = 220, alpha = -Infinity, beta = Infinity;
+                let delta = isHelper ? 180 + (threadId % 4) * 70 : 220, alpha = -Infinity, beta = Infinity;
                 if (!fullWidth && depth >= 4 && Math.abs(lastScore) < 500000) {
                     alpha = lastScore - delta;
                     beta = lastScore + delta;
@@ -2053,6 +2332,17 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
                     bestScore = value;
                     completedDepth = depth;
                     preferred.set(rootState, best);
+                    if (ctrl) {
+                        const prevD = Atomics.load(ctrl, CTRL_MAX_DEPTH);
+                        if (depth > prevD)
+                            Atomics.store(ctrl, CTRL_MAX_DEPTH, depth);
+                    }
+                    if (onProgress && !isHelper) {
+                        const el = elapsed();
+                        lastProgressMs = el;
+                        publishNodes();
+                        onProgress({ nodes, totalNodes: sumAllNodes(), depth, elapsedMs: el, score: bestScore, bestCode });
+                    }
                 }
                 if (Math.abs(value) >= 1000000000) {
                     if (fullWidth) {
@@ -2071,11 +2361,11 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
                 throw e;
         }
         finally {
-            maxAllowedNodes = budget.maxNodes;
-            curTimeLimit = budget.timeMs;
+            maxAllowedNodes = hardNodeCap;
+            curTimeLimit = isPonder ? 3600000 : budget.timeMs;
         }
-        // 3. Root tactical refutation guard (4-6 ply forced-reply check)
-        if (rootState.phase === 2 && !allLost && budget.maxDepth >= 4 && nodes < budget.maxNodes && elapsed() < budget.timeMs - 50) {
+        // 3. Root tactical refutation guard (4-6 ply forced-reply check, main search thread only)
+        if (!isHelper && !isPonder && rootState.phase === 2 && !allLost && budget.maxDepth >= 4 && nodes < hardNodeCap && elapsed() < budget.timeMs - 50) {
             const choices = allowed.slice().sort((a, b) => {
                 if (a === bestCode)
                     return b === bestCode ? 0 : -1;
@@ -2083,14 +2373,14 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
                     return 1;
                 const va = rootScores.get(a) ?? 0, vb = rootScores.get(b) ?? 0;
                 const cmp = maximizeRoot ? vb - va : va - vb;
-                return cmp !== 0 ? cmp : tieRankCode(b, seed) - tieRankCode(a, seed);
+                return cmp !== 0 ? cmp : tieRanks[b] - tieRanks[a];
             });
             const original = bestCode;
             let refutedCount = 0;
             try {
                 for (const cand of choices) {
                     bestCode = cand;
-                    const localLimit = Math.min(6000, budget.maxNodes - nodes);
+                    const localLimit = Math.min(6000, hardNodeCap - nodes);
                     if (localLimit <= 0)
                         break;
                     const ceiling = nodes + localLimit;

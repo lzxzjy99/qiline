@@ -12,6 +12,7 @@ import { actionKey, orderActions, retainActions, tieRank } from "./ordering.js";
 import { claimTacticalPoints, featuresOf, liveLinesOf, otherColor, playerColor, rescuedStones, shareFeaturePool } from "./features.js";
 import type { FeaturePool } from "./features.js";
 import { isV21Profile, runV21Search } from "./v21-engine.js";
+import type { V21RuntimeOptions } from "./v21-engine.js";
 
 export const SEARCH_POLICIES:Readonly<Record<AILevel,{readonly quietWidth:number;readonly rootWidth:number}>>=freeze({
   easy:{quietWidth:6,rootWidth:12},standard:{quietWidth:12,rootWidth:24},
@@ -100,6 +101,10 @@ function losingReply(match:Match,justMoved:PlayerId,control:Control,depth:number
 }
 /** Timed local search. It returns a serialized reply, not an authorization token or a live move. */
 export function runSearch(raw:unknown,host:SearchHost={}):AIResult<SearchOutcome> {
+  return runSearchWithRuntime(raw,host,undefined);
+}
+/** Extended runtime entry allowing persistent/shared TT & multi-core SMP without changing the protocol contract. */
+export function runSearchWithRuntime(raw:unknown,host:SearchHost={},v21Opts?:V21RuntimeOptions):AIResult<SearchOutcome> {
   if (!plain(host) || !Object.keys(host).every(k=>k==="now"||k==="isCancelled")
     || (host.now!==undefined&&typeof host.now!=="function") || (host.isCancelled!==undefined&&typeof host.isCancelled!=="function"))
     return aiFail("INVALID_AI_REQUEST","host");
@@ -132,7 +137,7 @@ export function runSearch(raw:unknown,host:SearchHost={}):AIResult<SearchOutcome
     const restored=hydrate(header,control);if(!restored.ok)return restored;
     const match=restored.value;control.nodes=1;
     if(header.level==="hard"&&isV21Profile(match)){
-      return runV21Search(header,match,now,cancelled,started,control.last);
+      return runV21Search(header,match,now,cancelled,started,control.last,v21Opts);
     }
     if(control.featurePool)shareFeaturePool(match,control.featurePool);
     if(header.level==="hard"&&securedClaim(match)?.color===playerColor(match,actor)){

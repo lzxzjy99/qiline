@@ -28,7 +28,13 @@ function resolveAsset(root, raw, pathAPI=path) {
 }
 function createAssetHandler(root, readFile=fs.readFile) {
   return async request=>{
-    const headers={'Content-Security-Policy':CSP,'X-Content-Type-Options':'nosniff'};
+    const headers={
+      'Content-Security-Policy':CSP,
+      'X-Content-Type-Options':'nosniff',
+      'Cross-Origin-Opener-Policy':'same-origin',
+      'Cross-Origin-Embedder-Policy':'require-corp',
+      'Cross-Origin-Resource-Policy':'same-origin',
+    };
     if(!['GET','HEAD'].includes(request.method))return new Response('Method not allowed',{status:405,headers});
     const file=resolveAsset(root,request.url);
     if(!file)return new Response('Not found',{status:404,headers});

@@ -1,4 +1,5 @@
 import type { AIAction, AILevel, AIResult, SearchReply } from "./types.js";
+import type { V21RuntimeOptions } from "./v21-engine.js";
 export declare const SEARCH_POLICIES: Readonly<Record<AILevel, {
     readonly quietWidth: number;
     readonly rootWidth: number;
@@ -22,3 +23,5 @@ export interface SearchOutcome {
 }
 /** Timed local search. It returns a serialized reply, not an authorization token or a live move. */
 export declare function runSearch(raw: unknown, host?: SearchHost): AIResult<SearchOutcome>;
+/** Extended runtime entry allowing persistent/shared TT & multi-core SMP without changing the protocol contract. */
+export declare function runSearchWithRuntime(raw: unknown, host?: SearchHost, v21Opts?: V21RuntimeOptions): AIResult<SearchOutcome>;

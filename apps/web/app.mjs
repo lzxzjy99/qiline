@@ -1,19 +1,24 @@
 import {DEFAULT_RULES, activePlayer, formatPoint, inspectGroup} from './core/src/index.js';
-import {createBrowserAI} from './ui/ai-host.mjs';
+import {createBrowserAI, detectHardwareCapabilities, PERF_MODES} from './ui/ai-host.mjs';
 import {createAIThinkingClock, formatThinkingTime} from './ui/ai-timing.mjs';
 import {SAVE_KEY, SafeStorage, createGameSession, practiceView, undoPracticePair, respondUndoPair, localCalendarDate, makeWebSave, parseWebSave, phaseView, rulesView, claimsView, playerName, colorName, levelName, other, errorText} from './ui/model.mjs';
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>typeof crypto.randomUUID==='function'?crypto.randomUUID():Array.from(crypto.getRandomValues(new Uint32Array(4)),n=>n.toString(16).padStart(8,'0')).join('-');
+const PERF_KEY='qiline.perfMode';
 let session=null, meta={names:['玩家一','玩家二'],aIndex:0,round:1};
-let ai=null, aiState=null, restoreHold=false, observedMatch=null, replaceAction=null;
+let ai=null, aiState=null, aiTelemetry=null, restoreHold=false, observedMatch=null, replaceAction=null;
 let inspect=false, labels=false, selected=null, focusPoint=40, flash=[], noticeTimer;
 const thinkingClock=createAIThinkingClock();
 let thinkingTick=null;
 let storageObject;
 try {storageObject=window.localStorage;} catch {storageObject={getItem(){throw Error('storage unavailable');},setItem(){throw Error('storage unavailable');}};}
 const storage=new SafeStorage(storageObject);
+const hwCaps=detectHardwareCapabilities();
+let perfMode='turbo';
+try {const savedPerf=storageObject.getItem(PERF_KEY);if(PERF_MODES.includes(savedPerf))perfMode=savedPerf;} catch {}
+function fmtCount(n){if(!n||n<0)return '0';if(n>=1000000)return (n/1000000).toFixed(2)+'M';if(n>=1000)return Math.round(n/1000)+'k';return String(n);}
 const startupRaw=storage.read();
 let badStartup=null, startupNote='';
 if (startupRaw) {
@@ -33,7 +38,7 @@ const humanTurn=()=>!!match()&&session.state.controllers[activePlayer(match())]?
 const replaceable=()=>!live()||!!practice();
 function attachAI(restored=false) {
   clearTimeout(thinkingTick);thinkingTick=null;thinkingClock.reset();
-  aiState=null;observedMatch=match();restoreHold=restored&&!!practice()&&!!live();
+  aiState=null;aiTelemetry=null;observedMatch=match();restoreHold=restored&&!!practice()&&!!live();
   if(!practice())return;
   const owned=session;let announcedError=null;
   const result=createBrowserAI(owned,state=>{
@@ -53,13 +58,16 @@ function attachAI(restored=false) {
       if(flash.length)setTimeout(()=>{flash=[];renderBoard();},750);
     }
     render();
-  },undefined,()=>storage.check());
+  },undefined,()=>storage.check(),{
+    perfMode,
+    onTelemetry:info=>{if(session!==owned)return;aiTelemetry=info;renderTelemetry();},
+  });
   if(!result.ok){session.setPaused(true);aiState={status:'failed',error:result.error};notice(errorText(result.error),true);return;}
   ai=result.value;
   if(restoreHold||storage.conflict)ai.pause();else ai.start();
   aiState=ai.state;
 }
-function releaseSession(){clearTimeout(thinkingTick);thinkingTick=null;thinkingClock.reset();const oldAI=ai;ai=null;aiState=null;if(oldAI)oldAI.close();else session?.close();}
+function releaseSession(){clearTimeout(thinkingTick);thinkingTick=null;thinkingClock.reset();const oldAI=ai;ai=null;aiState=null;aiTelemetry=null;if(oldAI)oldAI.close();else session?.close();}
 function installSession(next,players,restored=false){
   releaseSession();session=next;meta=players;inspect=false;selected=null;flash=[];
   focusPoint=Math.floor(match().rules.boardSize**2/2);attachAI(restored);save();render();
@@ -190,6 +198,27 @@ function renderThinkingTime(){
   $('mobile-ai-elapsed').hidden=!p||!text;$('mobile-ai-elapsed').textContent=text?` ｜ ${text}`:'';
   if(p&&live()&&t.running)thinkingTick=setTimeout(renderThinkingTime,100);
 }
+function isHardNine(){const m=match(),p=practice();return !!p&&p.level==='hard'&&!!m&&m.rules.boardSize===9&&m.rules.directions==='diagonal'&&m.rules.confirmationDelay===4&&m.rules.claimMode==='fixed-five'&&m.rules.superko==='positional';}
+function renderTelemetry(){
+  const el=$('ai-telemetry');if(!el)return;
+  const hard9=isHardNine(),ended=!live();
+  if(!hard9){el.hidden=true;return;}
+  const t=aiTelemetry;
+  const threads=t?.threads??(perfMode==='standard'?1:hwCaps.recommendedThreads);
+  const ttMB=t?.ttMB??(perfMode==='standard'?14:hwCaps.ttMB);
+  if(t?.pondering&&!ended){
+    el.hidden=false;el.textContent=`后台预算中 · ${threads} 线程预热 ${ttMB}MB 缓存`;return;
+  }
+  if(t&&t.totalNodes>0){
+    el.hidden=false;
+    const speed=t.nps>0?` · ${fmtCount(t.nps)} 节点/秒`:'';
+    const dep=t.depth>0?` · 深度 ${t.depth}`:'';
+    el.textContent=`${threads} 线程${speed}${dep} · ${fmtCount(t.totalNodes)} 节点 · ${ttMB}MB 缓存`;
+    return;
+  }
+  el.hidden=false;
+  el.textContent=perfMode==='standard'?'单核常驻 · 标准 400 万节点上限':hwCaps.sabSupported?`就绪：${threads} 核并行 · ${ttMB}MB 共享缓存`:`单核满载（当前环境未开启多核隔离）`;
+}
 function renderAI(){
   renderThinkingTime();
   const p=practice(),ended=!live();$('ai-panel').hidden=!p||(ended&&thinkingClock.snapshot.lastElapsedMs===null);
@@ -198,6 +227,13 @@ function renderAI(){
   $('ai-indicator').classList.toggle('thinking',!ended&&['starting','thinking','retrying'].includes(status));
   $('ai-status').textContent=ended?'本局已结束':storage.conflict?'存档冲突，AI 已停止':restoreHold?'存档已恢复，等待继续':failed?'AI 未能完成这一手':aiState?.hold==='undo'?'已悔棋，等待继续 AI 回合':paused?'对局已暂停':status==='starting'?'AI 准备中':status==='thinking'||recovering?'AI 正在思考':humanTurn()?'轮到你了':'AI 即将行动';
   $('ai-detail').textContent=ended?'已保留本局最后一次 AI 思考用时。':failed?`${aiState?.retryAttempt?'已自动重试 '+aiState.retryAttempt+' 次。':''}${errorText(aiState?.error??{code:'AI_WORKER_FAILED'})}`:restoreHold?'已恢复角色、难度和完整棋谱；继续后再开始新的思考。':aiState?.hold==='undo'?'已撤回操作，AI 不会立即重下。':paused?'棋盘已锁定，查气和导出仍可使用。':p.level==='hard'?'困难 AI 每手最多思考 2 分钟。思考时可查气、暂停或导出存档。':'AI 在本机运行。思考时可查气、暂停或结束对局。';
+  const perfWrap=$('ai-perf-wrap'),perfSelect=$('ai-perf-mode');
+  if(perfWrap&&perfSelect){
+    perfWrap.hidden=ended||!isHardNine();
+    perfSelect.value=perfMode;
+    perfSelect.disabled=storage.conflict||!ai;
+  }
+  renderTelemetry();
   $('ai-controls').hidden=ended;
   $('ai-pause').hidden=paused||failed;$('ai-resume').hidden=!paused||failed;$('ai-retry').hidden=!failed;
   for(const id of ['ai-pause','ai-resume','ai-retry'])$(id).disabled=storage.conflict||!ai;
@@ -348,6 +384,14 @@ $('import-file').onchange=async e=>{
 };
 for(const [id,method] of [['ai-pause','pause'],['ai-resume','resume'],['ai-retry','retry']])$(id).onclick=()=>{
   if(!ai||!mayChange())return;restoreHold=false;const result=ai[method]();if(!result.ok)notice(errorText(result.error),true);aiState=ai.state;render();
+};
+$('ai-perf-mode').onchange=e=>{
+  const next=e.target.value;if(!PERF_MODES.includes(next))return;
+  perfMode=next;
+  try{storageObject.setItem(PERF_KEY,perfMode);}catch{}
+  ai?.setPerfMode?.(perfMode);
+  renderTelemetry();
+  notice(perfMode==='extreme'?'已切换为极限满载（多核并行 + 后台预算），将在下一手及空闲时生效。':perfMode==='turbo'?'已切换为满载多核（自动匹配物理核心 + 大容量共享缓存）。':'已切换为标准单核（400 万节点上限，省电静音）。');
 };
 $('replace-confirm').onclick=()=>{const action=replaceAction;replaceAction=null;$('replace-dialog').close();if(mayChange()&&replaceable())action?.();};
 $('replace-dialog').addEventListener('close',()=>{replaceAction=null;});

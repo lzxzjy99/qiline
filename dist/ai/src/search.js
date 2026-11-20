@@ -134,6 +134,10 @@ function losingReply(match, justMoved, control, depth, proveDelayed = false) {
 }
 /** Timed local search. It returns a serialized reply, not an authorization token or a live move. */
 export function runSearch(raw, host = {}) {
+    return runSearchWithRuntime(raw, host, undefined);
+}
+/** Extended runtime entry allowing persistent/shared TT & multi-core SMP without changing the protocol contract. */
+export function runSearchWithRuntime(raw, host = {}, v21Opts) {
     if (!plain(host) || !Object.keys(host).every(k => k === "now" || k === "isCancelled")
         || (host.now !== undefined && typeof host.now !== "function") || (host.isCancelled !== undefined && typeof host.isCancelled !== "function"))
         return aiFail("INVALID_AI_REQUEST", "host");
@@ -192,7 +196,7 @@ export function runSearch(raw, host = {}) {
         const match = restored.value;
         control.nodes = 1;
         if (header.level === "hard" && isV21Profile(match)) {
-            return runV21Search(header, match, now, cancelled, started, control.last);
+            return runV21Search(header, match, now, cancelled, started, control.last, v21Opts);
         }
         if (control.featurePool)
             shareFeaturePool(match, control.featurePool);

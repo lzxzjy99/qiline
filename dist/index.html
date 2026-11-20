@@ -23,7 +23,7 @@
    </section>
    <aside class="side-panel">
     <section class="turn-card"><p class="eyebrow" id="phase-label">一起开局</p><h2 id="turn-title">准备好，下一手见。</h2><p id="turn-detail">围棋的提子，五连的胜负。两个人，一盘棋。</p><div id="choice-actions" hidden><button id="choose-black" class="choice"><i class="stone-dot black"></i>我执黑棋</button><button id="choose-white" class="choice"><i class="stone-dot white"></i>我执白棋</button></div><button id="first-start" class="primary wide">开始对局 <span>→</span></button></section>
-    <section id="ai-panel" class="ai-panel" aria-label="人机对局控制" hidden><div class="ai-state-line" role="status" aria-live="polite"><i id="ai-indicator" class="ai-indicator"></i><b id="ai-status">轮到你了</b></div><div id="ai-elapsed" class="ai-elapsed" role="timer" aria-live="off" title="累计实际思考用时，暂停、准备和重试等待不计入。" hidden></div><p id="ai-detail"></p><div id="ai-controls" class="ai-controls"><button id="ai-pause">暂停对局</button><button id="ai-resume" hidden>继续对局</button><button id="ai-retry" hidden>重试 AI</button></div></section>
+    <section id="ai-panel" class="ai-panel" aria-label="人机对局控制" hidden><div class="ai-state-line" role="status" aria-live="polite"><i id="ai-indicator" class="ai-indicator"></i><b id="ai-status">轮到你了</b></div><div id="ai-elapsed" class="ai-elapsed" role="timer" aria-live="off" title="累计实际思考用时，暂停、准备和重试等待不计入。" hidden></div><div id="ai-telemetry" class="ai-telemetry" aria-live="off" hidden></div><p id="ai-detail"></p><label id="ai-perf-wrap" class="ai-perf-row" hidden><span>算力模式</span><select id="ai-perf-mode" aria-label="困难 AI 算力模式"><option value="turbo">满载多核（推荐）</option><option value="extreme">极限满载（含后台预算）</option><option value="standard">标准单核（省电静音）</option></select></label><div id="ai-controls" class="ai-controls"><button id="ai-pause">暂停对局</button><button id="ai-resume" hidden>继续对局</button><button id="ai-retry" hidden>重试 AI</button></div></section>
     <section id="players" class="players" aria-label="双方状态"></section>
     <section id="consent-panel" class="consent-panel" aria-live="polite" hidden></section>
     <section class="actions" aria-label="对局操作"><button id="pass-btn">停一手</button><button id="undo-btn">申请悔棋</button><button id="end-btn" class="text-btn danger">结束操作</button></section>
@@ -31,7 +31,7 @@
     <details class="records"><summary>棋谱与存档 <span id="save-status">尚未开局</span></summary><div class="save-actions"><button id="export-btn">导出存档</button><button id="import-btn">导入存档</button></div><p class="micro">自动保存完整棋谱、角色和难度。人机存档恢复后点击“继续对局”。双人局须结束后导入；练习局可确认替换。</p><input id="import-file" type="file" accept=".json,application/json" hidden><ol id="move-list" class="move-list" aria-label="落子记录"></ol></details>
    </aside>
   </div>
-  <div class="underboard"><span><i class="status-dot"></i> <span id="play-context">同一设备，双方轮流操作</span></span><span>规则 2.1 · 修订 3 · v0.6.0</span></div>
+  <div class="underboard"><span><i class="status-dot"></i> <span id="play-context">同一设备，双方轮流操作</span></span><span>规则 2.1 · 修订 3 · v0.6.1</span></div>
  </main>
  <footer><span>弈合 <span class="footer-dot">/</span> 每一手，都有回应。</span><span>提子只改变棋势，不直接计分。</span></footer>
  <div id="mobile-status" class="mobile-status" hidden><span id="mobile-status-text" aria-live="polite"></span><span id="mobile-ai-elapsed" role="timer" aria-live="off" hidden></span></div>

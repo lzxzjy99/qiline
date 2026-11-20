@@ -49,6 +49,7 @@ else {
     session.defaultSession.setPermissionCheckHandler(()=>false);
     session.defaultSession.webRequest.onBeforeRequest((details,callback)=>callback({cancel:!isGameURL(details.url)&&!details.url.startsWith('blob:qiline://game/')}));
     ipcMain.on('qiline:flash-frame',()=>{if(win&&!win.isDestroyed()&&!win.isFocused())win.flashFrame(true);});
+    ipcMain.on('qiline:open-online',()=>{shell.openExternal('https://qiline-online.pages.dev/online.html').catch(()=>{});});
     const ws=readWindowState();
     win=new BrowserWindow({
       title:'弈合 · 吃子与五连',icon:path.join(app.getAppPath(),'icon.ico'),
@@ -81,6 +82,7 @@ else {
       {label:'页面与显示',submenu:[
         {label:'本地与人机对局',click:()=>win.loadURL(HOME)},
         {label:'棋谱库与复盘',click:()=>win.loadURL('qiline://game/test-records.html')},
+        {label:'在线对战（网页版）',click:()=>shell.openExternal('https://qiline-online.pages.dev/online.html').catch(()=>{})},
         {type:'separator'},
         {label:'放大',role:'zoomIn'},{label:'缩小',role:'zoomOut'},{label:'恢复原始大小',role:'resetZoom'},
         {type:'separator'},{label:'全屏',role:'togglefullscreen'},

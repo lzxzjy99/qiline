@@ -9,12 +9,12 @@ import {formatAdvisedAction, formatEvalSummary, runAdvisorySearch, saveGameRecor
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>typeof crypto.randomUUID==='function'?crypto.randomUUID():Array.from(crypto.getRandomValues(new Uint32Array(4)),n=>n.toString(16).padStart(8,'0')).join('-');
-const PERF_KEY='qiline.perfMode', EVAL_HIDDEN_KEY='qiline.evalHidden', ZOOM_KEY='qiline.boardZoom', HANDOFF_KEY='qiline.handoff', REPLAY_TARGET_KEY='qiline.replayTarget';
+const PERF_KEY='qiline.perfMode', EVAL_HIDDEN_KEY='qiline.evalHidden', ZOOM_KEY='qiline.boardZoom', ADVISORY_KEY='qiline.advisoryEnabled', HANDOFF_KEY='qiline.handoff', REPLAY_TARGET_KEY='qiline.replayTarget';
 
 let session=null, meta={names:['执黑','执白'],aIndex:0,round:1};
 let ai=null, aiState=null, aiTelemetry=null, restoreHold=false, observedMatch=null, replaceAction=null;
 let inspect=false, labels=false, selected=null, focusPoint=40, flash=[], noticeTimer;
-let boardZoom='fit', evalHidden=false, lastEvalScore=null, advisory=null, advisoryJob=null, advisoryBusy=false;
+let boardZoom='fit', evalHidden=false, advisoryEnabled=false, lastEvalScore=null, advisory=null, advisoryJob=null, advisoryBusy=false;
 const illegalLabels={OCCUPIED:'已有棋子',SUICIDE:'无气自杀点',REPETITION:'禁重复局面',OPENING_CAPTURE:'摆局不能提子'};
 let illegalCacheKey='', illegalCacheMap=new Map();
 
@@ -29,18 +29,22 @@ try {
   const savedPerf=storageObject.getItem(PERF_KEY);if(PERF_MODES.includes(savedPerf))perfMode=savedPerf;
   const savedZoom=storageObject.getItem(ZOOM_KEY);if(['fit','compact','large'].includes(savedZoom))boardZoom=savedZoom;
   evalHidden=storageObject.getItem(EVAL_HIDDEN_KEY)==='1';
+  advisoryEnabled=storageObject.getItem(ADVISORY_KEY)==='1';
 } catch {}
 function fmtCount(n){if(!n||n<0)return '0';if(n>=1000000)return (n/1000000).toFixed(2)+'M';if(n>=1000)return Math.round(n/1000)+'k';return String(n);}
 
-// Offline Electron mode check: disable online room link while keeping replay fully active.
+// Offline Electron mode: open the web online-rooms page in the user's browser.
 try {
   const isOfflineDesktop=typeof window!=='undefined'&&window.location?.protocol==='qiline:';
   const onlineLink=$('online-nav-link');
   if(isOfflineDesktop&&onlineLink){
-    onlineLink.classList.toggle('disabled-offline',true);
-    onlineLink.setAttribute('aria-disabled','true');
-    onlineLink.setAttribute('title','仅网页版支持在线对战');
-    onlineLink.onclick=e=>{e.preventDefault();notice('桌面离线版不联网；好友在线对战请访问网页版。');};
+    onlineLink.setAttribute('href','https://qiline-online.pages.dev/online.html');
+    onlineLink.setAttribute('title','在默认浏览器中打开在线对战网页版');
+    onlineLink.onclick=e=>{
+      e.preventDefault();
+      if(typeof window.qilineDesktop?.openOnline==='function')window.qilineDesktop.openOnline();
+      else notice('请使用浏览器访问 https://qiline-online.pages.dev/online.html 进行好友联机。');
+    };
   }
 } catch {}
 
@@ -308,14 +312,18 @@ function renderEvalAndProgress(){
 }
 
 function renderAdvisory(){
-  const m=match(),card=$('advisory-card'),quick=$('advise-quick-btn');
+  const m=match(),card=$('advisory-card'),quick=$('advise-quick-btn'),toggle=$('advisory-toggle'),body=$('advisory-body');
   const blocked=!m||!!m.state.outcome||!!session?.state.competitive;
   card.hidden=!m||!!session?.state.competitive;
-  quick.disabled=blocked||advisoryBusy;
-  $('advise-turn-btn').disabled=blocked||advisoryBusy;
-  $('advise-swap-btn').disabled=blocked||advisoryBusy||m?.state.phase.kind!=='playing'||(m?.state.passStreak??0)>0;
+  toggle.checked=advisoryEnabled;
+  toggle.disabled=blocked;
+  body.hidden=!advisoryEnabled||blocked;
+  quick.hidden=!advisoryEnabled||!!session?.state.competitive;
+  quick.disabled=blocked||!advisoryEnabled||advisoryBusy;
+  $('advise-turn-btn').disabled=blocked||!advisoryEnabled||advisoryBusy;
+  $('advise-swap-btn').disabled=blocked||!advisoryEnabled||advisoryBusy||m?.state.phase.kind!=='playing'||(m?.state.passStreak??0)>0;
   const res=$('advisory-result'),applyBtn=$('advise-apply-btn');
-  if(!advisory){
+  if(!advisoryEnabled||!advisory){
     res.hidden=true;applyBtn.hidden=true;return;
   }
   res.hidden=false;
@@ -483,6 +491,7 @@ function renderWarning() {
 }
 
 async function requestAdvisory(swapSide=false){
+  if(!advisoryEnabled)return;
   const m=match();if(!m||m.state.outcome||session?.state.competitive||advisoryBusy)return;
   clearAdvisory();
   const lvl=$('advisory-level').value||'standard';
@@ -531,6 +540,12 @@ $('labels-toggle').onclick=()=>{labels=!labels;renderBoard();};
 $('zoom-select').onchange=e=>{boardZoom=e.target.value;try{storageObject.setItem(ZOOM_KEY,boardZoom);}catch{}renderBoard();};
 $('eval-toggle').onclick=()=>{evalHidden=!evalHidden;try{storageObject.setItem(EVAL_HIDDEN_KEY,evalHidden?'1':'0');}catch{}renderEvalAndProgress();};
 $('sound-toggle').onclick=()=>{const muted=toggleMuted();renderSoundButton();if(!muted)playSound('stone');};
+$('advisory-toggle').onchange=e=>{
+  advisoryEnabled=!!e.target.checked;
+  try{storageObject.setItem(ADVISORY_KEY,advisoryEnabled?'1':'0');}catch{}
+  if(!advisoryEnabled)clearAdvisory();
+  render();
+};
 $('advise-quick-btn').onclick=()=>requestAdvisory(false);
 $('advise-turn-btn').onclick=()=>requestAdvisory(false);
 $('advise-swap-btn').onclick=()=>requestAdvisory(true);

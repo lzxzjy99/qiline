@@ -25,11 +25,13 @@ export function installCornerManual(){
   if(!dialog){
     dialog=document.createElement('dialog');
     dialog.id='manual-dialog';
+    dialog.className='manual-dialog-shell';
     dialog.setAttribute('aria-labelledby','manual-title');
-    dialog.innerHTML=`<div class="dialog-head"><div><p class="eyebrow">HOW TO PLAY &amp; GUIDE</p><h2 id="manual-title">玩法手册与功能指南</h2></div><button type="button" id="shared-manual-close" class="close-btn" aria-label="关闭手册">×</button></div><article class="manual">${MANUAL_HTML}</article>`;
+    dialog.innerHTML=`<div class="dialog-head manual-pinned-head"><div><p class="eyebrow">HOW TO PLAY &amp; GUIDE</p><h2 id="manual-title">玩法手册与功能指南</h2></div><button type="button" id="shared-manual-close" class="manual-outer-close" aria-label="关闭手册">✕ 关闭</button></div><article class="manual">${MANUAL_HTML}</article>`;
     document.body.append(dialog);
     dialog.querySelector('#shared-manual-close')?.addEventListener('click',()=>dialog.close());
   }else{
+    dialog.classList?.toggle?.('manual-dialog-shell',true);
     const article=dialog.querySelector('article.manual');
     if(article)article.innerHTML=MANUAL_HTML;
   }

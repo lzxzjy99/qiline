@@ -14,7 +14,15 @@ try{const z=localStorage.getItem(ZOOM_KEY);if(['fit','compact','large'].includes
 try{
   if(window.location?.protocol==='qiline:'){
     const onlineLink=$('online-nav-link');
-    if(onlineLink){onlineLink.classList.add('disabled-offline');onlineLink.setAttribute('aria-disabled','true');onlineLink.onclick=e=>{e.preventDefault();message('桌面离线版不联网；好友在线对战请使用网页版。');};}
+    if(onlineLink){
+      onlineLink.setAttribute('href','https://qiline-online.pages.dev/online.html');
+      onlineLink.setAttribute('title','在默认浏览器中打开在线对战网页版');
+      onlineLink.onclick=e=>{
+        e.preventDefault();
+        if(typeof window.qilineDesktop?.openOnline==='function')window.qilineDesktop.openOnline();
+        else message('请用浏览器访问 https://qiline-online.pages.dev/online.html 进行好友联机。');
+      };
+    }
   }
 }catch{}
 

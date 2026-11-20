@@ -139,6 +139,14 @@ main{max-width:1280px;margin:auto;padding:16px 28px 28px}
 .ai-progress-fill{height:100%;background:var(--green);width:0%;transition:width .2s ease}
 .advisory-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
 .advisory-head h3{margin:0;font-size:13px;font-weight:650}
+.advisory-switch{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--green);cursor:pointer;font-weight:600}
+.advisory-switch input{appearance:none;width:32px;height:18px;background:#cfd6c8;border-radius:18px;position:relative;cursor:pointer;transition:.18s}
+.advisory-switch input:before{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px #1c332c30;transition:.18s}
+.advisory-switch input:checked{background:var(--green)}
+.advisory-switch input:checked:before{left:16px}
+.advisory-body{margin-top:8px;display:grid;gap:7px}
+.advisory-level-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;color:#5b6b5c}
+.advisory-level-row select{padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)}
 .advisory-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .advisory-actions button{font-size:12px;padding:7px 8px;background:var(--paper)}
 .advisory-result{margin-top:8px;padding:8px 10px;border-radius:8px;background:#fff;border:1px solid #dcd7c3;font-size:12px;line-height:1.6}
@@ -177,6 +185,12 @@ dialog::backdrop{background:#1c332c66;backdrop-filter:blur(3px)}
 .dialog-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}
 .dialog-head h2{font-size:22px;margin:0;line-height:1.4}
 .close-btn{border:0;padding:0;font-size:27px;line-height:30px;color:#88917f;width:32px;height:32px}
+#manual-dialog,.manual-dialog-shell{padding:0;overflow:hidden;display:flex;flex-direction:column}
+#manual-dialog:not([open]),.manual-dialog-shell:not([open]){display:none}
+.manual-pinned-head,#manual-dialog .dialog-head{flex-shrink:0;margin:0;padding:16px 22px;border-bottom:1px solid var(--line);background:var(--paper);z-index:2;align-items:center}
+.manual-outer-close{border:1px solid var(--line);background:#faf9f4;color:var(--ink);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0}
+.manual-outer-close:hover{background:#e7eddf;border-color:#9daf9e}
+#manual-dialog .manual{flex:1;min-height:0;overflow-y:auto;padding:18px 24px 24px}
 .dialog-head .eyebrow{font-size:10px;margin-bottom:4px}
 fieldset{border:0;padding:0;margin:0 0 16px}
 legend{font-size:13px;font-weight:600;margin-bottom:8px}

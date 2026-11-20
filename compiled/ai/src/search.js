@@ -6,6 +6,7 @@ import { evaluatePosition, evaluateHardPosition, SECURED_LINE_VALUE, WIN_VALUE }
 import { securedClaim } from "./claim-proof.js";
 import { actionKey, orderActions, retainActions, tieRank } from "./ordering.js";
 import { claimTacticalPoints, featuresOf, liveLinesOf, otherColor, playerColor, rescuedStones, shareFeaturePool } from "./features.js";
+import { isV21Profile, runV21Search } from "./v21-engine.js";
 export const SEARCH_POLICIES = freeze({
     easy: { quietWidth: 6, rootWidth: 12 }, standard: { quietWidth: 12, rootWidth: 24 },
     hard: { quietWidth: 12, rootWidth: 24 },
@@ -190,6 +191,9 @@ export function runSearch(raw, host = {}) {
             return restored;
         const match = restored.value;
         control.nodes = 1;
+        if (header.level === "hard" && isV21Profile(match)) {
+            return runV21Search(header, match, now, cancelled, started, control.last);
+        }
         if (control.featurePool)
             shareFeaturePool(match, control.featurePool);
         if (header.level === "hard" && securedClaim(match)?.color === playerColor(match, actor)) {

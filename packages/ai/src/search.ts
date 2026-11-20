@@ -11,6 +11,7 @@ import { securedClaim } from "./claim-proof.js";
 import { actionKey, orderActions, retainActions, tieRank } from "./ordering.js";
 import { claimTacticalPoints, featuresOf, liveLinesOf, otherColor, playerColor, rescuedStones, shareFeaturePool } from "./features.js";
 import type { FeaturePool } from "./features.js";
+import { isV21Profile, runV21Search } from "./v21-engine.js";
 
 export const SEARCH_POLICIES:Readonly<Record<AILevel,{readonly quietWidth:number;readonly rootWidth:number}>>=freeze({
   easy:{quietWidth:6,rootWidth:12},standard:{quietWidth:12,rootWidth:24},
@@ -130,6 +131,9 @@ export function runSearch(raw:unknown,host:SearchHost={}):AIResult<SearchOutcome
   try {
     const restored=hydrate(header,control);if(!restored.ok)return restored;
     const match=restored.value;control.nodes=1;
+    if(header.level==="hard"&&isV21Profile(match)){
+      return runV21Search(header,match,now,cancelled,started,control.last);
+    }
     if(control.featurePool)shareFeaturePool(match,control.featurePool);
     if(header.level==="hard"&&securedClaim(match)?.color===playerColor(match,actor)){
       const action:AIAction={kind:"pass",actor},result=control.simulate(match,action,1);

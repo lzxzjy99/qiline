@@ -1,11 +1,13 @@
-export declare const NNUE_VERSION = 3;
-export declare const NNUE_IN_SPARSE = 886;
-export declare const NNUE_IN_DENSE = 24;
-export declare const NNUE_H1 = 128;
-export declare const NNUE_H2 = 16;
+export declare const NNUE_VERSION = 4;
+export declare const NNUE_IN_SPARSE = 1638;
+export declare const NNUE_IN_DENSE = 16;
+export declare const NNUE_H1 = 192;
+export declare const NNUE_H2 = 32;
+export declare const NNUE_H3 = 16;
 export declare const NNUE_NUM_BUCKETS = 4;
-export declare const NNUE_BLEND_ALPHA = 0.88;
-export declare const NNUE_CLAIM_BLEND_ALPHA = 0.5;
+export declare const NNUE_FLAGS = 0;
+export declare const NNUE_BLEND_ALPHA = 1;
+export declare const NNUE_CLAIM_BLEND_ALPHA = 1;
 export declare const NNUE_SCORE_SCALE = 2200;
 export declare function decodeBase64(b64: string): Uint8Array;
 export interface NnueWeights {
@@ -14,6 +16,8 @@ export interface NnueWeights {
     readonly b1: Float32Array;
     readonly w2: Float32Array;
     readonly b2: Float32Array;
+    readonly w2b: Float32Array;
+    readonly b2b: Float32Array;
     readonly w3: Float32Array;
     readonly b3: Float32Array;
 }

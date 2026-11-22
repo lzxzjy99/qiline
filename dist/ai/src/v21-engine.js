@@ -1,7 +1,7 @@
 import { applyAction } from "../../core/src/engine.js";
 import { freeze } from "../../core/src/result.js";
 import { AI_PROTOCOL_VERSION, aiOK } from "./protocol.js";
-import { getNnueWeights, NNUE_BLEND_ALPHA, NNUE_CLAIM_BLEND_ALPHA, NNUE_H1, NNUE_H2, NNUE_IN_DENSE, NNUE_NUM_BUCKETS, NNUE_SCORE_SCALE, } from "./v21-nnue-weights.js";
+import { getNnueWeights, NNUE_H1, NNUE_H2, NNUE_H3, NNUE_IN_DENSE, NNUE_NUM_BUCKETS, NNUE_SCORE_SCALE, } from "./v21-nnue-weights.js";
 import { runV24WasmSearch } from "./v24-wasm-kernel.js";
 const MASK27 = 0x7ffffff; // 27 bits = 3 rows of 9
 const NOT_LEFT_27 = 0b111111110_111111110_111111110;
@@ -1188,97 +1188,182 @@ function buildView(s, leafOnly) {
         material, spread, stone, libs, moves0, moves1, critical, forcing, priority, leafOnly,
     };
 }
-// Static NNUE scratch accumulators (zero GC per leaf!)
+// Static NNUE v4 scratch accumulators (zero GC per leaf!)
 const nnAcc = new Float32Array(NNUE_H1);
 const nnH2 = new Float32Array(NNUE_H2);
+const nnH3 = new Float32Array(NNUE_H3);
 const nnDense = new Float32Array(NNUE_IN_DENSE);
+const nnCell3 = new Uint8Array(81);
+// 2x2 Go-shape quad tables matching v25 NNUE v4 exactly
+const QUAD_P0 = new Uint8Array(64);
+const QUAD_ZONE_OFF = new Uint16Array(64);
+const QUAD_LUT = new Int8Array(81);
+(function initQuadsV4() {
+    let q = 0;
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            QUAD_P0[q] = r * 9 + c;
+            const dr = Math.abs(2 * r - 7), dc = Math.abs(2 * c - 7);
+            const dm = dr > dc ? dr : dc;
+            const z = dm <= 2 ? 0 : dm <= 4 ? 1 : dm <= 6 ? 2 : 3;
+            QUAD_ZONE_OFF[q] = z * 72;
+            q++;
+        }
+    }
+    const skip = new Set([0, 1, 2, 3, 6, 9, 18, 27, 54]);
+    let k = 0;
+    for (let code = 0; code < 81; code++) {
+        QUAD_LUT[code] = skip.has(code) ? -1 : k++;
+    }
+})();
 function clampF(x, lo, hi) {
     return x < lo ? lo : x > hi ? hi : x;
 }
 function evalNnueLogit(s, v, W) {
-    const w1s = W.w1s, w1d = W.w1d, w2 = W.w2, w3 = W.w3;
+    const w1s = W.w1s, w1d = W.w1d, w2 = W.w2, w2b = W.w2b, w3 = W.w3;
     nnAcc.set(W.b1);
+    nnCell3.fill(0);
     const isB = s.side === 1;
     const o0 = isB ? s.b0 : s.w0, o1 = isB ? s.b1 : s.w1, o2 = isB ? s.b2 : s.w2;
     const e0 = isB ? s.w0 : s.b0, e1 = isB ? s.w1 : s.b1, e2 = isB ? s.w2 : s.b2;
     const libs = v.libs;
-    const addAcc64 = (wArr, off) => {
-        for (let j = 0; j < 64; j += 4) {
+    const addAcc = (wArr, off) => {
+        for (let j = 0; j < NNUE_H1; j += 4) {
             nnAcc[j] = nnAcc[j] + wArr[off + j];
             nnAcc[j + 1] = nnAcc[j + 1] + wArr[off + j + 1];
             nnAcc[j + 2] = nnAcc[j + 2] + wArr[off + j + 2];
             nnAcc[j + 3] = nnAcc[j + 3] + wArr[off + j + 3];
         }
     };
-    const addStones = (mask, base, enemyOff) => {
+    let ownCnt = 0, enCnt = 0, ownAt = 0, enAt = 0, ownL2 = 0, enL2 = 0;
+    let oAt0 = 0, oAt1 = 0, oAt2 = 0, eAt0 = 0, eAt1 = 0, eAt2 = 0;
+    const addStones = (mask, base, isOwn) => {
         let x = mask;
         while (x) {
+            const bit = x & -x;
             const p = base + ctz27(x);
             x &= x - 1;
             const lb = libs[p];
-            const off = (p * 6 + enemyOff + (lb === 1 ? 0 : lb === 2 ? 1 : 2)) * NNUE_H1;
-            addAcc64(w1s, off);
+            nnCell3[p] = isOwn ? 1 : 2;
+            if (isOwn) {
+                ownCnt++;
+                if (lb === 1) {
+                    ownAt++;
+                    if (base === 0)
+                        oAt0 |= bit;
+                    else if (base === 27)
+                        oAt1 |= bit;
+                    else
+                        oAt2 |= bit;
+                }
+                else if (lb === 2)
+                    ownL2++;
+            }
+            else {
+                enCnt++;
+                if (lb === 1) {
+                    enAt++;
+                    if (base === 0)
+                        eAt0 |= bit;
+                    else if (base === 27)
+                        eAt1 |= bit;
+                    else
+                        eAt2 |= bit;
+                }
+                else if (lb === 2)
+                    enL2++;
+            }
+            const off = (p * 6 + (isOwn ? 0 : 3) + (lb === 1 ? 0 : lb === 2 ? 1 : 2)) * NNUE_H1;
+            addAcc(w1s, off);
         }
     };
-    addStones(o0, 0, 0);
-    addStones(o1, 27, 0);
-    addStones(o2, 54, 0);
-    addStones(e0, 0, 3);
-    addStones(e1, 27, 3);
-    addStones(e2, 54, 3);
+    addStones(o0, 0, true);
+    addStones(o1, 27, true);
+    addStones(o2, 54, true);
+    addStones(e0, 0, false);
+    addStones(e1, 27, false);
+    addStones(e2, 54, false);
     for (let w = 0; w < 50; w++) {
         const m0 = WIN_M0[w], m1 = WIN_M1[w], m2 = WIN_M2[w];
         const om0 = o0 & m0, om1 = o1 & m1, om2 = o2 & m2;
         const em0 = e0 & m0, em1 = e1 & m1, em2 = e2 & m2;
+        if ((om0 | om1 | om2 | em0 | em1 | em2) === 0)
+            continue;
+        const pts = WIN_PTS[w];
         if ((em0 | em1 | em2) === 0) {
             const c = popcnt27(om0) + popcnt27(om1) + popcnt27(om2);
-            if (c >= 2)
-                addAcc64(w1s, (486 + w * 8 + (c - 2)) * NNUE_H1);
+            if (c >= 2) {
+                const hasA = ((om0 & oAt0) | (om1 & oAt1) | (om2 & oAt2)) !== 0;
+                const st = c === 5 ? 6 : ((c - 2) * 2 + (hasA ? 0 : 1));
+                addAcc(w1s, (486 + w * 16 + st) * NNUE_H1);
+                let pat = 0;
+                for (let k = 0; k < 5; k++)
+                    if (nnCell3[pts[k]] === 1)
+                        pat |= 1 << k;
+                addAcc(w1s, (1286 + pat) * NNUE_H1);
+            }
         }
         else if ((om0 | om1 | om2) === 0) {
             const c = popcnt27(em0) + popcnt27(em1) + popcnt27(em2);
-            if (c >= 2)
-                addAcc64(w1s, (486 + w * 8 + 4 + (c - 2)) * NNUE_H1);
+            if (c >= 2) {
+                const hasA = ((em0 & eAt0) | (em1 & eAt1) | (em2 & eAt2)) !== 0;
+                const st = c === 5 ? 6 : ((c - 2) * 2 + (hasA ? 0 : 1));
+                addAcc(w1s, (486 + w * 16 + 8 + st) * NNUE_H1);
+                let pat = 0;
+                for (let k = 0; k < 5; k++)
+                    if (nnCell3[pts[k]] === 2)
+                        pat |= 1 << k;
+                addAcc(w1s, (1286 + 32 + pat) * NNUE_H1);
+            }
+        }
+        else {
+            if ((em0 & eAt0) === em0 && (em1 & eAt1) === em1 && (em2 & eAt2) === em2
+                && (popcnt27(om0) + popcnt27(om1) + popcnt27(om2)) >= 2
+                && ((om0 & oAt0) | (om1 & oAt1) | (om2 & oAt2)) === 0) {
+                addAcc(w1s, (486 + w * 16 + 7) * NNUE_H1);
+            }
+            else if ((om0 & oAt0) === om0 && (om1 & oAt1) === om1 && (om2 & oAt2) === om2
+                && (popcnt27(em0) + popcnt27(em1) + popcnt27(em2)) >= 2
+                && ((em0 & eAt0) | (em1 & eAt1) | (em2 & eAt2)) === 0) {
+                addAcc(w1s, (486 + w * 16 + 15) * NNUE_H1);
+            }
         }
     }
-    const pOwn = isB ? v.pressure0 : v.pressure1, pEn = isB ? v.pressure1 : v.pressure0;
-    const sOwn = isB ? v.safety0 : v.safety1, sEn = isB ? v.safety1 : v.safety0;
+    for (let q = 0; q < 64; q++) {
+        const p0 = QUAD_P0[q];
+        const code = nnCell3[p0] + 3 * nnCell3[p0 + 1] + 9 * nnCell3[p0 + 9] + 27 * nnCell3[p0 + 10];
+        const qidx = QUAD_LUT[code];
+        if (qidx >= 0)
+            addAcc(w1s, (1350 + QUAD_ZONE_OFF[q] + qidx) * NNUE_H1);
+    }
     const capDiff = isB ? (s.capW - s.capB) : (s.capB - s.capW);
-    nnDense[0] = clampF((pOwn - pEn) / 2000, -5, 5);
-    nnDense[1] = clampF((sOwn - sEn) / 1000, -5, 5);
-    nnDense[2] = clampF((v.stone * s.side) / 100, -5, 5);
-    nnDense[3] = clampF(capDiff / 10, -5, 5);
-    nnDense[4] = clampF(isB ? v.hComp0 : v.hComp1, 0, 3);
-    nnDense[5] = clampF(isB ? v.hComp1 : v.hComp0, 0, 3);
-    nnDense[6] = clampF(isB ? v.comp0 : v.comp1, 0, 3);
-    nnDense[7] = clampF(isB ? v.comp1 : v.comp0, 0, 3);
-    nnDense[8] = clampF(pOwn / 2000, 0, 5);
-    nnDense[9] = clampF(pEn / 2000, 0, 5);
-    nnDense[10] = clampF(sOwn / 1000, -5, 5);
-    nnDense[11] = clampF(sEn / 1000, -5, 5);
-    nnDense[12] = clampF((isB ? v.d2_0 : v.d2_1) / 4, 0, 3);
-    nnDense[13] = clampF((isB ? v.d2_1 : v.d2_0) / 4, 0, 3);
-    nnDense[14] = clampF((isB ? v.pk0 : v.pk1) / 4, 0, 3);
-    nnDense[15] = clampF((isB ? v.pk1 : v.pk0) / 4, 0, 3);
     const cRemOwn = isB ? v.claimMinRem0 : v.claimMinRem1;
     const cRemEn = isB ? v.claimMinRem1 : v.claimMinRem0;
     const cLibOwn = isB ? v.claimMinLib0 : v.claimMinLib1;
     const cLibEn = isB ? v.claimMinLib1 : v.claimMinLib0;
-    const stoneCount = popcnt27(s.b0) + popcnt27(s.b1) + popcnt27(s.b2) + popcnt27(s.w0) + popcnt27(s.w1) + popcnt27(s.w2);
-    nnDense[16] = cRemOwn < 100 ? (1 / Math.max(1, cRemOwn)) : 0;
-    nnDense[17] = cRemEn < 100 ? (1 / Math.max(1, cRemEn)) : 0;
-    nnDense[18] = cRemOwn < 100 ? clampF(cLibOwn / 4, 0, 1) : 0;
-    nnDense[19] = cRemEn < 100 ? clampF(cLibEn / 4, 0, 1) : 0;
-    nnDense[20] = clampF((isB ? v.claims0 : v.claims1) / 90000, 0, 2);
-    nnDense[21] = clampF((isB ? v.claims1 : v.claims0) / 90000, 0, 2);
-    nnDense[22] = clampF(s.ply / 60, 0, 2);
-    nnDense[23] = clampF(stoneCount / 60, 0, 2);
+    const stoneCount = ownCnt + enCnt;
+    nnDense[0] = clampF(capDiff / 10, -5, 5);
+    nnDense[1] = clampF(isB ? v.comp0 : v.comp1, 0, 3);
+    nnDense[2] = clampF(isB ? v.comp1 : v.comp0, 0, 3);
+    nnDense[3] = cRemOwn < 100 ? (1 / Math.max(1, cRemOwn)) : 0;
+    nnDense[4] = cRemEn < 100 ? (1 / Math.max(1, cRemEn)) : 0;
+    nnDense[5] = cRemOwn < 100 ? clampF(cLibOwn / 4, 0, 1) : 0;
+    nnDense[6] = cRemEn < 100 ? clampF(cLibEn / 4, 0, 1) : 0;
+    nnDense[7] = clampF((isB ? v.claims0 : v.claims1) / 90000, 0, 2);
+    nnDense[8] = clampF((isB ? v.claims1 : v.claims0) / 90000, 0, 2);
+    nnDense[9] = clampF(s.ply / 60, 0, 2);
+    nnDense[10] = clampF(stoneCount / 60, 0, 2);
+    nnDense[11] = clampF((ownCnt - enCnt) / 20, -3, 3);
+    nnDense[12] = clampF(ownAt / 10, 0, 3);
+    nnDense[13] = clampF(enAt / 10, 0, 3);
+    nnDense[14] = clampF(ownL2 / 15, 0, 3);
+    nnDense[15] = clampF(enL2 / 15, 0, 3);
     for (let d = 0; d < NNUE_IN_DENSE; d++) {
         const dv = nnDense[d];
         if (dv === 0)
             continue;
         const off = d * NNUE_H1;
-        for (let j = 0; j < 64; j += 4) {
+        for (let j = 0; j < NNUE_H1; j += 4) {
             nnAcc[j] = nnAcc[j] + dv * w1d[off + j];
             nnAcc[j + 1] = nnAcc[j + 1] + dv * w1d[off + j + 1];
             nnAcc[j + 2] = nnAcc[j + 2] + dv * w1d[off + j + 2];
@@ -1290,7 +1375,6 @@ function evalNnueLogit(s, v, W) {
         bkt = NNUE_NUM_BUCKETS - 1;
     const w2Base = bkt * NNUE_H1 * NNUE_H2;
     const b2Base = bkt * NNUE_H2;
-    const w3Base = bkt * NNUE_H2;
     for (let j = 0; j < NNUE_H2; j++)
         nnH2[j] = W.b2[b2Base + j];
     for (let i = 0; i < NNUE_H1; i++) {
@@ -1299,24 +1383,44 @@ function evalNnueLogit(s, v, W) {
             continue;
         if (a1 > 1)
             a1 = 1;
-        a1 = a1 * a1; // SCReLU (v23 Gen-4 4-bucket)
+        a1 = a1 * a1;
         const off = w2Base + i * NNUE_H2;
-        for (let j = 0; j < 16; j += 4) {
+        for (let j = 0; j < NNUE_H2; j += 4) {
             nnH2[j] = nnH2[j] + a1 * w2[off + j];
             nnH2[j + 1] = nnH2[j + 1] + a1 * w2[off + j + 1];
             nnH2[j + 2] = nnH2[j + 2] + a1 * w2[off + j + 2];
             nnH2[j + 3] = nnH2[j + 3] + a1 * w2[off + j + 3];
         }
     }
-    let out = W.b3[bkt];
-    for (let j = 0; j < NNUE_H2; j++) {
-        let a2 = nnH2[j];
+    const w2bBase = bkt * NNUE_H2 * NNUE_H3;
+    const b2bBase = bkt * NNUE_H3;
+    for (let j = 0; j < NNUE_H3; j++)
+        nnH3[j] = W.b2b[b2bBase + j];
+    for (let i = 0; i < NNUE_H2; i++) {
+        let a2 = nnH2[i];
         if (a2 <= 0)
             continue;
         if (a2 > 1)
             a2 = 1;
-        a2 = a2 * a2; // SCReLU (v23 Gen-4 4-bucket)
-        out += a2 * w3[w3Base + j];
+        a2 = a2 * a2;
+        const off = w2bBase + i * NNUE_H3;
+        for (let j = 0; j < NNUE_H3; j += 4) {
+            nnH3[j] = nnH3[j] + a2 * w2b[off + j];
+            nnH3[j + 1] = nnH3[j + 1] + a2 * w2b[off + j + 1];
+            nnH3[j + 2] = nnH3[j + 2] + a2 * w2b[off + j + 2];
+            nnH3[j + 3] = nnH3[j + 3] + a2 * w2b[off + j + 3];
+        }
+    }
+    const w3Base = bkt * NNUE_H3;
+    let out = W.b3[bkt];
+    for (let j = 0; j < NNUE_H3; j++) {
+        let a3 = nnH3[j];
+        if (a3 <= 0)
+            continue;
+        if (a3 > 1)
+            a3 = 1;
+        a3 = a3 * a3;
+        out += a3 * w3[w3Base + j];
     }
     return out;
 }
@@ -1327,21 +1431,13 @@ function heuristicValueA(s, v, W) {
         const advantage = v.potential0 - v.potential1 + v.material + v.oldSafety0 - v.oldSafety1;
         return -Math.abs(advantage - 12) - v.spread;
     }
-    const captures = (s.capW - s.capB) * 40;
-    const baseScore = v.pressure0 - v.pressure1 + v.stone + captures + v.safety0 - v.safety1;
     const isB = s.side === 1;
     const hOwn = isB ? v.hComp0 : v.hComp1, cOwn = isB ? v.comp0 : v.comp1;
     const hEn = isB ? v.hComp1 : v.hComp0, cEn = isB ? v.comp1 : v.comp0;
     const initiative = hOwn > 0 ? 6000 : cOwn > 0 ? 1800 : hEn >= 2 ? -5000 : cEn >= 2 ? -1500 : 0;
     const claimDiff = v.claims0 - v.claims1;
-    let score = baseScore + claimDiff + s.side * (12 + initiative);
     const nnueBlack = s.side * evalNnueLogit(s, v, W) * NNUE_SCORE_SCALE;
-    if (v.claims0 === 0 && v.claims1 === 0) {
-        score = (1 - NNUE_BLEND_ALPHA) * score + NNUE_BLEND_ALPHA * (nnueBlack + s.side * (12 + initiative));
-    }
-    else {
-        score = (1 - NNUE_CLAIM_BLEND_ALPHA) * score + NNUE_CLAIM_BLEND_ALPHA * (nnueBlack + claimDiff + s.side * (12 + initiative));
-    }
+    const score = nnueBlack + claimDiff + s.side * (12 + initiative);
     return (s.ownerBlack === 0 ? 1 : -1) * Math.max(-1000000, Math.min(1000000, score));
 }
 // ============================================================

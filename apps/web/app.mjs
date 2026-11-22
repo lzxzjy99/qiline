@@ -242,7 +242,7 @@ function renderRules() {
   badge.hidden=false;
   const nnue=isHardNine();
   badge.classList.toggle('fallback',!nnue);
-  badge.textContent=nnue?(hwCaps.sabSupported?'Gen-5 NNUE · WASM SIMD 多核':'Gen-5 NNUE · WASM SIMD 单核'):'通用规则深算内核（NNUE 限默认 9 路）';
+  badge.textContent=nnue?(hwCaps.sabSupported?'Gen-6.3 NNUE · v25 WASM 多核':'Gen-6.3 NNUE · v25 WASM 单核'):'通用规则深算内核（NNUE 限默认 9 路）';
 }
 
 function renderBoard() {

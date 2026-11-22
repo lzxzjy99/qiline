@@ -242,7 +242,12 @@ function renderRules() {
   badge.hidden=false;
   const nnue=isHardNine();
   badge.classList.toggle('fallback',!nnue);
-  badge.textContent=nnue?(hwCaps.sabSupported?'Gen-6.3 NNUE · v25 WASM 多核':'Gen-6.3 NNUE · v25 WASM 单核'):'通用规则深算内核（NNUE 限默认 9 路）';
+  if(!nnue){badge.textContent='通用规则深算内核（v26 限默认 9 路）';return;}
+  const bk=aiTelemetry?.backend;
+  if(perfMode==='standard'){badge.textContent='Gen-7 NNUE v5 · v26 WASM 单核';return;}
+  if(bk==='webgpu'||aiTelemetry?.gpuAvailable){badge.textContent='Gen-7 · v26 WebGPU GPU 神经 MCTS';return;}
+  if(bk==='native'||aiTelemetry?.nativeAvailable){badge.textContent='Gen-7 NNUE v5 · v26 原生 AVX2 多核';return;}
+  badge.textContent=hwCaps.sabSupported?'Gen-7 NNUE v5 · v26 WASM 多核':'Gen-7 NNUE v5 · v26 WASM 单核';
 }
 
 function renderBoard() {
@@ -436,14 +441,39 @@ function renderThinkingTime(){
 
 function renderTelemetry(){
   renderEvalAndProgress();
+  renderRules();
   const el=$('ai-telemetry');if(!el)return;
   const hard9=isHardNine(),ended=!live();
   if(!hard9){el.hidden=true;return;}
   const t=aiTelemetry;
-  const threads=t?.threads??(perfMode==='standard'?1:hwCaps.recommendedThreads);
+  const bk=t?.backend;
+  const threads=t?.threads??(perfMode==='standard'?1:(perfMode==='extreme'?hwCaps.extremeThreads:hwCaps.recommendedThreads));
   const ttMB=t?.ttMB??(perfMode==='standard'?14:hwCaps.ttMB);
   if(t?.pondering&&!ended){
     el.hidden=false;el.textContent=`后台预算中 · ${threads} 线程预热 ${ttMB}MB 缓存`;return;
+  }
+  if(bk==='webgpu'&&perfMode!=='standard'){
+    el.hidden=false;
+    const gpuTag=t?.gpuLabel?'WebGPU · '+t.gpuLabel:'WebGPU GPU';
+    if(t&&t.totalNodes>0){
+      const speed=t.nps>0?` · ${fmtCount(t.nps)} 模拟/秒`:'';
+      const dep=t.depth>0?` · 深度 ${t.depth}`:'';
+      el.textContent=`${gpuTag}${speed}${dep} · ${fmtCount(t.totalNodes)} 模拟`;
+      return;
+    }
+    el.textContent=`就绪：${gpuTag} · 8×96 ResNet MCTS + 战术守护`;
+    return;
+  }
+  if(bk==='native'&&perfMode!=='standard'){
+    el.hidden=false;
+    if(t&&t.totalNodes>0){
+      const speed=t.nps>0?` · ${fmtCount(t.nps)} 节点/秒`:'';
+      const dep=t.depth>0?` · 深度 ${t.depth}`:'';
+      el.textContent=`原生 AVX2 ${threads} 核${speed}${dep} · ${fmtCount(t.totalNodes)} 节点 · ${ttMB}MB 缓存`;
+      return;
+    }
+    el.textContent=`就绪：原生 AVX2 ${threads} 核并行 · ${ttMB}MB 共享缓存`;
+    return;
   }
   if(t&&t.totalNodes>0){
     el.hidden=false;
@@ -453,7 +483,7 @@ function renderTelemetry(){
     return;
   }
   el.hidden=false;
-  el.textContent=perfMode==='standard'?'单核常驻 · 标准 400 万节点上限':hwCaps.sabSupported?`就绪：${threads} 核并行 · ${ttMB}MB 共享缓存`:`单核满载（当前环境未开启多核隔离）`;
+  el.textContent=perfMode==='standard'?'单核常驻 · 标准 400 万节点上限（省电静音）':hwCaps.sabSupported?`就绪：${threads} 核并行 · ${ttMB}MB 共享缓存`:`单核满载（当前环境未开启多核隔离）`;
 }
 
 function renderAI(){
@@ -702,7 +732,7 @@ $('ai-perf-mode').onchange=e=>{
   try{storageObject.setItem(PERF_KEY,perfMode);}catch{}
   ai?.setPerfMode?.(perfMode);
   renderTelemetry();
-  notice(perfMode==='extreme'?'已切换为极限满载（多核并行 + 后台预算），将在下一手及空闲时生效。':perfMode==='turbo'?'已切换为满载多核（自动匹配物理核心 + 大容量共享缓存）。':'已切换为标准单核（400 万节点上限，省电静音）。');
+  notice(perfMode==='extreme'?'已切换为极限榨干模式（WebGPU 10s 深算 / 全核满载 + 后台预算），将在下一手生效。':perfMode==='turbo'?'已切换为自动榨干模式（优先 WebGPU GPU 神经 MCTS / 物理核心满载）。':'已切换为节能单核模式（v26 WASM 单核，省电静音）。');
 };
 $('replace-confirm').onclick=()=>{const action=replaceAction;replaceAction=null;$('replace-dialog').close();if(mayChange()&&replaceable())action?.();};
 $('replace-dialog').addEventListener('close',()=>{replaceAction=null;});

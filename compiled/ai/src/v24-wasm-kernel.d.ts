@@ -1,8 +1,8 @@
 export interface WasmSearchCallbacks {
-    readonly nowMs: () => number;
-    readonly pollStatus: (nodes: number, depth: number, score: number, bestCode: number, forceProgress: number) => number;
-    readonly ttProbe: (keyLo: number, keyHi: number, b0: number, b1: number, b2: number, w0: number, w1: number, w2: number, activeClaims: number, rem: number, qleft: number, ttSafe: number, ioOut: Float64Array) => number;
-    readonly ttStore: (keyLo: number, keyHi: number, b0: number, b1: number, b2: number, w0: number, w1: number, w2: number, activeClaims: number, rem: number, qleft: number, ttSafe: number, val: number, move: number, bnd: number) => void;
+    nowMs: () => number;
+    pollStatus: (nodes: number, depth: number, score: number, bestCode: number, forceProgress: number) => number;
+    ttProbe: (kl: number, kh: number, b0: number, b1: number, b2: number, w0: number, w1: number, w2: number, ac: number, rem: number, ql: number, ts: number, outIo: Float64Array) => number;
+    ttStore: (kl: number, kh: number, b0: number, b1: number, b2: number, w0: number, w1: number, w2: number, ac: number, rem: number, ql: number, ts: number, val: number, mv: number, bnd: number) => void;
 }
 export interface WasmSearchResult {
     readonly bestCode: number;

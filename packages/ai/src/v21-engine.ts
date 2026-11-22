@@ -858,18 +858,23 @@ function buildView(s: State, leafOnly: boolean): ViewData {
   };
 }
 
-// Static NNUE v4 scratch accumulators (zero GC per leaf!)
-const nnAcc = new Float32Array(NNUE_H1);
+// Static NNUE v5 Dual-Perspective scratch accumulators (zero GC per leaf!)
+const nnAccStm = new Float32Array(NNUE_H1);
+const nnAccOpp = new Float32Array(NNUE_H1);
+const nnPsqtStm = new Float32Array(NNUE_NUM_BUCKETS);
+const nnPsqtOpp = new Float32Array(NNUE_NUM_BUCKETS);
 const nnH2 = new Float32Array(NNUE_H2);
 const nnH3 = new Float32Array(NNUE_H3);
 const nnDense = new Float32Array(NNUE_IN_DENSE);
+const nnDenseOpp = new Float32Array(NNUE_IN_DENSE);
 const nnCell3 = new Uint8Array(81);
 
-// 2x2 Go-shape quad tables matching v25 NNUE v4 exactly
+// 2x2 Go-shape quad tables & exact mirror feature map matching NNUE v5
 const QUAD_P0 = new Uint8Array(64);
 const QUAD_ZONE_OFF = new Uint16Array(64);
 const QUAD_LUT = new Int8Array(81);
-(function initQuadsV4() {
+const MIRROR_FEAT = new Uint16Array(1638);
+(function initQuadsV5() {
   let q = 0;
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
@@ -886,6 +891,34 @@ const QUAD_LUT = new Int8Array(81);
   for (let code = 0; code < 81; code++) {
     QUAD_LUT[code] = skip.has(code) ? -1 : k++;
   }
+  // Exact mirror map (swaps own <-> opp perspective)
+  for (let p = 0; p < 81; p++) {
+    for (let l = 0; l < 3; l++) {
+      MIRROR_FEAT[p * 6 + l] = p * 6 + 3 + l;
+      MIRROR_FEAT[p * 6 + 3 + l] = p * 6 + l;
+    }
+  }
+  for (let w = 0; w < 50; w++) {
+    for (let k2 = 0; k2 < 8; k2++) {
+      MIRROR_FEAT[486 + w * 16 + k2] = 486 + w * 16 + 8 + k2;
+      MIRROR_FEAT[486 + w * 16 + 8 + k2] = 486 + w * 16 + k2;
+    }
+  }
+  for (let pat = 0; pat < 32; pat++) {
+    MIRROR_FEAT[1286 + pat] = 1286 + 32 + pat;
+    MIRROR_FEAT[1286 + 32 + pat] = 1286 + pat;
+  }
+  const swap3 = [0, 2, 1];
+  for (let z = 0; z < 4; z++) {
+    for (let code = 0; code < 81; code++) {
+      const qi = QUAD_LUT[code]!;
+      if (qi < 0) continue;
+      const d0 = swap3[code % 3]!, d1 = swap3[((code / 3) | 0) % 3]!,
+            d2 = swap3[((code / 9) | 0) % 3]!, d3 = swap3[((code / 27) | 0) % 3]!;
+      const mcode = d0 + 3 * d1 + 9 * d2 + 27 * d3;
+      MIRROR_FEAT[1350 + z * 72 + qi] = 1350 + z * 72 + QUAD_LUT[mcode]!;
+    }
+  }
 })();
 
 function clampF(x: number, lo: number, hi: number): number {
@@ -893,20 +926,35 @@ function clampF(x: number, lo: number, hi: number): number {
 }
 
 function evalNnueLogit(s: State, v: ViewData, W: NnueWeights): number {
-  const w1s = W.w1s, w1d = W.w1d, w2 = W.w2, w2b = W.w2b, w3 = W.w3;
-  nnAcc.set(W.b1);
+  const w1s = W.w1s, w1d = W.w1d, psqt = W.psqt, w2 = W.w2, w2b = W.w2b, w3 = W.w3;
+  nnAccStm.set(W.b1);
+  nnAccOpp.set(W.b1);
+  nnPsqtStm.fill(0);
+  nnPsqtOpp.fill(0);
   nnCell3.fill(0);
   const isB = s.side === 1;
   const o0 = isB ? s.b0 : s.w0, o1 = isB ? s.b1 : s.w1, o2 = isB ? s.b2 : s.w2;
   const e0 = isB ? s.w0 : s.b0, e1 = isB ? s.w1 : s.b1, e2 = isB ? s.w2 : s.b2;
   const libs = v.libs;
 
-  const addAcc = (wArr: Float32Array, off: number) => {
+  const addFeat = (fStm: number) => {
+    const fOpp = MIRROR_FEAT[fStm]!;
+    const offS = fStm * NNUE_H1;
+    const offO = fOpp * NNUE_H1;
     for (let j = 0; j < NNUE_H1; j += 4) {
-      nnAcc[j] = nnAcc[j]! + wArr[off + j]!;
-      nnAcc[j + 1] = nnAcc[j + 1]! + wArr[off + j + 1]!;
-      nnAcc[j + 2] = nnAcc[j + 2]! + wArr[off + j + 2]!;
-      nnAcc[j + 3] = nnAcc[j + 3]! + wArr[off + j + 3]!;
+      nnAccStm[j] = nnAccStm[j]! + w1s[offS + j]!;
+      nnAccStm[j + 1] = nnAccStm[j + 1]! + w1s[offS + j + 1]!;
+      nnAccStm[j + 2] = nnAccStm[j + 2]! + w1s[offS + j + 2]!;
+      nnAccStm[j + 3] = nnAccStm[j + 3]! + w1s[offS + j + 3]!;
+      nnAccOpp[j] = nnAccOpp[j]! + w1s[offO + j]!;
+      nnAccOpp[j + 1] = nnAccOpp[j + 1]! + w1s[offO + j + 1]!;
+      nnAccOpp[j + 2] = nnAccOpp[j + 2]! + w1s[offO + j + 2]!;
+      nnAccOpp[j + 3] = nnAccOpp[j + 3]! + w1s[offO + j + 3]!;
+    }
+    const pS = fStm * NNUE_NUM_BUCKETS, pO = fOpp * NNUE_NUM_BUCKETS;
+    for (let b = 0; b < NNUE_NUM_BUCKETS; b++) {
+      nnPsqtStm[b] = nnPsqtStm[b]! + psqt[pS + b]!;
+      nnPsqtOpp[b] = nnPsqtOpp[b]! + psqt[pO + b]!;
     }
   };
   let ownCnt = 0, enCnt = 0, ownAt = 0, enAt = 0, ownL2 = 0, enL2 = 0;
@@ -927,8 +975,7 @@ function evalNnueLogit(s: State, v: ViewData, W: NnueWeights): number {
         if (lb === 1) { enAt++; if (base === 0) eAt0 |= bit; else if (base === 27) eAt1 |= bit; else eAt2 |= bit; }
         else if (lb === 2) enL2++;
       }
-      const off = (p * 6 + (isOwn ? 0 : 3) + (lb === 1 ? 0 : lb === 2 ? 1 : 2)) * NNUE_H1;
-      addAcc(w1s, off);
+      addFeat(p * 6 + (isOwn ? 0 : 3) + (lb === 1 ? 0 : lb === 2 ? 1 : 2));
     }
   };
   addStones(o0, 0, true); addStones(o1, 27, true); addStones(o2, 54, true);
@@ -945,30 +992,30 @@ function evalNnueLogit(s: State, v: ViewData, W: NnueWeights): number {
       if (c >= 2) {
         const hasA = ((om0 & oAt0) | (om1 & oAt1) | (om2 & oAt2)) !== 0;
         const st = c === 5 ? 6 : ((c - 2) * 2 + (hasA ? 0 : 1));
-        addAcc(w1s, (486 + w * 16 + st) * NNUE_H1);
+        addFeat(486 + w * 16 + st);
         let pat = 0;
         for (let k = 0; k < 5; k++) if (nnCell3[pts[k]!] === 1) pat |= 1 << k;
-        addAcc(w1s, (1286 + pat) * NNUE_H1);
+        addFeat(1286 + pat);
       }
     } else if ((om0 | om1 | om2) === 0) {
       const c = popcnt27(em0) + popcnt27(em1) + popcnt27(em2);
       if (c >= 2) {
         const hasA = ((em0 & eAt0) | (em1 & eAt1) | (em2 & eAt2)) !== 0;
         const st = c === 5 ? 6 : ((c - 2) * 2 + (hasA ? 0 : 1));
-        addAcc(w1s, (486 + w * 16 + 8 + st) * NNUE_H1);
+        addFeat(486 + w * 16 + 8 + st);
         let pat = 0;
         for (let k = 0; k < 5; k++) if (nnCell3[pts[k]!] === 2) pat |= 1 << k;
-        addAcc(w1s, (1286 + 32 + pat) * NNUE_H1);
+        addFeat(1286 + 32 + pat);
       }
     } else {
       if ((em0 & eAt0) === em0 && (em1 & eAt1) === em1 && (em2 & eAt2) === em2
           && (popcnt27(om0) + popcnt27(om1) + popcnt27(om2)) >= 2
           && ((om0 & oAt0) | (om1 & oAt1) | (om2 & oAt2)) === 0) {
-        addAcc(w1s, (486 + w * 16 + 7) * NNUE_H1);
+        addFeat(486 + w * 16 + 7);
       } else if ((om0 & oAt0) === om0 && (om1 & oAt1) === om1 && (om2 & oAt2) === om2
           && (popcnt27(em0) + popcnt27(em1) + popcnt27(em2)) >= 2
           && ((em0 & eAt0) | (em1 & eAt1) | (em2 & eAt2)) === 0) {
-        addAcc(w1s, (486 + w * 16 + 15) * NNUE_H1);
+        addFeat(486 + w * 16 + 15);
       }
     }
   }
@@ -976,7 +1023,7 @@ function evalNnueLogit(s: State, v: ViewData, W: NnueWeights): number {
     const p0 = QUAD_P0[q]!;
     const code = nnCell3[p0]! + 3 * nnCell3[p0 + 1]! + 9 * nnCell3[p0 + 9]! + 27 * nnCell3[p0 + 10]!;
     const qidx = QUAD_LUT[code]!;
-    if (qidx >= 0) addAcc(w1s, (1350 + QUAD_ZONE_OFF[q]! + qidx) * NNUE_H1);
+    if (qidx >= 0) addFeat(1350 + QUAD_ZONE_OFF[q]! + qidx);
   }
 
   const capDiff = isB ? (s.capW - s.capB) : (s.capB - s.capW);
@@ -1002,34 +1049,67 @@ function evalNnueLogit(s: State, v: ViewData, W: NnueWeights): number {
   nnDense[14] = clampF(ownL2 / 15, 0, 3);
   nnDense[15] = clampF(enL2 / 15, 0, 3);
 
+  nnDenseOpp[0] = -nnDense[0]!; nnDenseOpp[1] = nnDense[2]!; nnDenseOpp[2] = nnDense[1]!;
+  nnDenseOpp[3] = nnDense[4]!; nnDenseOpp[4] = nnDense[3]!;
+  nnDenseOpp[5] = nnDense[6]!; nnDenseOpp[6] = nnDense[5]!;
+  nnDenseOpp[7] = nnDense[8]!; nnDenseOpp[8] = nnDense[7]!;
+  nnDenseOpp[9] = nnDense[9]!; nnDenseOpp[10] = nnDense[10]!;
+  nnDenseOpp[11] = -nnDense[11]!;
+  nnDenseOpp[12] = nnDense[13]!; nnDenseOpp[13] = nnDense[12]!;
+  nnDenseOpp[14] = nnDense[15]!; nnDenseOpp[15] = nnDense[14]!;
+
   for (let d = 0; d < NNUE_IN_DENSE; d++) {
-    const dv = nnDense[d]!;
-    if (dv === 0) continue;
+    const dvS = nnDense[d]!;
+    const dvO = nnDenseOpp[d]!;
     const off = d * NNUE_H1;
-    for (let j = 0; j < NNUE_H1; j += 4) {
-      nnAcc[j] = nnAcc[j]! + dv * w1d[off + j]!;
-      nnAcc[j + 1] = nnAcc[j + 1]! + dv * w1d[off + j + 1]!;
-      nnAcc[j + 2] = nnAcc[j + 2]! + dv * w1d[off + j + 2]!;
-      nnAcc[j + 3] = nnAcc[j + 3]! + dv * w1d[off + j + 3]!;
+    if (dvS !== 0) {
+      for (let j = 0; j < NNUE_H1; j += 4) {
+        nnAccStm[j] = nnAccStm[j]! + dvS * w1d[off + j]!;
+        nnAccStm[j + 1] = nnAccStm[j + 1]! + dvS * w1d[off + j + 1]!;
+        nnAccStm[j + 2] = nnAccStm[j + 2]! + dvS * w1d[off + j + 2]!;
+        nnAccStm[j + 3] = nnAccStm[j + 3]! + dvS * w1d[off + j + 3]!;
+      }
+    }
+    if (dvO !== 0) {
+      for (let j = 0; j < NNUE_H1; j += 4) {
+        nnAccOpp[j] = nnAccOpp[j]! + dvO * w1d[off + j]!;
+        nnAccOpp[j + 1] = nnAccOpp[j + 1]! + dvO * w1d[off + j + 1]!;
+        nnAccOpp[j + 2] = nnAccOpp[j + 2]! + dvO * w1d[off + j + 2]!;
+        nnAccOpp[j + 3] = nnAccOpp[j + 3]! + dvO * w1d[off + j + 3]!;
+      }
     }
   }
 
-  let bkt = (stoneCount / 14) | 0;
+  let bkt = (stoneCount / 10) | 0;
   if (bkt >= NNUE_NUM_BUCKETS) bkt = NNUE_NUM_BUCKETS - 1;
-  const w2Base = bkt * NNUE_H1 * NNUE_H2;
+  const l2In = NNUE_H1 * 2;
+  const w2Base = bkt * l2In * NNUE_H2;
   const b2Base = bkt * NNUE_H2;
   for (let j = 0; j < NNUE_H2; j++) nnH2[j] = W.b2[b2Base + j]!;
   for (let i = 0; i < NNUE_H1; i++) {
-    let a1 = nnAcc[i]!;
-    if (a1 <= 0) continue;
-    if (a1 > 1) a1 = 1;
-    a1 = a1 * a1;
-    const off = w2Base + i * NNUE_H2;
-    for (let j = 0; j < NNUE_H2; j += 4) {
-      nnH2[j] = nnH2[j]! + a1 * w2[off + j]!;
-      nnH2[j + 1] = nnH2[j + 1]! + a1 * w2[off + j + 1]!;
-      nnH2[j + 2] = nnH2[j + 2]! + a1 * w2[off + j + 2]!;
-      nnH2[j + 3] = nnH2[j + 3]! + a1 * w2[off + j + 3]!;
+    let a1 = nnAccStm[i]!;
+    if (a1 > 0) {
+      if (a1 > 1) a1 = 1;
+      a1 = a1 * a1;
+      const off = w2Base + i * NNUE_H2;
+      for (let j = 0; j < NNUE_H2; j += 4) {
+        nnH2[j] = nnH2[j]! + a1 * w2[off + j]!;
+        nnH2[j + 1] = nnH2[j + 1]! + a1 * w2[off + j + 1]!;
+        nnH2[j + 2] = nnH2[j + 2]! + a1 * w2[off + j + 2]!;
+        nnH2[j + 3] = nnH2[j + 3]! + a1 * w2[off + j + 3]!;
+      }
+    }
+    let a2 = nnAccOpp[i]!;
+    if (a2 > 0) {
+      if (a2 > 1) a2 = 1;
+      a2 = a2 * a2;
+      const off = w2Base + (NNUE_H1 + i) * NNUE_H2;
+      for (let j = 0; j < NNUE_H2; j += 4) {
+        nnH2[j] = nnH2[j]! + a2 * w2[off + j]!;
+        nnH2[j + 1] = nnH2[j + 1]! + a2 * w2[off + j + 1]!;
+        nnH2[j + 2] = nnH2[j + 2]! + a2 * w2[off + j + 2]!;
+        nnH2[j + 3] = nnH2[j + 3]! + a2 * w2[off + j + 3]!;
+      }
     }
   }
   const w2bBase = bkt * NNUE_H2 * NNUE_H3;
@@ -1049,7 +1129,7 @@ function evalNnueLogit(s: State, v: ViewData, W: NnueWeights): number {
     }
   }
   const w3Base = bkt * NNUE_H3;
-  let out = W.b3[bkt]!;
+  let out = W.b3[bkt]! + 0.5 * (nnPsqtStm[bkt]! - nnPsqtOpp[bkt]!);
   for (let j = 0; j < NNUE_H3; j++) {
     let a3 = nnH3[j]!;
     if (a3 <= 0) continue;

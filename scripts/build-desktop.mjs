@@ -40,8 +40,16 @@ const options={dir:appDir,name:'QiLine',executableName:'弈合',icon:join(root,'
   win32metadata:{ProductName:'弈合',FileDescription:'弈合 · 吃子与五连',CompanyName:'QiLine',OriginalFilename:'弈合.exe',InternalName:'QiLine'}};
 const paths=await packager(options),extras=[];
 for(const directory of paths){
-  for(const [source,name]of [['apps/desktop/manual.html','弈合_游玩手册.html'],['docs/Windows真机验收清单.md','Windows真机验收清单.md']]){
-    await cp(join(root,source),join(directory,name));extras.push({source,file:name});
+  for(const [source,name]of [
+    ['apps/desktop/manual.html','弈合_游玩手册.html'],
+    ['docs/Windows真机验收清单.md','Windows真机验收清单.md'],
+    ['native-bin/qiline-engine.exe','resources/engine/qiline-engine.exe'],
+    ['native-bin/nnue-gen7-192x2.bin','resources/engine/nnue-gen7-192x2.bin'],
+  ]){
+    const targetPath=join(directory,name);
+    await mkdir(dirname(targetPath),{recursive:true});
+    await cp(join(root,source),targetPath);
+    extras.push({source,file:name});
   }
   await writeFile(join(directory,'启动说明.txt'),`弈合 v${version} · Windows x64\n\n请保留整个文件夹，双击“弈合.exe”启动。\n支持离线双人与人机练习（简单／标准／困难）。困难 AI 每手最多思考 2 分钟，可随时暂停。\n游玩手册见“弈合_游玩手册.html”。自动保存默认在 %APPDATA%\\QiLine。\n实际运行验证范围见随包验收记录，不能仅凭构建成功认定所有 Windows 环境均通过。\n`,'utf8');
 }

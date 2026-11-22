@@ -104,7 +104,7 @@ export function runAdvisorySearch({match,level='standard',swapSide=false,seed=1,
       return;
     }
     const hw=typeof navigator!=='undefined'&&Number.isFinite(navigator.hardwareConcurrency)?navigator.hardwareConcurrency:4;
-    const threadCount=hw>=8?Math.min(8,Math.floor(hw/2)):Math.max(1,hw-1);
+    const threadCount=hw>=20?Math.min(16,Math.floor(hw*0.75)):hw>=8?Math.min(12,Math.floor(hw/2)):Math.max(1,hw-1);
     const ttSlots=1<<20;
     const ttBuf=new SharedArrayBuffer(ttSlots*SHARED_TT_STRIDE*4);
     const ctrlBuf=new SharedArrayBuffer(CTRL_BUFFER_BYTES);

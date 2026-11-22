@@ -1,5 +1,7 @@
 'use strict';
 const {app,BrowserWindow,protocol,session,dialog,Menu,ipcMain,shell,screen} = require('electron');
+const {spawn} = require('node:child_process');
+const readline = require('node:readline');
 const path = require('node:path');
 const fs = require('node:fs');
 const {version} = require('./package.json');
@@ -13,6 +15,104 @@ if(profileOverride&&!path.isAbsolute(profileOverride))throw new Error('QILINE_PR
 const profile=profileOverride?path.resolve(profileOverride):path.join(app.getPath('appData'),'QiLine');
 fs.mkdirSync(profile,{recursive:true});app.setPath('userData',profile);
 const windowStateFile=path.join(profile,'window-state.json');
+
+// ---- Native AVX2 Multi-Thread Engine Sidecar (qiline-engine.exe) ----
+const ALLOWED_ENGINE_ASSETS=new Set(['qiline-gpufast-v3.qgpu','qiline_v26_mcts.wasm']);
+let nativeProc=null;
+let nativeInfo=null;
+let nativeBootPromise=null;
+let nativePending=new Map();
+let nativeSeq=0;
+
+function resolveSidecarPaths(){
+  const candidates=[
+    path.join(process.resourcesPath||'', 'engine'),
+    path.join(path.dirname(app.getPath('exe')), 'resources', 'engine'),
+    path.resolve(app.getAppPath(), '..', 'native-bin'),
+  ];
+  for(const dir of candidates){
+    const exe=path.join(dir,'qiline-engine.exe');
+    const model=path.join(dir,'nnue-gen7-192x2.bin');
+    if(fs.existsSync(exe)&&fs.existsSync(model))return {exe,model};
+  }
+  return null;
+}
+
+function shutdownNativeSidecar(){
+  if(!nativeProc)return;
+  const p=nativeProc;
+  nativeProc=null;
+  nativeBootPromise=null;
+  for(const [,entry] of nativePending){
+    try{entry.resolve({ok:false,cancelled:true});}catch{}
+  }
+  nativePending.clear();
+  try{p.stdin.write('{"cmd":"quit"}\n');}catch{}
+  setTimeout(()=>{try{if(!p.killed)p.kill();}catch{}},250);
+}
+
+function ensureNativeSidecar(winRef){
+  if(nativeInfo&&nativeProc&&!nativeProc.killed)return Promise.resolve(nativeInfo);
+  if(nativeBootPromise)return nativeBootPromise;
+  nativeBootPromise=new Promise(resolve=>{
+    const paths=resolveSidecarPaths();
+    if(!paths){nativeInfo={available:false,reason:'missing'};resolve(nativeInfo);return;}
+    try{
+      const proc=spawn(paths.exe,[],{stdio:['pipe','pipe','ignore'],windowsHide:true});
+      nativeProc=proc;
+      let readyMsg=null;
+      let settled=false;
+      const done=info=>{if(!settled){settled=true;nativeInfo=info;resolve(info);}};
+      const bootTimer=setTimeout(()=>{shutdownNativeSidecar();done({available:false,reason:'timeout'});},4000);
+
+      const rl=readline.createInterface({input:proc.stdout});
+      rl.on('line',line=>{
+        let msg;try{msg=JSON.parse(line);}catch{return;}
+        if(msg.type==='ready'){
+          readyMsg=msg;
+          try{proc.stdin.write(JSON.stringify({cmd:'load',modelPath:paths.model.replaceAll('\\','/')})+'\n');}catch{}
+        }else if(msg.type==='loaded'){
+          clearTimeout(bootTimer);
+          if(msg.ok){
+            done({
+              available:true,
+              version:readyMsg?.version||'v26-native',
+              isa:readyMsg?.isa||'avx2',
+              logicalCores:readyMsg?.logicalCores||4,
+              physicalCores:readyMsg?.physicalCores||4,
+              perfCores:readyMsg?.perfCores||4,
+              effCores:readyMsg?.effCores||0,
+            });
+          }else{
+            shutdownNativeSidecar();
+            done({available:false,reason:'model-load-failed'});
+          }
+        }else if(msg.type==='progress'){
+          const target=winRef&&!winRef.isDestroyed()?winRef:null;
+          if(target)target.webContents.send('qiline:native-progress',msg);
+        }else if(msg.type==='result'||msg.type==='error'){
+          const entry=nativePending.get(msg.id);
+          if(entry){
+            nativePending.delete(msg.id);
+            entry.resolve(msg.type==='result'?{ok:true,...msg}:{ok:false,error:msg.error||'search-error'});
+          }
+        }
+      });
+      proc.on('error',()=>{clearTimeout(bootTimer);if(nativeProc===proc)nativeProc=null;done({available:false,reason:'spawn-error'});});
+      proc.on('exit',()=>{
+        clearTimeout(bootTimer);
+        if(nativeProc===proc)nativeProc=null;
+        nativeBootPromise=null;
+        for(const [,entry] of nativePending){try{entry.resolve({ok:false,error:'exited'});}catch{}}
+        nativePending.clear();
+        done({available:false,reason:'exited'});
+      });
+    }catch{
+      done({available:false,reason:'exception'});
+    }
+  });
+  return nativeBootPromise;
+}
 
 function readWindowState(){
   const fallback={width:1240,height:900,maximized:false};
@@ -43,6 +143,7 @@ const isSmoke=process.env.QILINE_SMOKE_EXIT==='1';
 if(!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance',()=>{if(win){if(win.isMinimized())win.restore();win.show();win.focus();}});
+  app.on('before-quit',()=>{shutdownNativeSidecar();});
   app.whenReady().then(async()=>{
     protocol.handle('qiline',createAssetHandler(path.join(app.getAppPath(),'web')));
     session.defaultSession.setPermissionRequestHandler((_wc,_permission,callback)=>callback(false));
@@ -50,6 +151,44 @@ else {
     session.defaultSession.webRequest.onBeforeRequest((details,callback)=>callback({cancel:!isGameURL(details.url)&&!details.url.startsWith('blob:qiline://game/')}));
     ipcMain.on('qiline:flash-frame',()=>{if(win&&!win.isDestroyed()&&!win.isFocused())win.flashFrame(true);});
     ipcMain.on('qiline:open-online',()=>{shell.openExternal('https://qiline-online.pages.dev/online.html').catch(()=>{});});
+    ipcMain.handle('qiline:read-engine-asset',async(_ev,name)=>{
+      if(typeof name!=='string'||!ALLOWED_ENGINE_ASSETS.has(name))throw new Error('Asset not allowed');
+      const full=path.join(app.getAppPath(),'web','assets',name);
+      return await fs.promises.readFile(full);
+    });
+    ipcMain.handle('qiline:native-info',async()=>{
+      if(isSmoke)return {available:false,reason:'smoke'};
+      return await ensureNativeSidecar(win);
+    });
+    ipcMain.handle('qiline:native-search',async(_ev,req)=>{
+      const info=await ensureNativeSidecar(win);
+      if(!info.available||!nativeProc||nativeProc.killed)return {ok:false,error:'unavailable'};
+      const id=++nativeSeq;
+      const payload={
+        cmd:'search',
+        id,
+        swap3:req?.swap3!==false,
+        moves:Array.isArray(req?.moves)?req.moves.map(n=>Number(n)|0):[],
+        timeMs:Math.max(50,Math.min(120000,Number(req?.timeMs)||1500)),
+        nodeBudget:Math.max(1000,Math.min(200000000,Number(req?.nodeBudget)||50000000)),
+        maxDepth:Math.max(1,Math.min(24,Number(req?.maxDepth)||20)),
+        threads:Math.max(1,Math.min(32,Number(req?.threads)||info.physicalCores||4)),
+        ttMb:Math.max(16,Math.min(512,Number(req?.ttMb)||256)),
+        seed:(Number(req?.seed)>>>0)||1,
+        randomize:req?.randomize===true,
+        clearTt:req?.clearTt===true,
+      };
+      return await new Promise(resolve=>{
+        nativePending.set(id,{resolve});
+        try{nativeProc.stdin.write(JSON.stringify(payload)+'\n');}
+        catch{nativePending.delete(id);resolve({ok:false,error:'write-failed'});}
+      });
+    });
+    ipcMain.on('qiline:native-stop',()=>{
+      if(nativeProc&&!nativeProc.killed){
+        try{nativeProc.stdin.write('{"cmd":"stop"}\n');}catch{}
+      }
+    });
     const ws=readWindowState();
     win=new BrowserWindow({
       title:'弈合 · 吃子与五连',icon:path.join(app.getAppPath(),'icon.ico'),
@@ -89,7 +228,7 @@ else {
       ]},
       {label:'帮助',submenu:[
         {label:'玩法手册与功能说明',accelerator:'F1',click:()=>sendCmd('open-manual')},
-        {label:'关于弈合',click:()=>dialog.showMessageBox(win,{type:'info',title:'弈合',message:`弈合 · 离线版 v${version}`,detail:'规则 2.1.0-r3\n支持同设备双人、离线人机练习与棋谱复盘续下。\nAI 提供简单／标准／困难三档（默认9路困难档启用 Gen-3 NNUE + 多核 SMP）。\n完整玩法见界面角落“玩法手册”。',buttons:['知道了']})}
+        {label:'关于弈合',click:()=>dialog.showMessageBox(win,{type:'info',title:'弈合',message:`弈合 · 离线版 v${version}`,detail:'规则 2.1.0-r3\n支持同设备双人、离线人机练习与棋谱复盘续下。\n默认9路困难 AI 搭载 Gen-7 v26 引擎：自动识别并榨干硬件性能（WebGPU GPU 神经网络 MCTS、原生 AVX2 多核引擎、WASM 多核/单核 NNUE v5）。\n完整玩法见界面角落“玩法手册”。',buttons:['知道了']})}
       ]}
     ]));
     if(isSmoke){
@@ -100,5 +239,5 @@ else {
     }
     await win.loadURL(HOME);
   }).catch(error=>{dialog.showErrorBox('弈合启动失败','请确认已完整解压整个文件夹，并检查当前账户是否有保存权限。\n'+String(error.message));app.exit(1);});
-  app.on('window-all-closed',()=>app.quit());
+  app.on('window-all-closed',()=>{shutdownNativeSidecar();app.quit();});
 }

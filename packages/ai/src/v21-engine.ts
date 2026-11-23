@@ -1157,21 +1157,47 @@ function heuristicValueA(s: State, v: ViewData, W: NnueWeights): number {
 }
 
 // ============================================================
-// Static 262,144-entry Typed-Array Zobrist TT (zero GC!)
+// Lazy 262,144-entry Typed-Array Zobrist TT (zero GC!)
 // ============================================================
 const TT_SIZE = 262144;
 const TT_MASK = TT_SIZE - 1;
-const ttKeyLo = new Int32Array(TT_SIZE);
-const ttKeyHi = new Int32Array(TT_SIZE);
-const ttB0 = new Int32Array(TT_SIZE), ttB1 = new Int32Array(TT_SIZE), ttB2 = new Int32Array(TT_SIZE);
-const ttW0 = new Int32Array(TT_SIZE), ttW1 = new Int32Array(TT_SIZE), ttW2 = new Int32Array(TT_SIZE);
-const ttVal = new Float64Array(TT_SIZE);
-const ttMove = new Int8Array(TT_SIZE);
-const ttDepth = new Int8Array(TT_SIZE);
-const ttBound = new Int8Array(TT_SIZE);
-const ttQLeft = new Int8Array(TT_SIZE);
-const ttClaims = new Uint8Array(TT_SIZE);
-const ttGen = new Uint32Array(TT_SIZE);
+type LocalTT = {
+  ttKeyLo: Int32Array;
+  ttKeyHi: Int32Array;
+  ttB0: Int32Array;
+  ttB1: Int32Array;
+  ttB2: Int32Array;
+  ttW0: Int32Array;
+  ttW1: Int32Array;
+  ttW2: Int32Array;
+  ttVal: Float64Array;
+  ttMove: Int8Array;
+  ttDepth: Int8Array;
+  ttBound: Int8Array;
+  ttQLeft: Int8Array;
+  ttClaims: Uint8Array;
+  ttGen: Uint32Array;
+};
+let localTT: LocalTT | null = null;
+function ensureLocalTT(): LocalTT {
+  return localTT ??= {
+    ttKeyLo: new Int32Array(TT_SIZE),
+    ttKeyHi: new Int32Array(TT_SIZE),
+    ttB0: new Int32Array(TT_SIZE),
+    ttB1: new Int32Array(TT_SIZE),
+    ttB2: new Int32Array(TT_SIZE),
+    ttW0: new Int32Array(TT_SIZE),
+    ttW1: new Int32Array(TT_SIZE),
+    ttW2: new Int32Array(TT_SIZE),
+    ttVal: new Float64Array(TT_SIZE),
+    ttMove: new Int8Array(TT_SIZE),
+    ttDepth: new Int8Array(TT_SIZE),
+    ttBound: new Int8Array(TT_SIZE),
+    ttQLeft: new Int8Array(TT_SIZE),
+    ttClaims: new Uint8Array(TT_SIZE),
+    ttGen: new Uint32Array(TT_SIZE),
+  };
+}
 let globalTTGen = 0;
 
 let skLo = 0, skHi = 0, skClaims = 0;
@@ -1241,7 +1267,7 @@ export const CTRL_TT_GEN = 48;
 export const CTRL_THREAD_COUNT = 64;
 export const CTRL_NODES_BASE = 80;
 export const CTRL_NODES_STRIDE = 16;
-export const CTRL_BUFFER_BYTES = 2048; // 512 Int32s: up to 26 cache-line-isolated threads
+export const CTRL_BUFFER_BYTES = 4096; // 1024 Int32s: covers 32 cache-line-isolated threads
 
 export interface V21ProgressInfo {
   readonly nodes: number;
@@ -1325,9 +1351,9 @@ export function runV21Search(
   };
   const sumAllNodes = (): number => {
     if (!ctrl) return nodes;
-    const tc = Math.max(1, Math.min(24, ctrl[CTRL_THREAD_COUNT] || 1));
+    const tc = Math.max(1, Math.min(32, ctrl[CTRL_THREAD_COUNT] || 1));
     let tot = 0;
-    for (let t = 0; t < tc; t++) tot += ctrl[CTRL_NODES_BASE + t * CTRL_NODES_STRIDE]!;
+    for (let t = 0; t < tc && CTRL_NODES_BASE + t * CTRL_NODES_STRIDE < ctrl.length; t++) tot += ctrl[CTRL_NODES_BASE + t * CTRL_NODES_STRIDE]!;
     return Math.max(nodes, tot);
   };
 
@@ -1544,6 +1570,8 @@ export function runV21Search(
       return finish("internal");
     }
   }
+
+  const { ttKeyLo, ttKeyHi, ttB0, ttB1, ttB2, ttW0, ttW1, ttW2, ttVal, ttMove, ttDepth, ttBound, ttQLeft, ttClaims, ttGen } = ensureLocalTT();
 
   // Tactics helpers
   const formations = (s: State, color: number, holes: number): number[] => {

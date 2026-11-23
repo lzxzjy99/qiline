@@ -564,12 +564,14 @@ async function requestAdvisory(swapSide=false){
   advisoryJob=job;
   try{
     const res=await job.promise;
+    if(advisoryJob!==job)return;
     advisory={...res,targetLabel,loading:false};
     playSound('notify');
   }catch(e){
+    if(advisoryJob!==job)return;
     advisory={error:e.message||'AI 推演未完成。',targetLabel,loading:false};
   }finally{
-    advisoryBusy=false;advisoryJob=null;render();
+    if(advisoryJob===job){advisoryBusy=false;advisoryJob=null;render();}
   }
 }
 

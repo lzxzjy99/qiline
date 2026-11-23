@@ -651,7 +651,7 @@ export class WebGpuResNet {
     if (typeof navigator === "undefined" || !navigator.gpu) {
       throw new Error("WebGPU not supported");
     }
-    const adapter = await navigator.gpu.requestAdapter({
+    const adapter = opts.adapter || await navigator.gpu.requestAdapter({
       powerPreference: opts.powerPreference || "high-performance",
     });
     if (!adapter) throw new Error("No WebGPU adapter available");
@@ -663,9 +663,19 @@ export class WebGpuResNet {
       description: ai.description || "",
     };
     const wantF16 = opts.forceF32 ? false : !!adapter.features?.has?.("shader-f16");
-    const device = await adapter.requestDevice(wantF16 ? { requiredFeatures: ["shader-f16"] } : undefined);
-    const parsed = parseQgpuBinary(qgpuArrayBuffer, wantF16);
-    return new WebGpuResNet(device, adapterInfo, parsed);
+    let device = null;
+    let instance = null;
+    try {
+      device = await adapter.requestDevice(wantF16 ? { requiredFeatures: ["shader-f16"] } : undefined);
+      if (opts.signal?.aborted) throw new Error("GPU init expired");
+      const parsed = parseQgpuBinary(qgpuArrayBuffer, wantF16);
+      instance = new WebGpuResNet(device, adapterInfo, parsed);
+      return instance;
+    } catch (err) {
+      try { instance?.dispose(); } catch {}
+      try { device?.destroy?.(); } catch {}
+      throw err;
+    }
   }
 
   _createStaticBuf(typedArr) {

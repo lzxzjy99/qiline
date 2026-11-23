@@ -4,8 +4,8 @@
 import { AI_PROTOCOL_VERSION } from "../ai/src/index.js";
 import { WebGpuResNet } from "./webgpu-resnet.mjs";
 
-const GPU_CACHE_NAME = "qiline-v27-gpu-v2";
-const OLD_GPU_CACHES = ["qiline-v26-gpu-v1", "qiline-v27-gpu-v1"];
+const GPU_CACHE_NAME = "qiline-v27-gpu-v3";
+const OLD_GPU_CACHES = ["qiline-v26-gpu-v1", "qiline-v27-gpu-v1", "qiline-v27-gpu-v2"];
 const MIN_BOARDS_PER_SEC = 1200;
 
 let initPromise = null;
@@ -27,30 +27,63 @@ function moveCodeToAction(code, actor) {
   return null;
 }
 
-async function loadBinaryAsset(fileName) {
+async function withTimeout(promise, ms, label, onTimeout) {
+  let timer;
+  try {
+    return await Promise.race([promise, new Promise((_, reject) => {
+      timer = setTimeout(() => {
+        const err = new Error(`${label} timed out`);
+        err.name = "TimeoutError";
+        reject(err);
+        try { onTimeout?.(); } catch {}
+      }, ms);
+    })]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function loadBinaryAsset(fileName, { timeoutMs = 12000, signal = null } = {}) {
   // 1. Electron Desktop: read directly via secure allowlisted IPC (preserves CSP connect-src 'none')
   if (typeof window !== "undefined" && typeof window.qilineDesktop?.readEngineAsset === "function") {
-    const u8 = await window.qilineDesktop.readEngineAsset(fileName);
+    const u8 = await withTimeout(window.qilineDesktop.readEngineAsset(fileName), timeoutMs, `IPC ${fileName}`);
     if (!u8 || !u8.byteLength) throw new Error(`IPC readEngineAsset empty: ${fileName}`);
     return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength);
   }
   // 2. Web (Cloudflare Pages / GitHub Pages): lazy-fetch with Cache API persistence
   const url = new URL(`../assets/${fileName}`, import.meta.url).href;
+  let cache = null;
   if (typeof caches !== "undefined" && typeof caches.open === "function") {
     try {
-      for (const oldName of OLD_GPU_CACHES) caches.delete(oldName).catch(() => {});
-      const cache = await caches.open(GPU_CACHE_NAME);
-      const hit = await cache.match(url);
-      if (hit && hit.ok) return await hit.arrayBuffer();
-      const resp = await fetch(url, { cache: "no-cache" });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status} for ${fileName}`);
-      try { await cache.put(url, resp.clone()); } catch {}
-      return await resp.arrayBuffer();
-    } catch {}
+      for (const oldName of OLD_GPU_CACHES) withTimeout(caches.delete(oldName), timeoutMs, "cache delete").catch(() => {});
+      cache = await withTimeout(caches.open(GPU_CACHE_NAME), timeoutMs, "cache open");
+      const hit = await withTimeout(cache.match(url), timeoutMs, "cache match");
+      if (hit && hit.ok) return await withTimeout(hit.arrayBuffer(), timeoutMs, "cached asset");
+    } catch (err) {
+      if (err?.name === "TimeoutError") throw err;
+      cache = null;
+    }
   }
-  const resp = await fetch(url);
-  if (!resp.ok) throw new Error(`HTTP ${resp.status} for ${fileName}`);
-  return await resp.arrayBuffer();
+  const controller = new AbortController();
+  const onParentAbort = () => controller.abort();
+  if (signal) {
+    if (signal.aborted) controller.abort();
+    else signal.addEventListener("abort", onParentAbort, { once: true });
+  }
+  try {
+    return await withTimeout((async () => {
+      const resp = await fetch(url, { cache: "no-cache", signal: controller.signal });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status} for ${fileName}`);
+      const cached = cache ? resp.clone() : null;
+      const bytes = await resp.arrayBuffer();
+      if (cache) {
+        try { await withTimeout(cache.put(url, cached), timeoutMs, "cache put"); } catch {}
+      }
+      return bytes;
+    })(), timeoutMs, `fetch ${fileName}`, () => controller.abort());
+  } finally {
+    if (signal) signal.removeEventListener("abort", onParentAbort);
+  }
 }
 
 function formatGpuLabel(info, boardsPerSec, useF16) {
@@ -78,33 +111,39 @@ export function getWebGpuMctsStatus() {
   };
 }
 
-export function initWebGpuMcts() {
+export function initWebGpuMcts({ timeoutMs = 12000 } = {}) {
   if (runtime) return Promise.resolve(runtime);
   if (initPromise) return initPromise;
   initPromise = (async () => {
+    let createdGpu = null;
+    const controller = new AbortController();
     try {
       if (typeof navigator === "undefined" || !navigator.gpu) {
         runtime = { unavailable: true, reason: "no-webgpu" };
         return runtime;
       }
-      const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+      const adapter = await withTimeout(navigator.gpu.requestAdapter({ powerPreference: "high-performance" }), Math.min(5000, timeoutMs), "requestAdapter");
       if (!adapter) {
         runtime = { unavailable: true, reason: "no-adapter" };
         return runtime;
       }
-      const [qgpuAb, mctsWasmAb] = await Promise.all([
-        loadBinaryAsset("qiline-v27-pro.qgpu"),
-        loadBinaryAsset("qiline_v27_mcts.wasm"),
-      ]);
-      const gpu = await WebGpuResNet.create(qgpuAb, { powerPreference: "high-performance" });
+      const [qgpuAb, mctsWasmAb] = await withTimeout(Promise.all([
+        loadBinaryAsset("qiline-v27-pro.qgpu", { timeoutMs, signal: controller.signal }),
+        loadBinaryAsset("qiline_v27_mcts.wasm", { timeoutMs, signal: controller.signal }),
+      ]), timeoutMs, "GPU assets", () => controller.abort());
+      const gpu = await withTimeout(WebGpuResNet.create(qgpuAb, { adapter, signal: controller.signal, powerPreference: "high-performance" }).then(value => {
+        if (controller.signal.aborted) { value.dispose(); throw new Error("GPU init expired"); }
+        createdGpu = value;
+        return value;
+      }), Math.min(8000, timeoutMs), "WebGpuResNet.create", () => controller.abort());
       // 100ms startup micro-benchmark to gate WebGPU automatically
-      const bm = await gpu.benchmark(32, 4);
+      const bm = await withTimeout(gpu.benchmark(32, 4), Math.min(6000, timeoutMs), "GPU benchmark");
       if (!Number.isFinite(bm.boardsPerSec) || bm.boardsPerSec < MIN_BOARDS_PER_SEC) {
         gpu.dispose();
         runtime = { unavailable: true, reason: `too-slow:${Math.round(bm.boardsPerSec || 0)}` };
         return runtime;
       }
-      const { instance } = await WebAssembly.instantiate(mctsWasmAb, {});
+      const { instance } = await withTimeout(WebAssembly.instantiate(mctsWasmAb, {}), Math.min(5000, timeoutMs), "MCTS instantiate");
       const mex = instance.exports;
       mex.mcts_init();
       const batchSize = bm.boardsPerSec >= 6000 ? 48 : bm.boardsPerSec >= 2500 ? 32 : 16;
@@ -118,6 +157,8 @@ export function initWebGpuMcts() {
       };
       return runtime;
     } catch (err) {
+      controller.abort();
+      try { createdGpu?.dispose(); } catch {}
       runtime = { unavailable: true, reason: err?.message || "init-failed" };
       return runtime;
     }
@@ -129,6 +170,15 @@ export function initWebGpuMcts() {
 let activeSearchCancel = null;
 let gpuRunQueue = Promise.resolve();
 
+export function resetWebGpuMctsForTest() {
+  activeSearchCancel?.();
+  activeSearchCancel = null;
+  try { runtime?.gpu?.dispose(); } catch {}
+  runtime = null;
+  initPromise = null;
+  gpuRunQueue = Promise.resolve();
+}
+
 function invalidateGpuRuntime(rt) {
   if (rt && runtime === rt) {
     try { rt.gpu?.dispose(); } catch {}
@@ -139,7 +189,9 @@ function invalidateGpuRuntime(rt) {
 
 export function runWebGpuMctsSearch(request, { perfMode = "turbo", onProgress = null } = {}) {
   let cancelled = false;
-  const cancel = () => { cancelled = true; };
+  let resolveCancel;
+  const cancellation = new Promise(resolve => { resolveCancel = resolve; });
+  const cancel = () => { cancelled = true; resolveCancel(null); };
 
   if (activeSearchCancel) {
     try { activeSearchCancel(); } catch {}
@@ -151,7 +203,8 @@ export function runWebGpuMctsSearch(request, { perfMode = "turbo", onProgress = 
     if (cancelled) {
       return { ok: false, fallback: false, cancelled: true };
     }
-    const rt = await initWebGpuMcts();
+    const rt = await Promise.race([initWebGpuMcts(), cancellation]);
+    if (!rt) return { ok: false, fallback: false, cancelled: true };
     if (rt.unavailable || rt.gpu?.deviceLost || rt.gpu?.disposed || cancelled) {
       if (rt.gpu?.deviceLost) invalidateGpuRuntime(rt);
       return { ok: false, fallback: !cancelled, cancelled };
@@ -194,7 +247,7 @@ export function runWebGpuMctsSearch(request, { perfMode = "turbo", onProgress = 
         const outVal = new Float32Array(mex.memory.buffer, mex.mcts_val_ptr(), bn);
         const outPol = new Float32Array(mex.memory.buffer, mex.mcts_pol_ptr(), bn * 82);
 
-        await gpu.evalBatch(bn, boardsU8, denseF32, lpI8, outVal, outPol);
+        await withTimeout(gpu.evalBatch(bn, boardsU8, denseF32, lpI8, outVal, outPol), 12000, "GPU evalBatch");
         if (cancelled) break;
 
         bn = mex.mcts_step_batch(bn);
@@ -279,7 +332,7 @@ export function runWebGpuMctsSearch(request, { perfMode = "turbo", onProgress = 
       if (activeSearchCancel === cancel) activeSearchCancel = null;
     }
   });
-  gpuRunQueue = promise;
+  gpuRunQueue = promise.catch(() => {});
 
   return { promise, cancel };
 }

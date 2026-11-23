@@ -23,6 +23,7 @@ let nativeInfo=null;
 let nativeBootPromise=null;
 let nativePending=new Map();
 let nativeSeq=0;
+let nativeGen=0;
 
 function resolveSidecarPaths(){
   const candidates=[
@@ -38,82 +39,101 @@ function resolveSidecarPaths(){
   return null;
 }
 
-function shutdownNativeSidecar(){
-  if(!nativeProc)return;
-  const p=nativeProc;
-  nativeProc=null;
-  nativeBootPromise=null;
-  for(const [,entry] of nativePending){
-    if(entry.timer)clearTimeout(entry.timer);
-    try{entry.resolve({ok:false,cancelled:true});}catch{}
+function failPendingForGen(gen,result){
+  for(const [id,entry] of nativePending){
+    if(gen!=null&&entry.gen!==gen)continue;
+    nativePending.delete(id);
+    clearTimeout(entry.timer);
+    entry.resolve(result);
   }
-  nativePending.clear();
-  try{p.stdin.write('{"cmd":"quit"}\n');}catch{}
+}
+
+function safeWriteSidecar(proc,gen,text,onErr){
+  try{
+    if(!proc||proc.killed||!proc.stdin||proc.stdin.destroyed||!proc.stdin.writable)throw Error('Sidecar stdin unavailable');
+    proc.stdin.write(text,err=>{if(err)onErr?.(err);});
+  }catch(err){onErr?.(err);}
+}
+
+function shutdownNativeSidecar(){
+  const p=nativeProc;
+  const gen=nativeGen++;
+  nativeInfo=null;nativeProc=null;nativeBootPromise=null;
+  failPendingForGen(gen,{ok:false,cancelled:true});
+  if(!p)return;
+  safeWriteSidecar(p,gen,'{"cmd":"quit"}\n');
   setTimeout(()=>{try{if(!p.killed)p.kill();}catch{}},250);
 }
 
 function ensureNativeSidecar(winRef){
-  if(nativeInfo&&nativeProc&&!nativeProc.killed)return Promise.resolve(nativeInfo);
+  if(nativeInfo?.available&&nativeProc&&!nativeProc.killed)return Promise.resolve(nativeInfo);
   if(nativeBootPromise)return nativeBootPromise;
-  nativeBootPromise=new Promise(resolve=>{
+  const gen=++nativeGen;
+  const boot=new Promise(resolve=>{
+    let settled=false;
+    let bootTimer=null;
+    const done=info=>{
+      if(settled)return;
+      settled=true;
+      clearTimeout(bootTimer);
+      if(gen===nativeGen)nativeInfo=info;
+      resolve(info);
+    };
+    const fail=reason=>{
+      failPendingForGen(gen,{ok:false,error:reason});
+      done({available:false,reason});
+      if(gen===nativeGen)shutdownNativeSidecar();
+    };
     const paths=resolveSidecarPaths();
-    if(!paths){nativeInfo={available:false,reason:'missing'};resolve(nativeInfo);return;}
+    if(!paths){done({available:false,reason:'missing'});return;}
     try{
       const proc=spawn(paths.exe,[],{stdio:['pipe','pipe','ignore'],windowsHide:true});
-      nativeProc=proc;
+      proc.stdin.on('error',()=>fail('stdin-error'));
+      if(gen===nativeGen)nativeProc=proc;
       let readyMsg=null;
-      let settled=false;
-      const done=info=>{if(!settled){settled=true;nativeInfo=info;resolve(info);}};
-      const bootTimer=setTimeout(()=>{shutdownNativeSidecar();done({available:false,reason:'timeout'});},4000);
-
+      bootTimer=setTimeout(()=>fail('timeout'),4000);
       const rl=readline.createInterface({input:proc.stdout});
       rl.on('line',line=>{
+        if(gen!==nativeGen)return;
         let msg;try{msg=JSON.parse(line);}catch{return;}
         if(msg.type==='ready'){
           readyMsg=msg;
-          try{proc.stdin.write(JSON.stringify({cmd:'load',modelPath:paths.model.replaceAll('\\','/')})+'\n');}catch{}
+          safeWriteSidecar(proc,gen,JSON.stringify({cmd:'load',modelPath:paths.model.replaceAll('\\','/')})+'\n',()=>fail('write-failed'));
         }else if(msg.type==='loaded'){
-          clearTimeout(bootTimer);
           if(msg.ok){
-            done({
-              available:true,
-              version:readyMsg?.version||'v27-native',
-              isa:readyMsg?.isa||'avx2',
-              logicalCores:readyMsg?.logicalCores||4,
-              physicalCores:readyMsg?.physicalCores||4,
-              perfCores:readyMsg?.perfCores||4,
-              effCores:readyMsg?.effCores||0,
-            });
-          }else{
-            shutdownNativeSidecar();
-            done({available:false,reason:'model-load-failed'});
-          }
+            done({available:true,version:readyMsg?.version||'v27-native',isa:readyMsg?.isa||'avx2',
+              logicalCores:readyMsg?.logicalCores||4,physicalCores:readyMsg?.physicalCores||4,
+              perfCores:readyMsg?.perfCores||4,effCores:readyMsg?.effCores||0});
+          }else fail('model-load-failed');
         }else if(msg.type==='progress'){
           const target=winRef&&!winRef.isDestroyed()?winRef:null;
           if(target)target.webContents.send('qiline:native-progress',msg);
         }else if(msg.type==='result'||msg.type==='error'){
           const entry=nativePending.get(msg.id);
-          if(entry){
+          if(entry?.gen===gen){
             nativePending.delete(msg.id);
-            if(entry.timer)clearTimeout(entry.timer);
+            clearTimeout(entry.timer);
             entry.resolve(msg.type==='result'?{ok:true,...msg}:{ok:false,error:msg.error||'search-error'});
           }
         }
       });
-      proc.on('error',()=>{clearTimeout(bootTimer);if(nativeProc===proc)nativeProc=null;done({available:false,reason:'spawn-error'});});
+      proc.on('error',()=>fail('spawn-error'));
       proc.on('exit',()=>{
         clearTimeout(bootTimer);
-        if(nativeProc===proc)nativeProc=null;
-        nativeBootPromise=null;
-        for(const [,entry] of nativePending){if(entry.timer)clearTimeout(entry.timer);try{entry.resolve({ok:false,error:'exited'});}catch{}}
-        nativePending.clear();
+        failPendingForGen(gen,{ok:false,error:'exited'});
+        if(gen===nativeGen){nativeProc=null;nativeInfo=null;nativeBootPromise=null;}
         done({available:false,reason:'exited'});
+        rl.close();
       });
-    }catch{
-      done({available:false,reason:'exception'});
-    }
+    }catch{fail('exception');}
   });
-  return nativeBootPromise;
+  const tracked=boot.then(info=>{
+    if(gen===nativeGen&&nativeBootPromise===tracked)nativeBootPromise=null;
+    return info;
+  });
+  // A synchronous spawn failure may already have invalidated this generation.
+  if(gen===nativeGen)nativeBootPromise=tracked;
+  return tracked;
 }
 
 function readWindowState(){
@@ -166,6 +186,8 @@ else {
       const info=await ensureNativeSidecar(win);
       if(!info.available||!nativeProc||nativeProc.killed)return {ok:false,error:'unavailable'};
       const id=++nativeSeq;
+      const gen=nativeGen;
+      const proc=nativeProc;
       const payload={
         cmd:'search',
         id,
@@ -184,18 +206,24 @@ else {
         const watchdogMs=Math.max(8000,payload.timeMs+5000);
         const timer=setTimeout(()=>{
           if(nativePending.delete(id)){
-            shutdownNativeSidecar();
+            if(gen===nativeGen)shutdownNativeSidecar();
             resolve({ok:false,error:'timeout'});
           }
         },watchdogMs);
-        nativePending.set(id,{resolve,timer});
-        try{nativeProc.stdin.write(JSON.stringify(payload)+'\n');}
-        catch{clearTimeout(timer);nativePending.delete(id);resolve({ok:false,error:'write-failed'});}
+        nativePending.set(id,{resolve,timer,gen});
+        safeWriteSidecar(proc,gen,JSON.stringify(payload)+'\n',()=>{
+          failPendingForGen(gen,{ok:false,error:'write-failed'});
+          if(gen===nativeGen)shutdownNativeSidecar();
+        });
       });
     });
     ipcMain.on('qiline:native-stop',()=>{
       if(nativeProc&&!nativeProc.killed){
-        try{nativeProc.stdin.write('{"cmd":"stop"}\n');}catch{}
+        const gen=nativeGen;
+        safeWriteSidecar(nativeProc,gen,'{"cmd":"stop"}\n',()=>{
+          failPendingForGen(gen,{ok:false,error:'write-failed'});
+          if(gen===nativeGen)shutdownNativeSidecar();
+        });
       }
     });
     const ws=readWindowState();

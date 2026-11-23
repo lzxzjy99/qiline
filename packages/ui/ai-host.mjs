@@ -82,6 +82,7 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
   let activeGpuCancel=null;
   let activeNativeSearch=false;
   let activeNativeOffProgress=null;
+  let activeNativeToken=null;
 
   // Dedicated single ultra-light worker for Easy / Standard (~1.44 MB WASM, no SAB, no Hard NNUE decode)
   let litePool=null;
@@ -89,6 +90,12 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
 
   // Persistent warm Hard WASM worker pool (lazily initialized only when Hard CPU WASM tier is needed)
   let pool=null;
+  let poolCleanupTimer=null;
+
+  function clearPoolCleanupTimer(){
+    clearTimeout(poolCleanupTimer);
+    poolCleanupTimer=null;
+  }
 
   function sessionNeedsHardAI(){
     const st=session?.state;
@@ -98,19 +105,21 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
   }
 
   function ensureHardProbes(){
-    if(hardProbesStarted||closed)return;
+    if(perfMode==='standard'||hardProbesStarted||closed)return;
     hardProbesStarted=true;
     if(caps.webgpuSupported){
       initWebGpuMcts().then(()=>{
+        if(closed)return;
         gpuReadyInfo=getWebGpuMctsStatus();
         emitTelemetry({});
       }).catch(()=>{});
     }
     if(caps.nativeDesktop){
       window.qilineDesktop.nativeEngine.getInfo().then(info=>{
+        if(closed)return;
         nativeInfo=info&&info.available?info:{available:false};
         emitTelemetry({});
-      }).catch(()=>{nativeInfo={available:false};});
+      }).catch(()=>{if(!closed)nativeInfo={available:false};});
     }
   }
 
@@ -202,6 +211,7 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
   }
 
   function destroyPool(){
+    clearPoolCleanupTimer();
     pondering=false;ponderSeq=-1;
     if(!pool)return;
     const old=pool;pool=null;
@@ -269,6 +279,7 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
     }
     if(activeNativeSearch){
       activeNativeSearch=false;
+      activeNativeToken=null;
       if(activeNativeOffProgress){try{activeNativeOffProgress();}catch{} activeNativeOffProgress=null;}
       try{window.qilineDesktop?.nativeEngine?.stop();}catch{}
     }
@@ -279,9 +290,12 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
     if(pool.ctrl){
       Atomics.store(pool.ctrl,CTRL_JOB_SEQ,-1);
       if(hardResetIfBusy){
+        clearPoolCleanupTimer();
         const p=pool;
-        setTimeout(()=>{
-          if(pool===p&&p.ctrl&&Atomics.load(p.ctrl,CTRL_ACTIVE_WORKERS)>0){
+        const cancelledSeq=jobSeq;
+        poolCleanupTimer=setTimeout(()=>{
+          poolCleanupTimer=null;
+          if(pool===p&&p.ctrl&&cancelledSeq===jobSeq&&Atomics.load(p.ctrl,CTRL_JOB_SEQ)===-1&&Atomics.load(p.ctrl,CTRL_ACTIVE_WORKERS)>0){
             destroyPool();
           }
         },350);
@@ -305,6 +319,7 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
     let p;
     try{p=ensurePool();}catch{return;}
     if(!p.ctrl||p.threadCount<2)return;
+    clearPoolCleanupTimer();
     const seq=++jobSeq;
     ponderSeq=seq;
     pondering=true;
@@ -358,6 +373,7 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
 
     function dispatchWasm(request,seq){
       if(terminated||closed||mySeq!==seq)return;
+      clearPoolCleanupTimer();
       const p=ensurePool();
       const isHardV21=request?.level==='hard'&&isV21Rules(request?.record?.rules);
       const useMulti=isHardV21&&perfMode!=='standard'&&p.threadCount>1&&!!p.ctrl;
@@ -423,6 +439,16 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
 
     async function dispatchNative(request,seq){
       if(!caps.nativeDesktop||terminated||closed||mySeq!==seq)return false;
+      const myToken=Symbol('native');
+      let localOff=null;
+      const releaseNative=()=>{
+        if(localOff){const off=localOff;localOff=null;try{off();}catch{}}
+        if(activeNativeToken===myToken){
+          activeNativeToken=null;
+          activeNativeSearch=false;
+          activeNativeOffProgress=null;
+        }
+      };
       try{
         if(!nativeInfo)nativeInfo=await window.qilineDesktop.nativeEngine.getInfo();
         if(!nativeInfo?.available||terminated||closed||mySeq!==seq)return false;
@@ -441,8 +467,9 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
         const targetMs=Math.max(300,Math.min(perfMode==='extreme'?15000:5000,reqTime-150));
 
         activeNativeSearch=true;
+        activeNativeToken=myToken;
         emitTelemetry({backend:'native',threads,ttMB:ttMb,totalNodes:0,depth:0,nps:0,elapsedMs:0,pondering:false});
-        activeNativeOffProgress=window.qilineDesktop.nativeEngine.onProgress(msg=>{
+        const off=window.qilineDesktop.nativeEngine.onProgress(msg=>{
           if(terminated||closed||mySeq!==seq)return;
           emitTelemetry({
             backend:'native',
@@ -457,6 +484,9 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
             pondering:false,
           });
         });
+        let unsubscribed=false;
+        localOff=()=>{if(!unsubscribed){unsubscribed=true;off?.();}};
+        activeNativeOffProgress=localOff;
 
         const res=await window.qilineDesktop.nativeEngine.search({
           swap3,
@@ -471,8 +501,7 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
           clearTt:false,
         });
 
-        activeNativeSearch=false;
-        if(activeNativeOffProgress){try{activeNativeOffProgress();}catch{} activeNativeOffProgress=null;}
+        releaseNative();
         if(terminated||closed||mySeq!==seq)return true;
         if(!res?.ok)return false;
 
@@ -510,9 +539,9 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
         if(onmessage)onmessage({data:reply});
         return true;
       }catch{
-        activeNativeSearch=false;
-        if(activeNativeOffProgress){try{activeNativeOffProgress();}catch{} activeNativeOffProgress=null;}
         return false;
+      }finally{
+        releaseNative();
       }
     }
 
@@ -621,6 +650,7 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
       postMessage(request){
         if(terminated||closed)return;
         stopWorkersNow(false);
+        clearPoolCleanupTimer();
         const seq=++jobSeq;
         mySeq=seq;
         dispatchBestTier(request,seq).catch(err=>{
@@ -682,8 +712,9 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
     setPerfMode(nextMode){
       if(!PERF_MODES.includes(nextMode)||nextMode===perfMode)return perfMode;
       perfMode=nextMode;
-      stopWorkersNow(false);
+      if(pondering)stopWorkersNow(false);
       if(perfMode!=='extreme')pondering=false;
+      if(perfMode!=='standard'&&sessionNeedsHardAI())ensureHardProbes();
       emitTelemetry({pondering:false});
       if(inner.state.status==='idle')startPonderIfEligible();
       return perfMode;
@@ -695,7 +726,7 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
       return r;
     },
     change(fn){
-      stopWorkersNow(false);
+      if(pondering)stopWorkersNow(false);
       const r=inner.change(fn);
       if(inner.state.status==='idle')startPonderIfEligible();
       return r;

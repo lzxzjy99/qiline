@@ -10,7 +10,7 @@ export declare const CTRL_TT_GEN = 48;
 export declare const CTRL_THREAD_COUNT = 64;
 export declare const CTRL_NODES_BASE = 80;
 export declare const CTRL_NODES_STRIDE = 16;
-export declare const CTRL_BUFFER_BYTES = 2048;
+export declare const CTRL_BUFFER_BYTES = 4096;
 export interface V21ProgressInfo {
     readonly nodes: number;
     readonly totalNodes: number;

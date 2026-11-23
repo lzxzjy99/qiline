@@ -74,84 +74,94 @@ export function runAdvisorySearch({match,level='standard',swapSide=false,seed=1,
     seed:(Number(seed)>>>0)||1,
     budget:profile,
   };
-  let cancelled=false;
   const workers=[];
   let ctrl=null;
-  const cancel=()=>{
-    cancelled=true;
-    try{if(ctrl)Atomics.store(ctrl,CTRL_JOB_SEQ,-1);}catch{}
-    for(const w of workers){try{w.terminate();}catch{}}
-  };
+  let cancel=()=>{};
   const promise=new Promise((resolve,reject)=>{
-    if(typeof Worker!=='function'){reject(Error('当前环境不支持后台 AI 计算。'));return;}
-    const useSmp=level==='hard'&&isV21Rules(record.rules)&&typeof SharedArrayBuffer==='function'&&globalThis.crossOriginIsolated===true;
-    if(!useSmp){
-      const w=new Worker(new URL('../ai/src/worker-entry.js',import.meta.url),{type:'module',name:'qiline-advisory'});
-      workers.push(w);
-      let posted=false;
-      w.onmessage=ev=>{
-        if(cancelled)return;
-        const d=ev?.data;
-        if(d?.kind==='ready'&&!posted){posted=true;w.postMessage(request);return;}
-        if(d?.kind==='result'){
-          try{w.terminate();}catch{}
-          if((d.status==='move'||d.status==='timeout'||d.status==='ok')&&d.action){
-            resolve({action:d.action,stats:d.stats,score:null,targetActor,targetColor,swapped:swapSide,elapsedMs:d.stats?.elapsedMs??0});
-          }else reject(Error('AI 推演未得到有效着法。'));
-        }
-      };
-      w.onerror=()=>reject(Error('AI 推演线程启动失败。'));
-      return;
-    }
-    const hw=typeof navigator!=='undefined'&&Number.isFinite(navigator.hardwareConcurrency)?navigator.hardwareConcurrency:4;
-    const threadCount=hw>=20?Math.min(16,Math.floor(hw*0.75)):hw>=8?Math.min(12,Math.floor(hw/2)):Math.max(1,hw-1);
-    const ttSlots=1<<20;
-    const ttBuf=new SharedArrayBuffer(ttSlots*SHARED_TT_STRIDE*4);
-    const ctrlBuf=new SharedArrayBuffer(CTRL_BUFFER_BYTES);
-    ctrl=new Int32Array(ctrlBuf);
-    const jobSeq=1;
-    ctrl[CTRL_THREAD_COUNT]=threadCount;
-    for(let t=0;t<threadCount;t++)ctrl[CTRL_NODES_BASE+t*CTRL_NODES_STRIDE]=0;
-    Atomics.store(ctrl,CTRL_TT_GEN,1);
-    Atomics.store(ctrl,CTRL_MAX_DEPTH,0);
-    Atomics.store(ctrl,CTRL_JOB_SEQ,jobSeq);
-    const workerUrl=new URL('../ai/src/v21-smp-worker.js',import.meta.url);
-    let lastScore=null;
-    const readyList=[];
-    for(let tid=0;tid<threadCount;tid++){
-      const w=new Worker(workerUrl,{type:'module',name:`qiline-adv-${tid}`});
-      workers.push(w);
-      readyList.push(new Promise((res,rej)=>{
-        const onBoot=ev=>{
-          const d=ev?.data;
-          if(d?.kind==='smp-boot')w.postMessage({kind:'smp-init',threadId:tid,sharedTTBuf:ttBuf,sharedTTSlots:ttSlots,controlBuf:ctrlBuf,warmupHard:true});
-          else if(d?.kind==='smp-ready'){w.removeEventListener('message',onBoot);w.removeEventListener('error',onErr);res();}
-        };
-        const onErr=err=>{w.removeEventListener('message',onBoot);w.removeEventListener('error',onErr);rej(err);};
-        w.addEventListener('message',onBoot);w.addEventListener('error',onErr);
-      }));
-    }
-    Promise.all(readyList).then(()=>{
-      if(cancelled)return;
-      const mainW=workers[0];
-      mainW.onmessage=ev=>{
-        if(cancelled)return;
-        const d=ev?.data;
-        if(!d||d.jobSeq!==jobSeq)return;
-        if(d.kind==='smp-progress'){
-          if(Number.isFinite(d.score))lastScore=d.score;
-          onProgress?.({depth:d.depth,totalNodes:d.totalNodes,elapsedMs:d.elapsedMs,score:lastScore,threads:threadCount});
-        }else if(d.kind==='smp-done'){
-          cancel();
-          if((d.reply?.status==='move'||d.reply?.status==='timeout'||d.reply?.status==='ok')&&d.reply?.action){
-            resolve({action:d.reply.action,stats:d.reply.stats,score:lastScore,targetActor,targetColor,swapped:swapSide,elapsedMs:d.reply.stats?.elapsedMs??0});
-          }else reject(Error('AI 推演未得到有效着法。'));
-        }
-      };
-      for(let tid=0;tid<threadCount;tid++){
-        workers[tid].postMessage({kind:'smp-run',jobSeq,request,fullPower:true,ponder:false,keepTT:false});
+    let settled=false;
+    let cleaned=false;
+    let watchdog=null;
+    const cleanup=()=>{
+      if(cleaned)return;
+      cleaned=true;
+      clearTimeout(watchdog);
+      if(ctrl)Atomics.store(ctrl,CTRL_JOB_SEQ,-1);
+      for(const w of workers){
+        w.onmessage=null;w.onerror=null;w.onmessageerror=null;
+        try{w.terminate();}catch{}
       }
-    }).catch(()=>reject(Error('多核 AI 推演初始化失败。')));
+    };
+    const settle=(ok,val)=>{
+      if(settled)return;
+      settled=true;
+      cleanup();
+      if(ok)resolve(val);else reject(val);
+    };
+    cancel=()=>settle(false,Error('已取消推演。'));
+    watchdog=setTimeout(()=>settle(false,Error('AI 推演超时。')),Math.max(15000,(profile.timeMs||2000)+12000));
+    const fail=()=>settle(false,Error('AI 推演线程运行失败。'));
+    const finish=(reply,score=null)=>{
+      if(['move','timeout','ok'].includes(reply?.status)&&reply?.action){
+        settle(true,{action:reply.action,stats:reply.stats,score,targetActor,targetColor,swapped:swapSide,elapsedMs:reply.stats?.elapsedMs??0});
+      }else settle(false,Error('AI 推演未得到有效着法。'));
+    };
+    try{
+      if(typeof Worker!=='function'){settle(false,Error('当前环境不支持后台 AI 计算。'));return;}
+      const useSmp=level==='hard'&&isV21Rules(record.rules)&&typeof SharedArrayBuffer==='function'&&globalThis.crossOriginIsolated===true;
+      if(!useSmp){
+        const w=new Worker(new URL('../ai/src/worker-entry.js',import.meta.url),{type:'module',name:'qiline-advisory'});
+        workers.push(w);
+        w.onerror=fail;w.onmessageerror=fail;
+        let posted=false;
+        w.onmessage=ev=>{
+          if(settled)return;
+          const d=ev?.data;
+          if(d?.kind==='ready'&&!posted){
+            posted=true;
+            try{w.postMessage(request);}catch{fail();}
+          }else if(d?.kind==='result')finish(d);
+        };
+        return;
+      }
+      const hw=typeof navigator!=='undefined'&&Number.isFinite(navigator.hardwareConcurrency)?navigator.hardwareConcurrency:4;
+      const threadCount=hw>=20?Math.min(16,Math.floor(hw*0.75)):hw>=8?Math.min(12,Math.floor(hw/2)):Math.max(1,hw-1);
+      const ttSlots=1<<20;
+      const ttBuf=new SharedArrayBuffer(ttSlots*SHARED_TT_STRIDE*4);
+      const ctrlBuf=new SharedArrayBuffer(CTRL_BUFFER_BYTES);
+      ctrl=new Int32Array(ctrlBuf);
+      const jobSeq=1;
+      ctrl[CTRL_THREAD_COUNT]=threadCount;
+      Atomics.store(ctrl,CTRL_TT_GEN,1);
+      Atomics.store(ctrl,CTRL_MAX_DEPTH,0);
+      Atomics.store(ctrl,CTRL_JOB_SEQ,jobSeq);
+      const workerUrl=new URL('../ai/src/v21-smp-worker.js',import.meta.url);
+      let lastScore=null;
+      const readyList=[];
+      for(let tid=0;tid<threadCount;tid++){
+        const w=new Worker(workerUrl,{type:'module',name:`qiline-adv-${tid}`});
+        workers.push(w);
+        w.onerror=fail;w.onmessageerror=fail;
+        readyList.push(new Promise(res=>{
+          w.onmessage=ev=>{
+            if(settled)return;
+            const d=ev?.data;
+            if(d?.kind==='smp-boot'){
+              try{w.postMessage({kind:'smp-init',threadId:tid,sharedTTBuf:ttBuf,sharedTTSlots:ttSlots,controlBuf:ctrlBuf,warmupHard:true});}catch{fail();}
+            }else if(d?.kind==='smp-ready')res();
+            else if(tid===0&&d?.jobSeq===jobSeq){
+              if(d.kind==='smp-progress'){
+                if(Number.isFinite(d.score))lastScore=d.score;
+                onProgress?.({depth:d.depth,totalNodes:d.totalNodes,elapsedMs:d.elapsedMs,score:lastScore,threads:threadCount});
+              }else if(d.kind==='smp-done')finish(d.reply,lastScore);
+            }
+          };
+        }));
+      }
+      Promise.all(readyList).then(()=>{
+        if(settled)return;
+        for(const w of workers)w.postMessage({kind:'smp-run',jobSeq,request,fullPower:true,ponder:false,keepTT:false});
+      }).catch(fail);
+    }catch{fail();}
   });
   return {promise,cancel};
 }

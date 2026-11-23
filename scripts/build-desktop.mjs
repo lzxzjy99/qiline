@@ -44,7 +44,7 @@ for(const directory of paths){
     ['apps/desktop/manual.html','弈合_游玩手册.html'],
     ['docs/Windows真机验收清单.md','Windows真机验收清单.md'],
     ['native-bin/qiline-engine.exe','resources/engine/qiline-engine.exe'],
-    ['native-bin/nnue-gen7-192x2.bin','resources/engine/nnue-gen7-192x2.bin'],
+    ['native-bin/nnue-gen8-192x2.bin','resources/engine/nnue-gen8-192x2.bin'],
   ]){
     const targetPath=join(directory,name);
     await mkdir(dirname(targetPath),{recursive:true});

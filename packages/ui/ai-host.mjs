@@ -54,11 +54,12 @@ function isV21Rules(rules){
 }
 
 /**
- * Multi-Device 4-Tier Adaptive AI Host for Qiline v0.12.0:
- *   Tier 1/2 : WebGPU gpufast-v3 Batched MCTS + Tactical Guard (auto-gated >= 1,200 boards/s)
- *   Tier 1B  : Electron Desktop Native AVX2 Multi-Thread Sidecar (qiline-engine.exe, 256MB lock-free TT)
- *   Tier 3   : Multi-Worker v26 WASM SIMD128 Lazy SMP (uncapped cores + 160MB SAB TT + Ponder)
- *   Tier 4   : Single-Core v26 WASM SIMD128 (NNUE v5 + 38KB Policy, works everywhere incl. mobile/GitHub Pages)
+ * Multi-Device 4-Tier Adaptive AI Host for Qiline v0.13.0 (Gen-8 · v27):
+ *   Easy/Std : v27 Lite Ultra-Low-Resource WASM (125KB NNUE-Lite, ~1.44MB RAM, ~1-4ms/move, 0% GPU, zero SAB/Sidecar!)
+ *   Tier 1/2 : WebGPU v27-pro12 (12b x 128ch, 28-plane FP16) Batched MCTS + Tactical Guard (auto-gated >= 1,200 b/s)
+ *   Tier 1B  : Electron Desktop Native AVX2 Multi-Thread Sidecar (qiline-engine.exe + Gen-8 NNUE v5, 256MB lock-free TT)
+ *   Tier 3   : Multi-Worker v27 WASM SIMD128 Lazy SMP (uncapped cores + 160MB SAB TT + Ponder)
+ *   Tier 4   : Single-Core v27 WASM SIMD128 (Gen-8 NNUE v5 + 38KB Policy, works everywhere incl. mobile/GitHub Pages)
  */
 export function createBrowserAI(session,onState,limits,canContinue=()=>true,options={}){
   if(typeof canContinue!=='function')return {ok:false,error:{code:'INVALID_AI_REQUEST'}};
@@ -74,17 +75,49 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
   let pondering=false;
   let ponderSeq=-1;
 
-  // Background probe for WebGPU & Desktop Native Sidecar (non-blocking, updates UI badge/telemetry on ready!)
+  // Lazy probes for WebGPU & Desktop Native Sidecar: ONLY started for Hard 9x9 sessions so Easy/Standard use 0% GPU & 0 Sidecar RAM!
+  let hardProbesStarted=false;
   let gpuReadyInfo=getWebGpuMctsStatus();
   let nativeInfo=null;
   let activeGpuCancel=null;
   let activeNativeSearch=false;
   let activeNativeOffProgress=null;
 
-  // Persistent warm WASM worker pool (lazily initialized only when WASM tier is needed)
+  // Dedicated single ultra-light worker for Easy / Standard (~1.44 MB WASM, no SAB, no Hard NNUE decode)
+  let litePool=null;
+  let liteBusy=false;
+
+  // Persistent warm Hard WASM worker pool (lazily initialized only when Hard CPU WASM tier is needed)
   let pool=null;
 
+  function sessionNeedsHardAI(){
+    const st=session?.state;
+    if(!st||!isV21Rules(st.match?.rules))return false;
+    const c=st.controllers;
+    return (c?.A?.kind==='ai'&&c.A.level==='hard')||(c?.B?.kind==='ai'&&c.B.level==='hard');
+  }
+
+  function ensureHardProbes(){
+    if(hardProbesStarted||closed)return;
+    hardProbesStarted=true;
+    if(caps.webgpuSupported){
+      initWebGpuMcts().then(()=>{
+        gpuReadyInfo=getWebGpuMctsStatus();
+        emitTelemetry({});
+      }).catch(()=>{});
+    }
+    if(caps.nativeDesktop){
+      window.qilineDesktop.nativeEngine.getInfo().then(info=>{
+        nativeInfo=info&&info.available?info:{available:false};
+        emitTelemetry({});
+      }).catch(()=>{nativeInfo={available:false};});
+    }
+  }
+
   function activeBackendId(){
+    if(!sessionNeedsHardAI()){
+      return isV21Rules(session?.state?.match?.rules)?'lite-wasm':'wasm-1t';
+    }
     if(perfMode==='standard')return 'wasm-1t';
     if(gpuReadyInfo?.available)return 'webgpu';
     if(nativeInfo?.available)return 'native';
@@ -106,8 +139,8 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
   function emitTelemetry(patch){
     if(!onTelemetry||closed)return;
     const backend=patch?.backend||activeBackendId();
-    const defaultThreads=backend==='webgpu'?1:backend==='native'?desiredNativeThreads():(pool?pool.threadCount:desiredWasmThreads());
-    const defaultTtMB=backend==='webgpu'?64:backend==='native'?256:(pool?pool.ttMB:(perfMode==='standard'?14:caps.ttMB));
+    const defaultThreads=backend==='lite-wasm'||backend==='webgpu'?1:backend==='native'?desiredNativeThreads():(pool?pool.threadCount:desiredWasmThreads());
+    const defaultTtMB=backend==='lite-wasm'?1:backend==='webgpu'?64:backend==='native'?256:(pool?pool.ttMB:(perfMode==='standard'?14:caps.ttMB));
     try{
       onTelemetry(Object.freeze({
         perfMode,
@@ -126,18 +159,43 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
     }catch{}
   }
 
-  // Kick off non-blocking capability probes in background (zero startup stall)
-  if(caps.webgpuSupported){
-    initWebGpuMcts().then(()=>{
-      gpuReadyInfo=getWebGpuMctsStatus();
-      emitTelemetry({});
-    }).catch(()=>{});
+  // Only start GPU / Native probes on boot when this session actually uses Hard 9x9 AI!
+  if(sessionNeedsHardAI()){
+    ensureHardProbes();
   }
-  if(caps.nativeDesktop){
-    window.qilineDesktop.nativeEngine.getInfo().then(info=>{
-      nativeInfo=info&&info.available?info:{available:false};
-      emitTelemetry({});
-    }).catch(()=>{nativeInfo={available:false};});
+
+  function destroyLitePool(){
+    liteBusy=false;
+    if(!litePool)return;
+    const old=litePool;litePool=null;
+    try{old.worker.onmessage=null;old.worker.onerror=null;old.worker.onmessageerror=null;old.worker.terminate();}catch{}
+  }
+
+  function ensureLitePool(){
+    if(litePool)return litePool;
+    const workerUrl=new URL('../ai/src/v21-smp-worker.js',import.meta.url);
+    const worker=new Worker(workerUrl,{type:'module',name:'qiline-ai-lite'});
+    const ready=new Promise((resolve,reject)=>{
+      const onBoot=ev=>{
+        const d=ev?.data;
+        if(d&&d.kind==='smp-boot'){
+          worker.postMessage({kind:'smp-init',threadId:0,sharedTTBuf:null,sharedTTSlots:0,controlBuf:null,warmupHard:false});
+        }else if(d&&d.kind==='smp-ready'){
+          worker.removeEventListener('message',onBoot);
+          worker.removeEventListener('error',onErr);
+          resolve();
+        }
+      };
+      const onErr=err=>{
+        worker.removeEventListener('message',onBoot);
+        worker.removeEventListener('error',onErr);
+        reject(err);
+      };
+      worker.addEventListener('message',onBoot);
+      worker.addEventListener('error',onErr);
+    });
+    litePool={worker,ready};
+    return litePool;
   }
 
   function destroyPool(){
@@ -179,7 +237,7 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
         const onBoot=ev=>{
           const d=ev?.data;
           if(d&&d.kind==='smp-boot'){
-            w.postMessage({kind:'smp-init',threadId:tid,sharedTTBuf:ttBuf,sharedTTSlots:ttSlots,controlBuf:ctrlBuf});
+            w.postMessage({kind:'smp-init',threadId:tid,sharedTTBuf:ttBuf,sharedTTSlots:ttSlots,controlBuf:ctrlBuf,warmupHard:true});
           }else if(d&&d.kind==='smp-ready'){
             w.removeEventListener('message',onBoot);
             w.removeEventListener('error',onErr);
@@ -209,6 +267,9 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
       activeNativeSearch=false;
       if(activeNativeOffProgress){try{activeNativeOffProgress();}catch{} activeNativeOffProgress=null;}
       try{window.qilineDesktop?.nativeEngine?.stop();}catch{}
+    }
+    if(hardResetIfBusy&&liteBusy){
+      destroyLitePool();
     }
     if(!pool)return;
     if(pool.ctrl){
@@ -442,9 +503,68 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
       }
     }
 
+    function dispatchLite(request,seq){
+      if(terminated||closed||mySeq!==seq)return;
+      const lp=ensureLitePool();
+      const isLiteV27=(request?.level==='easy'||request?.level==='standard')&&isV21Rules(request?.record?.rules);
+      const backendTag=isLiteV27?'lite-wasm':'wasm-1t';
+      lp.ready.then(()=>{
+        if(terminated||closed||mySeq!==seq||litePool!==lp)return;
+        liteBusy=true;
+        const w=lp.worker;
+        const onMsg=ev=>{
+          const d=ev?.data;
+          if(!d||d.jobSeq!==seq)return;
+          if(d.kind==='smp-done'){
+            w.removeEventListener('message',onMsg);
+            w.removeEventListener('error',onErr);
+            liteBusy=false;
+            finished=true;
+            if(activePort===port)activePort=null;
+            if(isLiteV27&&d.reply?.stats){
+              emitTelemetry({
+                backend:backendTag,
+                threads:1,
+                ttMB:1,
+                totalNodes:d.reply.stats.nodes||0,
+                depth:d.reply.stats.completedDepth||0,
+                nps:d.reply.stats.elapsedMs>0?Math.round((d.reply.stats.nodes||0)*1000/d.reply.stats.elapsedMs):0,
+                elapsedMs:d.reply.stats.elapsedMs||0,
+                pondering:false,
+              });
+            }
+            if(!terminated&&!closed&&onmessage){
+              onmessage({data:d.reply});
+            }
+          }
+        };
+        const onErr=err=>{
+          w.removeEventListener('message',onMsg);
+          w.removeEventListener('error',onErr);
+          liteBusy=false;
+          if(activePort===port)activePort=null;
+          destroyLitePool();
+          if(!terminated&&!closed&&onerror)onerror(err);
+        };
+        w.addEventListener('message',onMsg);
+        w.addEventListener('error',onErr);
+        w.postMessage({kind:'smp-run',jobSeq:seq,request,fullPower:false,ponder:false,keepTT:false});
+      }).catch(err=>{
+        liteBusy=false;
+        destroyLitePool();
+        if(!terminated&&!closed&&onerror)onerror(err);
+      });
+    }
+
     async function dispatchBestTier(request,seq){
       const isHardV21=request?.level==='hard'&&isV21Rules(request?.record?.rules);
-      if(isHardV21&&perfMode!=='standard'){
+      if(!isHardV21){
+        // Easy / Standard / non-9x9: single ultra-light worker (~1.44 MB RAM, 0% GPU, zero SAB/Sidecar!)
+        dispatchLite(request,seq);
+        return;
+      }
+      ensureHardProbes();
+      if(perfMode!=='standard'){
         // Tier 1 / Tier 2: WebGPU GPU MCTS (auto-gated >= 1,200 boards/s!)
         if(caps.webgpuSupported&&!(gpuReadyInfo?.ready&&!gpuReadyInfo?.available)){
           emitTelemetry({backend:'webgpu',threads:1,ttMB:64,totalNodes:0,depth:0,nps:0,elapsedMs:0,pondering:false});
@@ -528,7 +648,7 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
     },
   },limits);
 
-  if(!created.ok){destroyPool();return created;}
+  if(!created.ok){destroyLitePool();destroyPool();return created;}
   const inner=created.value;
   driver={
     get state(){return inner.state;},
@@ -561,6 +681,7 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
     close(){
       closed=true;
       stopWorkersNow(false);
+      destroyLitePool();
       destroyPool();
       return inner.close();
     },

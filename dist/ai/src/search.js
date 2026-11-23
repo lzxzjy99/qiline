@@ -7,6 +7,7 @@ import { securedClaim } from "./claim-proof.js";
 import { actionKey, orderActions, retainActions, tieRank } from "./ordering.js";
 import { claimTacticalPoints, featuresOf, liveLinesOf, otherColor, playerColor, rescuedStones, shareFeaturePool } from "./features.js";
 import { isV21Profile, runV21Search } from "./v21-engine.js";
+import { runV27LiteSearch } from "./v27-lite-kernel.js";
 export const SEARCH_POLICIES = freeze({
     easy: { quietWidth: 6, rootWidth: 12 }, standard: { quietWidth: 12, rootWidth: 24 },
     hard: { quietWidth: 12, rootWidth: 24 },
@@ -197,6 +198,11 @@ export function runSearchWithRuntime(raw, host = {}, v21Opts) {
         control.nodes = 1;
         if (header.level === "hard" && isV21Profile(match)) {
             return runV21Search(header, match, now, cancelled, started, control.last, v21Opts);
+        }
+        if ((header.level === "easy" || header.level === "standard") && isV21Profile(match) && host.isCancelled === undefined) {
+            const lite = runV27LiteSearch(header, match, now, cancelled, started, control.last);
+            if (lite)
+                return lite;
         }
         if (control.featurePool)
             shareFeaturePool(match, control.featurePool);

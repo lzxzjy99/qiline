@@ -17,7 +17,7 @@ fs.mkdirSync(profile,{recursive:true});app.setPath('userData',profile);
 const windowStateFile=path.join(profile,'window-state.json');
 
 // ---- Native AVX2 Multi-Thread Engine Sidecar (qiline-engine.exe) ----
-const ALLOWED_ENGINE_ASSETS=new Set(['qiline-gpufast-v3.qgpu','qiline_v26_mcts.wasm']);
+const ALLOWED_ENGINE_ASSETS=new Set(['qiline-v27-pro.qgpu','qiline_v27_mcts.wasm']);
 let nativeProc=null;
 let nativeInfo=null;
 let nativeBootPromise=null;
@@ -32,7 +32,7 @@ function resolveSidecarPaths(){
   ];
   for(const dir of candidates){
     const exe=path.join(dir,'qiline-engine.exe');
-    const model=path.join(dir,'nnue-gen7-192x2.bin');
+    const model=path.join(dir,'nnue-gen8-192x2.bin');
     if(fs.existsSync(exe)&&fs.existsSync(model))return {exe,model};
   }
   return null;
@@ -76,7 +76,7 @@ function ensureNativeSidecar(winRef){
           if(msg.ok){
             done({
               available:true,
-              version:readyMsg?.version||'v26-native',
+              version:readyMsg?.version||'v27-native',
               isa:readyMsg?.isa||'avx2',
               logicalCores:readyMsg?.logicalCores||4,
               physicalCores:readyMsg?.physicalCores||4,
@@ -228,7 +228,7 @@ else {
       ]},
       {label:'帮助',submenu:[
         {label:'玩法手册与功能说明',accelerator:'F1',click:()=>sendCmd('open-manual')},
-        {label:'关于弈合',click:()=>dialog.showMessageBox(win,{type:'info',title:'弈合',message:`弈合 · 离线版 v${version}`,detail:'规则 2.1.0-r3\n支持同设备双人、离线人机练习与棋谱复盘续下。\n默认9路困难 AI 搭载 Gen-7 v26 引擎：自动识别并榨干硬件性能（WebGPU GPU 神经网络 MCTS、原生 AVX2 多核引擎、WASM 多核/单核 NNUE v5）。\n完整玩法见界面角落“玩法手册”。',buttons:['知道了']})}
+        {label:'关于弈合',click:()=>dialog.showMessageBox(win,{type:'info',title:'弈合',message:`弈合 · 离线版 v${version}`,detail:'规则 2.1.0-r3\n支持同设备双人、离线人机练习与棋谱复盘续下。\n默认9路困难 AI 搭载 Gen-8 v27 引擎（28通道 12×128 WebGPU FP16 神经 MCTS、原生 AVX2 多核、WASM Gen-8 NNUE v5）；简单与标准模式搭载 v27 Lite 超轻内核（约 1.5MB 内存、毫秒级响应、零 GPU 占用）。\n完整玩法见界面角落“玩法手册”。',buttons:['知道了']})}
       ]}
     ]));
     if(isSmoke){

@@ -19,6 +19,7 @@ interface InitMsg {
   readonly sharedTTBuf: SharedArrayBuffer | null;
   readonly sharedTTSlots: number;
   readonly controlBuf: SharedArrayBuffer | null;
+  readonly warmupHard?: boolean;
 }
 
 interface JobMsg {
@@ -37,8 +38,8 @@ let sharedTT: Int32Array | null = null;
 let sharedTTMask = 0;
 let control: Int32Array | null = null;
 
-// Pre-decode NNUE weights and compile WASM SIMD128 kernel on worker startup so first move has zero latency
-try { getNnueWeights(); warmupV24WasmKernel(); } catch {}
+// Hard NNUE / Hard WASM are warmed up ONLY when smp-init requests warmupHard=true,
+// keeping Easy & Standard workers at ~1.5 MB RAM with zero Hard-engine overhead!
 
 scope.onmessage = event => {
   const msg = event.data as InitMsg | JobMsg | null;
@@ -54,6 +55,9 @@ scope.onmessage = event => {
       sharedTTMask = 0;
     }
     control = msg.controlBuf ? new Int32Array(msg.controlBuf) : null;
+    if (msg.warmupHard === true) {
+      try { getNnueWeights(); warmupV24WasmKernel(); } catch {}
+    }
     scope.postMessage({ kind: "smp-ready", threadId });
     return;
   }

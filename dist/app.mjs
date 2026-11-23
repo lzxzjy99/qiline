@@ -232,22 +232,30 @@ function operate(fn,success) {
   if (flash.length) setTimeout(()=>{flash=[];renderBoard();},750);
 }
 
-function isHardNine(){const m=match(),p=practice();return !!p&&p.level==='hard'&&!!m&&m.rules.boardSize===9&&m.rules.directions==='diagonal'&&m.rules.confirmationDelay===4&&m.rules.claimMode==='fixed-five'&&m.rules.superko==='positional';}
+function isDefaultNine(){const m=match();return !!m&&m.rules.boardSize===9&&m.rules.directions==='diagonal'&&m.rules.confirmationDelay===4&&m.rules.claimMode==='fixed-five'&&m.rules.superko==='positional';}
+function isHardNine(){const p=practice();return !!p&&p.level==='hard'&&isDefaultNine();}
 
 function renderRules() {
   const m=match(),p=practice();
   $('rules-summary').innerHTML=rulesView(m?.rules).map(s=>`<span>${esc(s)}</span>`).join('');
   const badge=$('ai-kernel-badge');
-  if(!p||p.level!=='hard'){badge.hidden=true;return;}
+  if(!p){badge.hidden=true;return;}
+  if(p.level!=='hard'){
+    if(!isDefaultNine()){badge.hidden=true;return;}
+    badge.hidden=false;
+    badge.classList.toggle('fallback',false);
+    badge.textContent='v27 Lite 超轻内核（约 1.5MB · 零 GPU）';
+    return;
+  }
   badge.hidden=false;
   const nnue=isHardNine();
   badge.classList.toggle('fallback',!nnue);
-  if(!nnue){badge.textContent='通用规则深算内核（v26 限默认 9 路）';return;}
+  if(!nnue){badge.textContent='通用规则深算内核（v27 限默认 9 路）';return;}
   const bk=aiTelemetry?.backend;
-  if(perfMode==='standard'){badge.textContent='Gen-7 NNUE v5 · v26 WASM 单核';return;}
-  if(bk==='webgpu'||aiTelemetry?.gpuAvailable){badge.textContent='Gen-7 · v26 WebGPU GPU 神经 MCTS';return;}
-  if(bk==='native'||aiTelemetry?.nativeAvailable){badge.textContent='Gen-7 NNUE v5 · v26 原生 AVX2 多核';return;}
-  badge.textContent=hwCaps.sabSupported?'Gen-7 NNUE v5 · v26 WASM 多核':'Gen-7 NNUE v5 · v26 WASM 单核';
+  if(perfMode==='standard'){badge.textContent='Gen-8 NNUE v5 · v27 WASM 单核';return;}
+  if(bk==='webgpu'||aiTelemetry?.gpuAvailable){badge.textContent='Gen-8 · v27 WebGPU FP16 神经 MCTS';return;}
+  if(bk==='native'||aiTelemetry?.nativeAvailable){badge.textContent='Gen-8 NNUE v5 · v27 原生 AVX2 多核';return;}
+  badge.textContent=hwCaps.sabSupported?'Gen-8 NNUE v5 · v27 WASM 多核':'Gen-8 NNUE v5 · v27 WASM 单核';
 }
 
 function renderBoard() {
@@ -461,7 +469,7 @@ function renderTelemetry(){
       el.textContent=`${gpuTag}${speed}${dep} · ${fmtCount(t.totalNodes)} 模拟`;
       return;
     }
-    el.textContent=`就绪：${gpuTag} · 8×96 ResNet MCTS + 战术守护`;
+    el.textContent=`就绪：${gpuTag} · 12×128 28通道 ResNet MCTS + 战术守护`;
     return;
   }
   if(bk==='native'&&perfMode!=='standard'){
@@ -732,7 +740,7 @@ $('ai-perf-mode').onchange=e=>{
   try{storageObject.setItem(PERF_KEY,perfMode);}catch{}
   ai?.setPerfMode?.(perfMode);
   renderTelemetry();
-  notice(perfMode==='extreme'?'已切换为极限榨干模式（WebGPU 10s 深算 / 全核满载 + 后台预算），将在下一手生效。':perfMode==='turbo'?'已切换为自动榨干模式（优先 WebGPU GPU 神经 MCTS / 物理核心满载）。':'已切换为节能单核模式（v26 WASM 单核，省电静音）。');
+  notice(perfMode==='extreme'?'已切换为极限榨干模式（WebGPU 10s 深算 / 全核满载 + 后台预算），将在下一手生效。':perfMode==='turbo'?'已切换为自动榨干模式（优先 WebGPU FP16 神经 MCTS / 物理核心满载）。':'已切换为节能单核模式（v27 WASM 单核，省电静音）。');
 };
 $('replace-confirm').onclick=()=>{const action=replaceAction;replaceAction=null;$('replace-dialog').close();if(mayChange()&&replaceable())action?.();};
 $('replace-dialog').addEventListener('close',()=>{replaceAction=null;});

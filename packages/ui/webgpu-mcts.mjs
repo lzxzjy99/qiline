@@ -1,10 +1,10 @@
-// Zero-dependency WebGPU GPU MCTS Runtime for Qiline v0.12.0 (v26 gpufast-v3 8b x 96ch + qiline_v26_mcts.wasm)
+// Zero-dependency WebGPU GPU MCTS Runtime for Qiline v0.13.0 (Gen-8 v27-pro12 12b x 128ch 28-plane FP16 + qiline_v27_mcts.wasm)
 // Automatically benchmarks GPU at startup (>= 1,200 boards/s gate); gracefully returns unavailable on weak/software GPUs.
 
 import { AI_PROTOCOL_VERSION } from "../ai/src/index.js";
 import { WebGpuResNet } from "./webgpu-resnet.mjs";
 
-const GPU_CACHE_NAME = "qiline-v26-gpu-v1";
+const GPU_CACHE_NAME = "qiline-v27-gpu-v1";
 const MIN_BOARDS_PER_SEC = 1200;
 
 let initPromise = null;
@@ -51,14 +51,15 @@ async function loadBinaryAsset(fileName) {
   return await resp.arrayBuffer();
 }
 
-function formatGpuLabel(info, boardsPerSec) {
+function formatGpuLabel(info, boardsPerSec, useF16) {
   const parts = [];
   if (info?.description) parts.push(info.description);
   else if (info?.vendor || info?.architecture) {
     parts.push([info.vendor, info.architecture].filter(Boolean).join(" ").toUpperCase());
   }
   const tag = parts[0] || "WebGPU";
-  return `${tag} (${Math.round(boardsPerSec).toLocaleString()} b/s)`;
+  const prec = useF16 ? " FP16" : "";
+  return `${tag}${prec} (${Math.round(boardsPerSec).toLocaleString()} b/s)`;
 }
 
 export function getWebGpuMctsStatus() {
@@ -68,6 +69,7 @@ export function getWebGpuMctsStatus() {
     ready: true,
     pending: false,
     available: true,
+    useF16: !!runtime.gpu?.useF16,
     boardsPerSec: runtime.boardsPerSec,
     batchSize: runtime.batchSize,
     gpuLabel: runtime.gpuLabel,
@@ -89,8 +91,8 @@ export function initWebGpuMcts() {
         return runtime;
       }
       const [qgpuAb, mctsWasmAb] = await Promise.all([
-        loadBinaryAsset("qiline-gpufast-v3.qgpu"),
-        loadBinaryAsset("qiline_v26_mcts.wasm"),
+        loadBinaryAsset("qiline-v27-pro.qgpu"),
+        loadBinaryAsset("qiline_v27_mcts.wasm"),
       ]);
       const gpu = await WebGpuResNet.create(qgpuAb, { powerPreference: "high-performance" });
       // 100ms startup micro-benchmark to gate WebGPU automatically
@@ -103,14 +105,14 @@ export function initWebGpuMcts() {
       const { instance } = await WebAssembly.instantiate(mctsWasmAb, {});
       const mex = instance.exports;
       mex.mcts_init();
-      const batchSize = bm.boardsPerSec >= 8000 ? 48 : bm.boardsPerSec >= 3000 ? 32 : 16;
+      const batchSize = bm.boardsPerSec >= 6000 ? 48 : bm.boardsPerSec >= 2500 ? 32 : 16;
       runtime = {
         unavailable: false,
         gpu,
         mex,
         boardsPerSec: bm.boardsPerSec,
         batchSize,
-        gpuLabel: formatGpuLabel(gpu.adapterInfo, bm.boardsPerSec),
+        gpuLabel: formatGpuLabel(gpu.adapterInfo, bm.boardsPerSec, gpu.useF16),
       };
       return runtime;
     } catch (err) {

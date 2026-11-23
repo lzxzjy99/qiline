@@ -13,6 +13,7 @@ import { claimTacticalPoints, featuresOf, liveLinesOf, otherColor, playerColor, 
 import type { FeaturePool } from "./features.js";
 import { isV21Profile, runV21Search } from "./v21-engine.js";
 import type { V21RuntimeOptions } from "./v21-engine.js";
+import { runV27LiteSearch } from "./v27-lite-kernel.js";
 
 export const SEARCH_POLICIES:Readonly<Record<AILevel,{readonly quietWidth:number;readonly rootWidth:number}>>=freeze({
   easy:{quietWidth:6,rootWidth:12},standard:{quietWidth:12,rootWidth:24},
@@ -138,6 +139,10 @@ export function runSearchWithRuntime(raw:unknown,host:SearchHost={},v21Opts?:V21
     const match=restored.value;control.nodes=1;
     if(header.level==="hard"&&isV21Profile(match)){
       return runV21Search(header,match,now,cancelled,started,control.last,v21Opts);
+    }
+    if((header.level==="easy"||header.level==="standard")&&isV21Profile(match)&&host.isCancelled===undefined){
+      const lite=runV27LiteSearch(header,match,now,cancelled,started,control.last);
+      if(lite)return lite;
     }
     if(control.featurePool)shareFeaturePool(match,control.featurePool);
     if(header.level==="hard"&&securedClaim(match)?.color===playerColor(match,actor)){

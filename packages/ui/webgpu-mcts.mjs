@@ -123,22 +123,37 @@ export function initWebGpuMcts() {
   return initPromise;
 }
 
-// Serialized GPU search lock (one active GPU search at a time)
+// Serialized GPU search lock (strictly awaits prior evalBatch/mapAsync before next search begins!)
 let activeSearchCancel = null;
+let gpuRunQueue = Promise.resolve();
+
+function invalidateGpuRuntime(rt) {
+  if (rt && runtime === rt) {
+    try { rt.gpu?.dispose(); } catch {}
+    runtime = null;
+    initPromise = null;
+  }
+}
 
 export function runWebGpuMctsSearch(request, { perfMode = "turbo", onProgress = null } = {}) {
   let cancelled = false;
   const cancel = () => { cancelled = true; };
 
-  const promise = (async () => {
+  if (activeSearchCancel) {
+    try { activeSearchCancel(); } catch {}
+  }
+  activeSearchCancel = cancel;
+
+  const prevRun = gpuRunQueue;
+  const promise = prevRun.catch(() => {}).then(async () => {
+    if (cancelled) {
+      return { ok: false, fallback: false, cancelled: true };
+    }
     const rt = await initWebGpuMcts();
-    if (rt.unavailable || cancelled) {
+    if (rt.unavailable || rt.gpu?.deviceLost || rt.gpu?.disposed || cancelled) {
+      if (rt.gpu?.deviceLost) invalidateGpuRuntime(rt);
       return { ok: false, fallback: !cancelled, cancelled };
     }
-    if (activeSearchCancel) {
-      try { activeSearchCancel(); } catch {}
-    }
-    activeSearchCancel = cancel;
 
     const t0 = performance.now();
     try {
@@ -186,19 +201,19 @@ export function runWebGpuMctsSearch(request, { perfMode = "turbo", onProgress = 
           lastProg = now;
           const stats = new Float64Array(mex.memory.buffer, mex.mcts_stats_ptr(), 9);
           const el = Math.max(1, now - t0);
-          const sims = Math.round(stats[2]);
+          const sims = Math.max(0, Math.round(Number.isFinite(stats[2]) ? stats[2] : 0));
           onProgress({
             backend: "webgpu",
             gpuLabel,
             totalNodes: sims,
             sims,
-            depth: Math.max(1, Math.round(stats[8] || 1)),
+            depth: Math.max(1, Math.round(Number.isFinite(stats[8]) ? stats[8] : 1)),
             nps: Math.round((sims * 1000) / el),
             elapsedMs: el,
             score: Number.isFinite(stats[1]) ? stats[1] : null,
-            bestCode: Math.round(stats[0]),
-            batches: Math.round(stats[3]),
-            cacheHits: Math.round(stats[4]),
+            bestCode: Math.round(Number.isFinite(stats[0]) ? stats[0] : -1),
+            batches: Math.round(Number.isFinite(stats[3]) ? stats[3] : 0),
+            cacheHits: Math.round(Number.isFinite(stats[4]) ? stats[4] : 0),
           });
         }
       }
@@ -211,7 +226,7 @@ export function runWebGpuMctsSearch(request, { perfMode = "turbo", onProgress = 
             kind: "result",
             context: request.context,
             status: "cancelled",
-            stats: { elapsedMs: performance.now() - t0, nodes: 0, completedDepth: 0 },
+            stats: { elapsedMs: Math.max(0, performance.now() - t0), nodes: 0, completedDepth: 0 },
           },
         };
       }
@@ -221,8 +236,8 @@ export function runWebGpuMctsSearch(request, { perfMode = "turbo", onProgress = 
       const el = Math.max(1, performance.now() - t0);
       const maxNodes = Math.max(1, Number(request?.budget?.maxNodes) || 4000000);
       const maxDepth = Math.max(1, Number(request?.budget?.maxDepth) || 16);
-      const sims = Math.max(1, Math.round(stats[2]));
-      const depth = Math.max(1, Math.min(maxDepth, Math.round(stats[8] || 1)));
+      const sims = Math.max(1, Math.min(maxNodes, Math.round(Number.isFinite(stats[2]) ? stats[2] : 1)));
+      const depth = Math.max(1, Math.min(maxDepth, Math.round(Number.isFinite(stats[8]) ? stats[8] : 1)));
       const action = moveCodeToAction(bestCode, actor);
       if (!action) return { ok: false, fallback: true };
 
@@ -249,18 +264,20 @@ export function runWebGpuMctsSearch(request, { perfMode = "turbo", onProgress = 
           status: "move",
           action,
           stats: {
-            elapsedMs: Math.max(0, el),
-            nodes: Math.min(sims, maxNodes),
+            elapsedMs: Math.max(0, Number.isFinite(el) ? el : 0),
+            nodes: sims,
             completedDepth: depth,
           },
         },
       };
     } catch {
-      return { ok: false, fallback: true };
+      invalidateGpuRuntime(rt);
+      return { ok: false, fallback: !cancelled, cancelled };
     } finally {
       if (activeSearchCancel === cancel) activeSearchCancel = null;
     }
-  })();
+  });
+  gpuRunQueue = promise;
 
   return { promise, cancel };
 }

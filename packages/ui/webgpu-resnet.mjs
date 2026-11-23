@@ -635,11 +635,15 @@ export class WebGpuResNet {
     this.blocks = parsed.blocks;
     this.useF16 = parsed.useF16;
     this.disposed = false;
+    this.deviceLost = false;
     this.gpuErrors = [];
     device.addEventListener("uncapturederror", (ev) => {
       const m = ev.error ? ev.error.message : String(ev);
       if (this.gpuErrors.length < 8) this.gpuErrors.push(m);
     });
+    if (device.lost && typeof device.lost.then === "function") {
+      device.lost.then(() => { this.deviceLost = true; }).catch(() => { this.deviceLost = true; });
+    }
     this._buildResources(parsed);
   }
 
@@ -837,7 +841,7 @@ export class WebGpuResNet {
   }
 
   async evalBatch(bn, boardsU8, dense16F32, lastPtsI8, outVal = null, outPol = null) {
-    if (this.disposed) throw new Error("WebGpuResNet disposed");
+    if (this.disposed || this.deviceLost) throw new Error("WebGpuResNet unavailable");
     if (bn <= 0 || bn > MAX_BATCH) throw new Error(`Invalid batch size ${bn}`);
     const dev = this.device;
 

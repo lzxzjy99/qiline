@@ -2,6 +2,7 @@
 // Self-contained: NEVER imports or decodes the 820 KB Hard NNUE or 13.8 MB Hard WASM!
 // Sources: qiline_v27_lite.wasm (sha256:aabc649e9e335a82, 71850B) + nnue-lite-32x2.bin (sha256:beb87c095474a4df, 128504B FP16)
 import type { Match } from "../../core/src/types.js";
+import { applyAction } from "../../core/src/engine.js";
 import { freeze } from "../../core/src/result.js";
 import type { AIAction, AIResult, SearchReply } from "./types.js";
 import { AI_PROTOCOL_VERSION, aiOK } from "./protocol.js";
@@ -2361,8 +2362,10 @@ function codeToAction(code: number, actor: "A" | "B"): AIAction | null {
   return null;
 }
 
+// SearchCtx::search_move stop_code mapping:
+//   0 = max-depth, 1 = nodes, 2 = time, 3 = cancelled, 4 = tactical-win, 5 = confirmed-mate
 const STOP_NAMES: readonly SearchStop[] = [
-  "max-depth", "terminal-win", "secured-line", "time", "nodes", "cancelled", "internal",
+  "max-depth", "nodes", "time", "cancelled", "secured-line", "secured-line",
 ];
 
 /**
@@ -2436,9 +2439,9 @@ export function runV27LiteSearch(
   const maxVisitedDepth = Math.max(completedDepth, Math.min(r[4]! | 0, header.budget.maxDepth));
   const cutoffs = Math.max(0, r[5]! | 0);
   const rootCandidates = Math.max(1, r[6]! | 0);
-  const rawStop = STOP_NAMES[r[7]! | 0] ?? "max-depth";
-
-  let stop: SearchStop = rawStop;
+  const rawStopCode = r[7]! | 0;
+  let stop: SearchStop = STOP_NAMES[rawStopCode] ?? "max-depth";
+  if (stop === "cancelled" && !cancelled()) stop = "nodes";
   let elapsed = Math.max(0, last - started);
   try {
     elapsed = Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, safeNow() - started));
@@ -2456,11 +2459,18 @@ export function runV27LiteSearch(
   } as const;
 
   const action = codeToAction(r[0]! | 0, actor);
+  if (action && stop !== "cancelled" && stop !== "internal") {
+    const chk = applyAction(match, action);
+    if (!chk.ok) return null;
+    if (chk.value.match.state.outcome?.kind === "win") {
+      stop = "terminal-win";
+    }
+  }
   let reply: SearchReply;
   if (stop === "cancelled") reply = { ...common, status: "cancelled" };
   else if (stop === "internal") reply = { ...common, status: "failed", reason: "internal" };
   else if (action) reply = { ...common, status: (stop === "time" || stop === "nodes") ? "timeout" : "move", action };
-  else reply = { ...common, status: "failed", reason: "no-action" };
+  else return null;
 
   return aiOK(freeze({
     reply,

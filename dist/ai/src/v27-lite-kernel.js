@@ -1,3 +1,4 @@
+import { applyAction } from "../../core/src/engine.js";
 import { freeze } from "../../core/src/result.js";
 import { AI_PROTOCOL_VERSION, aiOK } from "./protocol.js";
 const LITE_WASM_B64 = "AGFzbQEAAAAB7gEaYAF/AXxgBX9/fH9/AX9gDH9/f39/f39/f39/fwF/YA9/f39/f39/f39/f398f38AYAABfGAAAGABfwBgAAF/YAJ/fQF/YAR/f399AX9g" +
@@ -2347,8 +2348,10 @@ function codeToAction(code, actor) {
         return { kind: "choose-color", actor, color: "white" };
     return null;
 }
+// SearchCtx::search_move stop_code mapping:
+//   0 = max-depth, 1 = nodes, 2 = time, 3 = cancelled, 4 = tactical-win, 5 = confirmed-mate
 const STOP_NAMES = [
-    "max-depth", "terminal-win", "secured-line", "time", "nodes", "cancelled", "internal",
+    "max-depth", "nodes", "time", "cancelled", "secured-line", "secured-line",
 ];
 /**
  * Ultra-low-latency, ultra-low-memory (~1.44 MB RAM) Lite NNUE search for Easy & Standard modes
@@ -2408,8 +2411,10 @@ export function runV27LiteSearch(header, match, now, cancelled, started, lastTim
     const maxVisitedDepth = Math.max(completedDepth, Math.min(r[4] | 0, header.budget.maxDepth));
     const cutoffs = Math.max(0, r[5] | 0);
     const rootCandidates = Math.max(1, r[6] | 0);
-    const rawStop = STOP_NAMES[r[7] | 0] ?? "max-depth";
-    let stop = rawStop;
+    const rawStopCode = r[7] | 0;
+    let stop = STOP_NAMES[rawStopCode] ?? "max-depth";
+    if (stop === "cancelled" && !cancelled())
+        stop = "nodes";
     let elapsed = Math.max(0, last - started);
     try {
         elapsed = Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, safeNow() - started));
@@ -2428,6 +2433,14 @@ export function runV27LiteSearch(header, match, now, cancelled, started, lastTim
         stats: { elapsedMs: elapsed, nodes: rawNodes, completedDepth },
     };
     const action = codeToAction(r[0] | 0, actor);
+    if (action && stop !== "cancelled" && stop !== "internal") {
+        const chk = applyAction(match, action);
+        if (!chk.ok)
+            return null;
+        if (chk.value.match.state.outcome?.kind === "win") {
+            stop = "terminal-win";
+        }
+    }
     let reply;
     if (stop === "cancelled")
         reply = { ...common, status: "cancelled" };
@@ -2436,7 +2449,7 @@ export function runV27LiteSearch(header, match, now, cancelled, started, lastTim
     else if (action)
         reply = { ...common, status: (stop === "time" || stop === "nodes") ? "timeout" : "move", action };
     else
-        reply = { ...common, status: "failed", reason: "no-action" };
+        return null;
     return aiOK(freeze({
         reply,
         details: {

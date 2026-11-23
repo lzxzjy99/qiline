@@ -44,6 +44,7 @@ function shutdownNativeSidecar(){
   nativeProc=null;
   nativeBootPromise=null;
   for(const [,entry] of nativePending){
+    if(entry.timer)clearTimeout(entry.timer);
     try{entry.resolve({ok:false,cancelled:true});}catch{}
   }
   nativePending.clear();
@@ -94,6 +95,7 @@ function ensureNativeSidecar(winRef){
           const entry=nativePending.get(msg.id);
           if(entry){
             nativePending.delete(msg.id);
+            if(entry.timer)clearTimeout(entry.timer);
             entry.resolve(msg.type==='result'?{ok:true,...msg}:{ok:false,error:msg.error||'search-error'});
           }
         }
@@ -103,7 +105,7 @@ function ensureNativeSidecar(winRef){
         clearTimeout(bootTimer);
         if(nativeProc===proc)nativeProc=null;
         nativeBootPromise=null;
-        for(const [,entry] of nativePending){try{entry.resolve({ok:false,error:'exited'});}catch{}}
+        for(const [,entry] of nativePending){if(entry.timer)clearTimeout(entry.timer);try{entry.resolve({ok:false,error:'exited'});}catch{}}
         nativePending.clear();
         done({available:false,reason:'exited'});
       });
@@ -179,9 +181,16 @@ else {
         clearTt:req?.clearTt===true,
       };
       return await new Promise(resolve=>{
-        nativePending.set(id,{resolve});
+        const watchdogMs=Math.max(8000,payload.timeMs+5000);
+        const timer=setTimeout(()=>{
+          if(nativePending.delete(id)){
+            shutdownNativeSidecar();
+            resolve({ok:false,error:'timeout'});
+          }
+        },watchdogMs);
+        nativePending.set(id,{resolve,timer});
         try{nativeProc.stdin.write(JSON.stringify(payload)+'\n');}
-        catch{nativePending.delete(id);resolve({ok:false,error:'write-failed'});}
+        catch{clearTimeout(timer);nativePending.delete(id);resolve({ok:false,error:'write-failed'});}
       });
     });
     ipcMain.on('qiline:native-stop',()=>{

@@ -95,7 +95,7 @@ export function runAdvisorySearch({match,level='standard',swapSide=false,seed=1,
         if(d?.kind==='ready'&&!posted){posted=true;w.postMessage(request);return;}
         if(d?.kind==='result'){
           try{w.terminate();}catch{}
-          if(d.status==='ok'&&d.action){
+          if((d.status==='move'||d.status==='timeout'||d.status==='ok')&&d.action){
             resolve({action:d.action,stats:d.stats,score:null,targetActor,targetColor,swapped:swapSide,elapsedMs:d.stats?.elapsedMs??0});
           }else reject(Error('AI 推演未得到有效着法。'));
         }
@@ -124,7 +124,7 @@ export function runAdvisorySearch({match,level='standard',swapSide=false,seed=1,
       readyList.push(new Promise((res,rej)=>{
         const onBoot=ev=>{
           const d=ev?.data;
-          if(d?.kind==='smp-boot')w.postMessage({kind:'smp-init',threadId:tid,sharedTTBuf:ttBuf,sharedTTSlots:ttSlots,controlBuf:ctrlBuf});
+          if(d?.kind==='smp-boot')w.postMessage({kind:'smp-init',threadId:tid,sharedTTBuf:ttBuf,sharedTTSlots:ttSlots,controlBuf:ctrlBuf,warmupHard:true});
           else if(d?.kind==='smp-ready'){w.removeEventListener('message',onBoot);w.removeEventListener('error',onErr);res();}
         };
         const onErr=err=>{w.removeEventListener('message',onBoot);w.removeEventListener('error',onErr);rej(err);};
@@ -143,7 +143,7 @@ export function runAdvisorySearch({match,level='standard',swapSide=false,seed=1,
           onProgress?.({depth:d.depth,totalNodes:d.totalNodes,elapsedMs:d.elapsedMs,score:lastScore,threads:threadCount});
         }else if(d.kind==='smp-done'){
           cancel();
-          if(d.reply?.status==='ok'&&d.reply?.action){
+          if((d.reply?.status==='move'||d.reply?.status==='timeout'||d.reply?.status==='ok')&&d.reply?.action){
             resolve({action:d.reply.action,stats:d.reply.stats,score:lastScore,targetActor,targetColor,swapped:swapSide,elapsedMs:d.reply.stats?.elapsedMs??0});
           }else reject(Error('AI 推演未得到有效着法。'));
         }

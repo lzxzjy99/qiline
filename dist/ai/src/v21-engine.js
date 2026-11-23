@@ -1888,19 +1888,27 @@ export function runV21Search(header, match, now, cancelled, started, initialLast
                 },
             });
             if (wasmRes) {
-                bestCode = wasmRes.bestCode;
-                bestScore = wasmRes.completedDepth > 0 || wasmRes.stopCode === 4 ? wasmRes.score : null;
-                nodes = Math.max(1, wasmRes.nodes);
-                completedDepth = wasmRes.completedDepth;
-                maxVisitedDepth = wasmRes.maxVisitedDepth;
-                cutoffs = wasmRes.cutoffs;
-                rootCandidates = Math.max(1, wasmRes.rootCandidates);
-                if (wasmRes.stopCode === 4) {
-                    const afterWin = applyCode(rootState, bestCode);
-                    return finish(afterWin.phase === 3 && afterWin.outcome === 1 ? "terminal-win" : "secured-line");
+                const wAct = wasmRes.bestCode >= 0 ? codeToAction(wasmRes.bestCode, actor) : null;
+                if (wAct && applyAction(match, wAct).ok) {
+                    bestCode = wasmRes.bestCode;
+                    bestScore = wasmRes.completedDepth > 0 || wasmRes.stopCode === 4 ? wasmRes.score : null;
+                    nodes = Math.max(1, wasmRes.nodes);
+                    completedDepth = wasmRes.completedDepth;
+                    maxVisitedDepth = wasmRes.maxVisitedDepth;
+                    cutoffs = wasmRes.cutoffs;
+                    rootCandidates = Math.max(1, wasmRes.rootCandidates);
+                    if (wasmRes.stopCode === 4) {
+                        const afterWin = applyCode(rootState, bestCode);
+                        return finish(afterWin.phase === 3 && afterWin.outcome === 1 ? "terminal-win" : "secured-line");
+                    }
+                    const stopMap = ["max-depth", "nodes", "time", "cancelled", "secured-line", "secured-line"];
+                    return finish(stopMap[wasmRes.stopCode] ?? "max-depth");
                 }
-                const stopMap = ["max-depth", "nodes", "time", "cancelled", "secured-line", "secured-line"];
-                return finish(stopMap[wasmRes.stopCode] ?? "max-depth");
+                // If WASM returned an unexpected/illegal action, fall through cleanly to verified TS search
+                bestCode = rootLegal[0];
+                nodes = 1;
+                completedDepth = 0;
+                cutoffs = 0;
             }
         }
         catch {

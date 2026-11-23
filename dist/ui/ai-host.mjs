@@ -1,4 +1,4 @@
-import {activePlayer,exportRecord} from '../core/src/index.js';
+import {activePlayer,applyAction,exportRecord} from '../core/src/index.js';
 import {AI_PROFILES,AI_PROTOCOL_VERSION} from '../ai/src/index.js';
 import {SHARED_TT_STRIDE,CTRL_JOB_SEQ,CTRL_MAX_DEPTH,CTRL_ACTIVE_WORKERS,CTRL_TT_GEN,CTRL_THREAD_COUNT,CTRL_NODES_BASE,CTRL_NODES_STRIDE,CTRL_BUFFER_BYTES} from '../ai/src/v21-engine.js';
 import {createRecoveringAI} from './ai-recovery.mjs';
@@ -175,6 +175,8 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
     if(litePool)return litePool;
     const workerUrl=new URL('../ai/src/v21-smp-worker.js',import.meta.url);
     const worker=new Worker(workerUrl,{type:'module',name:'qiline-ai-lite'});
+    const onFatal=()=>{if(litePool&&litePool.worker===worker)destroyLitePool();};
+    worker.addEventListener('error',onFatal);
     const ready=new Promise((resolve,reject)=>{
       const onBoot=ev=>{
         const d=ev?.data;
@@ -189,6 +191,7 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
       const onErr=err=>{
         worker.removeEventListener('message',onBoot);
         worker.removeEventListener('error',onErr);
+        onFatal();
         reject(err);
       };
       worker.addEventListener('message',onBoot);
@@ -233,6 +236,7 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
     for(let tid=0;tid<threadCount;tid++){
       const w=new Worker(workerUrl,{type:'module',name:`qiline-ai-${tid}`});
       workers.push(w);
+      w.addEventListener('error',()=>{if(pool&&pool.workers.includes(w))destroyPool();});
       readyPromises.push(new Promise((resolve,reject)=>{
         const onBoot=ev=>{
           const d=ev?.data;
@@ -409,6 +413,14 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
       });
     }
 
+    function replyActionLegalForSession(reply,request){
+      if(!reply||!['move','timeout'].includes(reply.status)||!reply.action)return true;
+      const curMatch=session?.state?.match;
+      const reqLen=request?.record?.actions?.length;
+      if(!curMatch||!Number.isInteger(reqLen)||curMatch.accepted.length!==reqLen)return true;
+      return applyAction(curMatch,reply.action).ok;
+    }
+
     async function dispatchNative(request,seq){
       if(!caps.nativeDesktop||terminated||closed||mySeq!==seq)return false;
       try{
@@ -480,6 +492,7 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
             completedDepth:Math.max(1,Math.min(Math.round(res.completedDepth||1),maxDepth)),
           },
         };
+        if(!replyActionLegalForSession(reply,request))return false;
         emitTelemetry({
           backend:'native',
           threads:res.threads||threads,
@@ -581,13 +594,13 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
           if(activeGpuCancel===job.cancel)activeGpuCancel=null;
           gpuReadyInfo=getWebGpuMctsStatus();
           if(terminated||closed||mySeq!==seq)return;
-          if(out.ok&&out.reply){
+          if(out.ok&&out.reply&&replyActionLegalForSession(out.reply,request)){
             finished=true;
             if(activePort===port)activePort=null;
             if(onmessage)onmessage({data:out.reply});
             return;
           }
-          // Fall through cleanly if GPU was unavailable or below 1,200 boards/s!
+          // Fall through cleanly if GPU was unavailable, below 1,200 boards/s, or action failed legality!
         }
 
         // Tier 1B: Desktop Native AVX2 Multi-Thread Sidecar (qiline-engine.exe)
@@ -627,12 +640,24 @@ export function createBrowserAI(session,onState,limits,canContinue=()=>true,opti
       },
     };
     activePort=port;
-    // Signal ready immediately on next microtask (zero blocking on WASM/GPU boot!)
-    Promise.resolve().then(()=>{
-      if(!terminated&&!closed&&onmessage){
-        onmessage({data:{protocolVersion:AI_PROTOCOL_VERSION,kind:'ready'}});
-      }
-    });
+    // If current turn isn't Hard 9x9, wait for cold Lite Worker boot before emitting 'ready' so startupMs (5s)
+    // covers initial JS/WASM compile instead of eating Easy's 300ms search timeout!
+    if(!sessionNeedsHardAI()){
+      ensureLitePool().ready.then(()=>{
+        if(!terminated&&!closed&&onmessage){
+          onmessage({data:{protocolVersion:AI_PROTOCOL_VERSION,kind:'ready'}});
+        }
+      }).catch(err=>{
+        destroyLitePool();
+        if(!terminated&&!closed&&onerror)onerror(err);
+      });
+    }else{
+      Promise.resolve().then(()=>{
+        if(!terminated&&!closed&&onmessage){
+          onmessage({data:{protocolVersion:AI_PROTOCOL_VERSION,kind:'ready'}});
+        }
+      });
+    }
     return port;
   }
 

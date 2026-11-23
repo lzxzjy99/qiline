@@ -4,7 +4,8 @@
 import { AI_PROTOCOL_VERSION } from "../ai/src/index.js";
 import { WebGpuResNet } from "./webgpu-resnet.mjs";
 
-const GPU_CACHE_NAME = "qiline-v27-gpu-v1";
+const GPU_CACHE_NAME = "qiline-v27-gpu-v2";
+const OLD_GPU_CACHES = ["qiline-v26-gpu-v1", "qiline-v27-gpu-v1"];
 const MIN_BOARDS_PER_SEC = 1200;
 
 let initPromise = null;
@@ -37,10 +38,11 @@ async function loadBinaryAsset(fileName) {
   const url = new URL(`../assets/${fileName}`, import.meta.url).href;
   if (typeof caches !== "undefined" && typeof caches.open === "function") {
     try {
+      for (const oldName of OLD_GPU_CACHES) caches.delete(oldName).catch(() => {});
       const cache = await caches.open(GPU_CACHE_NAME);
       const hit = await cache.match(url);
       if (hit && hit.ok) return await hit.arrayBuffer();
-      const resp = await fetch(url);
+      const resp = await fetch(url, { cache: "no-cache" });
       if (!resp.ok) throw new Error(`HTTP ${resp.status} for ${fileName}`);
       try { await cache.put(url, resp.clone()); } catch {}
       return await resp.arrayBuffer();
